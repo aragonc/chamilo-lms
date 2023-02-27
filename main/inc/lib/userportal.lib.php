@@ -2273,6 +2273,11 @@ class IndexManager
                                             isset($session_box['duration']) ? $session_box['duration'] : null
                                         );
                                     }
+                                    $calendarPlusEnabled = api_get_plugin_setting('calendarplus', 'tool_enable') === 'true';
+                                    if($calendarPlusEnabled){
+                                        $urlCurrentCalendar = 'calendarplus/calendar_room.php?id_session='.$session_id;
+                                        $this->tpl->assign('url_calendar', $urlCurrentCalendar);
+                                    }
                                     $this->tpl->assign('session', $sessionParams);
                                     $this->tpl->assign('show_tutor', api_get_setting('show_session_coach') === 'true');
                                     $this->tpl->assign('gamification_mode', $gameModeIsActive);
@@ -2335,7 +2340,6 @@ class IndexManager
                                     $categoryParams['subtitle'] = get_lang('Until').' '.$session_category_end_date;
                                 }
                             }
-
                             $this->tpl->assign('session_category', $categoryParams);
                             $sessions_with_category .= $this->tpl->fetch(
                                 $this->tpl->get_template('user_portal/session_category.tpl')
