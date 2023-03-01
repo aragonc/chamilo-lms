@@ -1160,7 +1160,7 @@ switch ($action) {
         if (!$lp_found) {
             require 'lp_list.php';
         } else {
-            learnpath::move_up($_REQUEST['lp_id'], $_REQUEST['category_id']);
+            learnpath::move_up($_REQUEST['lp_id'], $_REQUEST['category_id'],$_REQUEST['session_id']);
             Display::addFlash(Display::return_message(get_lang('Updated')));
             require 'lp_list.php';
         }
@@ -1173,7 +1173,7 @@ switch ($action) {
         if (!$lp_found) {
             require 'lp_list.php';
         } else {
-            learnpath::move_down($_REQUEST['lp_id'], $_REQUEST['category_id']);
+            learnpath::move_down($_REQUEST['lp_id'], $_REQUEST['category_id'],$_REQUEST['session_id']);
             Display::addFlash(Display::return_message(get_lang('Updated')));
             require 'lp_list.php';
         }

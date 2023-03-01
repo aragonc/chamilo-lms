@@ -826,27 +826,27 @@ foreach ($categories as $item) {
 
                 /* COLUMN ORDER	 */
                 // Only active while session mode is not active
-                if ($sessionId == 0) {
+                if ($sessionId != 0) {
                     if ($details['lp_display_order'] == 1 && $max != 1) {
                         $dsp_order .= Display::url(
                             Display::return_icon('down.png', get_lang('MoveDown')),
-                            "lp_controller.php?$cidReq&action=move_lp_down&lp_id=$id&category_id=$categoryId"
+                            "lp_controller.php?$cidReq&action=move_lp_down&lp_id=$id&category_id=$categoryId&session_id=$sessionId"
                         );
                     } elseif ($current == $max - 1 && $max != 1) {
                         $dsp_order .= Display::url(
                             Display::return_icon('up.png', get_lang('MoveUp')),
-                            "lp_controller.php?$cidReq&action=move_lp_up&lp_id=$id&category_id=$categoryId"
+                            "lp_controller.php?$cidReq&action=move_lp_up&lp_id=$id&category_id=$categoryId&session_id=$sessionId"
                         );
                     } elseif ($max == 1) {
                         $dsp_order = '';
                     } else {
                         $dsp_order .= Display::url(
                             Display::return_icon('down.png', get_lang('MoveDown')),
-                            "lp_controller.php?$cidReq&action=move_lp_down&lp_id=$id&category_id=$categoryId"
+                            "lp_controller.php?$cidReq&action=move_lp_down&lp_id=$id&category_id=$categoryId&session_id=$sessionId"
                         );
                         $dsp_order .= Display::url(
                             Display::return_icon('up.png', get_lang('MoveUp')),
-                            "lp_controller.php?$cidReq&action=move_lp_up&lp_id=$id&category_id=$categoryId"
+                            "lp_controller.php?$cidReq&action=move_lp_up&lp_id=$id&category_id=$categoryId&session_id=$sessionId"
                         );
                     }
                 }

@@ -4196,10 +4196,11 @@ class learnpath
      *
      * @param int $lp_id      Learnpath ID
      * @param int $categoryId Category ID
+     * @param int $sessionID Session ID
      *
      * @return bool
      */
-    public static function move_up($lp_id, $categoryId = 0)
+    public static function move_up($lp_id, $categoryId = 0, $sessionID = 0)
     {
         $courseId = api_get_course_int_id();
         $lp_table = Database::get_course_table(TABLE_LP_MAIN);
@@ -4257,10 +4258,11 @@ class learnpath
      *
      * @param int $lp_id      Learnpath ID
      * @param int $categoryId Category ID
+     * @param int $sessionID Session ID
      *
      * @return bool
      */
-    public static function move_down($lp_id, $categoryId = 0)
+    public static function move_down($lp_id, $categoryId = 0, $sessionID = 0)
     {
         $courseId = api_get_course_int_id();
         $lp_table = Database::get_course_table(TABLE_LP_MAIN);
