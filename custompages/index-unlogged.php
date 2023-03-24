@@ -51,6 +51,9 @@ $rootWeb = api_get_path('WEB_PATH');
     <link rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"/>
 
+    <link rel="icon" href="<?php echo $rootWeb; ?>custompages/images/icon.png">
+
+
     <link rel="stylesheet" type="text/css" href="<?php echo $rootWeb; ?>web/assets/flag-icon-css/css/flag-icon.min.css" />
 
     <link rel="stylesheet"
@@ -77,7 +80,7 @@ $rootWeb = api_get_path('WEB_PATH');
 	</script>
         <style>
         @media (min-width: 992px) {
-            
+
         }
         .wrapper {
             background: url('http://aulavirtual.cigamperu.com/custompages/images/portada.png') center/cover no-repeat;
@@ -114,18 +117,18 @@ $rootWeb = api_get_path('WEB_PATH');
 
             <form id="login-form" class="form" action="<?php echo api_get_path(WEB_PATH); ?>index.php" method="post">
                 <div class="group fadeIn second position-relative">
-                    <input class="form-control mb-2" 
+                    <input class="form-control mb-2"
                             required
                             autocomplete
-                            name="login" 
-                            type="text" 
+                            name="login"
+                            type="text"
                             placeholder="<?php echo custompages_get_lang('User'); ?>" />
                     <i class="fa fa-user position-absolute"></i>
                 </div>
                 <div class="group fadeIn third position-relative">
-                    <input class="form-control" 
-                            required name="password" 
-                            type="password" 
+                    <input class="form-control"
+                            required name="password"
+                            type="password"
                             placeholder="<?php echo custompages_get_lang('Password'); ?>" />
                     <i class="fa fa-lock position-absolute"></i>
                 </div>
@@ -142,7 +145,7 @@ $rootWeb = api_get_path('WEB_PATH');
                 </a><br />
                 <?php
             } ?>
-                
+
                 <a class="underlineHover" href="<?php echo api_get_path(WEB_CODE_PATH); ?>auth/lostPassword.php?language=<?php echo api_get_interface_language(); ?>">
                     <?php echo custompages_get_lang('LostPassword'); ?>
                 </a>
@@ -154,6 +157,6 @@ $rootWeb = api_get_path('WEB_PATH');
         <div class="container">
             <div class="py-3 text-white text-right font-weight-bold">Diseñado por <a class="underlineHover-ng" href="https://atecinnova.pe/" target="_blank"> Atecinnova</a></div>
         </div>
-    </footer>  
+    </footer>
 </body>
 </html>
