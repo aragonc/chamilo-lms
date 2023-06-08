@@ -54,8 +54,8 @@ if ($form->validate()) {
         Display::return_message(get_lang('MailingTestSent'), 'success')
     );
 
-    header('Location: '.api_get_self());
-    exit;
+    //header('Location: '.api_get_self());
+   //exit;
 }
 
 $view = new Template($toolName);
