@@ -39,11 +39,12 @@ if ($hideExportLink === 'true' ||
 ) {
     $allowExport = false;
 }
-
+$allowEasyCertificate = api_get_plugin_setting('easycertificate', 'enable_plugin_easycertificate');
 $template = new Template(get_lang('MyCertificates'));
 $template->assign('course_list', $courseList);
 $template->assign('session_list', $sessionList);
 $template->assign('allow_export', $allowExport);
+$template->assign('allow_custom_certificate', $allowEasyCertificate);
 $templateName = $template->get_template('gradebook/my_certificates.tpl');
 $content = $template->fetch($templateName);
 

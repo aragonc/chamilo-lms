@@ -8,7 +8,6 @@
                     <th class="text-right">{{ "Score"|get_lang }}</th>
                     <th class="text-center">{{ "Date"|get_lang }}</th>
                     <th width="10%" class="text-right">&nbsp;</th>
-                    <th width="10%" class="text-right">&nbsp;</th>
                 </tr>
             </thead>
             <tbody>
@@ -26,12 +25,11 @@
                             </a>
                         </td>
                         {% endif %}
-
-                        <td class="text-right">
+                        {% if allow_custom_certificate == 'false' %}
                             <a href="{{ row.link }}" target="_blank" class="btn btn-default btn-block">
                                 <em class="fa fa-external-link"></em> {{ 'Certificate'|get_lang }}
                             </a>
-                        </td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
             </tbody>
