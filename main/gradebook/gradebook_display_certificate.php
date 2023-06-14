@@ -77,6 +77,9 @@ $courseCode = api_get_course_id();
 $allowCustomCertificate = api_get_plugin_setting('customcertificate', 'enable_plugin_customcertificate') === 'true' &&
     api_get_course_setting('customcertificate_course_enable', $courseInfo) == 1;
 
+$allowEasyCertificate = api_get_plugin_setting('easycertificate', 'enable_plugin_easycertificate') === 'true' &&
+    api_get_course_setting('easycertificate_course_enable', $courseInfo) == 1;
+
 $tags = Certificate::notificationTags();
 
 switch ($action) {
@@ -126,15 +129,20 @@ switch ($action) {
         $content = $form->returnForm();
         break;
     case 'export_all_certificates_zip':
-        if ($allowCustomCertificate) {
-            $params = 'course_code='.api_get_course_id().
-                '&session_id='.api_get_session_id().
-                '&'.api_get_cidreq().
-                '&cat_id='.$categoryId;
-            $url = api_get_path(WEB_PLUGIN_PATH).'customcertificate/src/print_certificate.php?export_all=1&'.$params;
+        $params = 'course_code='.api_get_course_id().
+            '&session_id='.api_get_session_id().
+            '&'.api_get_cidreq().
+            '&cat_id='.$categoryId;
 
-            header('Location: '.$url);
+        if ($allowCustomCertificate) {
+            $url = api_get_path(WEB_PLUGIN_PATH).'customcertificate/src/print_certificate.php?export_all=1&'.$params;
         }
+        if ($allowEasyCertificate) {
+            $url = api_get_path(WEB_PLUGIN_PATH).'easycertificate/src/print_certificate.php?export_all=1&'.$params;
+        }
+
+        header('Location: '.$url);
+
         exit;
     case 'generate_all_certificates':
         $userList = CourseManager::get_user_list_from_course_code(
@@ -152,7 +160,7 @@ switch ($action) {
         }
         header('Location: '.$url);
         exit;
-        break;
+
     case 'delete_all_certificates':
         Category::deleteAllCertificates($categoryId);
         Display::addFlash(Display::return_message(get_lang('Deleted')));
@@ -334,19 +342,29 @@ $actions .= Display::url(
 $hideCertificateExport = api_get_setting('hide_certificate_export_link');
 
 if (count($certificate_list) > 0 && $hideCertificateExport !== 'true') {
+    $paramsExport = [
+        'export_all_in_one' => 1,
+        'course_code' => api_get_course_id(),
+        'session_id' => api_get_session_id(),
+        'cat_id' => $categoryId,
+    ];
     if ($allowCustomCertificate) {
         $actions .= Display::url(
             Display::return_icon('pdf.png', get_lang('ExportAllCertificatesToPDF'), [], ICON_SIZE_MEDIUM),
             api_get_path(WEB_PLUGIN_PATH)
                 .'customcertificate/src/print_certificate.php?'.api_get_cidreq().'&'
                 .http_build_query(
-                    [
-                        'export_all_in_one' => 1,
-                        'course_code' => api_get_course_id(),
-                        'session_id' => api_get_session_id(),
-                        'cat_id' => $categoryId,
-                    ]
+                $paramsExport
                 )
+        );
+    } if($allowEasyCertificate) {
+        $actions .= Display::url(
+            Display::return_icon('pdf.png', get_lang('ExportAllCertificatesToPDF'), [], ICON_SIZE_MEDIUM),
+            api_get_path(WEB_PLUGIN_PATH)
+            .'easycertificate/src/print_certificate.php?'.api_get_cidreq().'&'
+            .http_build_query(
+                $paramsExport
+            )
         );
     } else {
         $actions .= Display::url(
@@ -361,7 +379,7 @@ if (count($certificate_list) > 0 && $hideCertificateExport !== 'true') {
         $url.'&action=download_certificates_report'
     );
 
-    if ($allowCustomCertificate) {
+    if ($allowCustomCertificate || $allowEasyCertificate) {
         $actions .= Display::url(
             Display::return_icon('file_zip.png', get_lang('ExportAllCertificatesToZIP'), [], ICON_SIZE_MEDIUM),
             $url.'&action=export_all_certificates_zip'
