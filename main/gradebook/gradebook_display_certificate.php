@@ -402,7 +402,7 @@ if (count($certificate_list) == 0) {
     echo '<tbody>';
     foreach ($certificate_list as $index => $value) {
         echo '<tr>
-                <td width="100%" class="actions">'.get_lang('Student').' : '.api_get_person_name($value['firstname'], $value['lastname']).' ('.$value['username'].')</td>';
+                <td width="100%" class="actions"><strong>'.get_lang('Student').' :</strong> '.api_get_person_name($value['firstname'], $value['lastname']).' ('.$value['username'].')</td>';
         echo '</tr>';
         echo '<tr><td>
             <table class="table data_table">
@@ -414,10 +414,10 @@ if (count($certificate_list) == 0) {
         );
         foreach ($list as $valueCertificate) {
             echo '<tr>';
-            echo '<td width="50%">'.get_lang('Score').' : '.$valueCertificate['score_certificate'].'</td>';
-            echo '<td width="30%">'.get_lang('Date').' : '.api_convert_and_format_date($valueCertificate['created_at']).'</td>';
+            echo '<td width="50%"><strong>'.get_lang('Score').' : </strong> '.$valueCertificate['score_certificate'].'</td>';
+            echo '<td width="30%"><strong>'.get_lang('Date').' : </strong> '.api_convert_and_format_date($valueCertificate['created_at']).'</td>';
             echo '<td width="20%">';
-            if($allowEasyCertificate == false){
+
                 $url = api_get_path(WEB_PATH).'certificates/index.php?id='.$valueCertificate['id'].'&user_id='.$value['user_id'];
                 $certificateUrl = Display::url(
                     get_lang('Certificate'),
@@ -425,7 +425,7 @@ if (count($certificate_list) == 0) {
                     ['target' => '_blank', 'class' => 'btn btn-default']
                 );
                 echo $certificateUrl.PHP_EOL;
-            }
+
             if ($hideCertificateExport !== 'true') {
                 $url .= '&action=export';
                 $pdf = Display::url(

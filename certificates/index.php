@@ -7,9 +7,10 @@
  */
 require_once '../main/inc/global.inc.php';
 
-$action = isset($_GET['action']) ? $_GET['action'] : null;
-$userId = isset($_GET['user_id']) ? $_GET['user_id'] : 0;
-$certificateId = isset($_GET['id']) ? $_GET['id'] : 0;
+$action = $_GET['action'] ?? null;
+$userId = $_GET['user_id'] ?? 0;
+$certificateId = $_GET['id'] ?? 0;
+$codCertificate = $_GET['ccert'] ?? null;
 
 $category = Category::findByCertificate($certificateId);
 
@@ -28,11 +29,12 @@ if (!empty($category) && !empty($category->get_course_code())) {
     $language_interface_initial_value = $language_interface;
 }
 
-$certificate = new Certificate($certificateId, $userId);
-$certificateData = $certificate->get($certificateId);
-if (empty($certificateData)) {
+if (empty($certificateData) && $action != 'view') {
     api_not_allowed(false, Display::return_message(get_lang('NoCertificateAvailable'), 'warning'));
 }
+
+$certificate = new Certificate($certificateId, $userId);
+$certificateData = $certificate->get($certificateId);
 
 if (api_get_plugin_setting('easycertificate', 'enable_plugin_easycertificate') === 'true') {
     EasyCertificatePlugin::redirectCheck($certificate, $certificateId, $userId);
@@ -87,6 +89,12 @@ switch ($action) {
                 false,
                 false
             );
+        }
+        break;
+    case 'view':
+        if(api_get_plugin_setting('easycertificate', 'enable_plugin_easycertificate') === 'true'){
+            $result = EasyCertificatePlugin::getGenerateInfoCertificate(false, $codCertificate);
+            var_dump($result);
         }
         break;
     default:
