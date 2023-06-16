@@ -220,7 +220,12 @@ function generateLPFinalItemTemplate(
         $sessionId
     );
 
-    $finalItemTemplate = file_get_contents($documentInfo['absolute_path']);
+    if (api_get_plugin_setting('easycertificate', 'enable_plugin_congratulations') === 'true') {
+        $finalItemTemplate = EasyCertificatePlugin::getContentCongratulations();
+    } else {
+        $finalItemTemplate = file_get_contents($documentInfo['absolute_path']);
+    }
+
     $finalItemTemplate = str_replace('((certificate))', $downloadCertificateLink, $finalItemTemplate);
     $finalItemTemplate = str_replace('((skill))', $badgeLink, $finalItemTemplate);
 

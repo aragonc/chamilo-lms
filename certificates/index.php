@@ -29,9 +29,9 @@ if (!empty($category) && !empty($category->get_course_code())) {
     $language_interface_initial_value = $language_interface;
 }
 
-if (empty($certificateData) && $action != 'view') {
+/*if (empty($certificateData) && $action != 'view') {
     api_not_allowed(false, Display::return_message(get_lang('NoCertificateAvailable'), 'warning'));
-}
+}*/
 
 $certificate = new Certificate($certificateId, $userId);
 $certificateData = $certificate->get($certificateId);
@@ -94,7 +94,6 @@ switch ($action) {
     case 'view':
         if(api_get_plugin_setting('easycertificate', 'enable_plugin_easycertificate') === 'true'){
             $result = EasyCertificatePlugin::getGenerateInfoCertificate(false, $codCertificate);
-            var_dump($result);
         }
         break;
     default:
