@@ -13570,7 +13570,10 @@ EOD;
 
         $renderer = $form->defaultRenderer();
         $renderer->setElementTemplate('&nbsp;{label}{element}', 'content_lp_certificate');
-
+        if (api_get_plugin_setting('easycertificate', 'enable_plugin_congratulations') === 'true') {
+            $messagePlugin = get_plugin_lang('ItemGlobalCertificateEnabled','EasyCertificatePlugin');
+            $form->addHtml('<div class="alert alert-warning" role="alert">'.$messagePlugin.'</div>');
+        }
         $form->addHtmlEditor(
             'content_lp_certificate',
             null,

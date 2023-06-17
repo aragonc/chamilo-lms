@@ -64,6 +64,13 @@ function get_tabs($courseId = null)
     $navigation['myagenda']['key'] = 'agenda';
     $navigation['myagenda']['icon'] = 'agenda.png';
 
+    if (api_get_setting('course_catalog_published') == 'true') {
+        $navigation['mycatalog']['url'] = api_get_path(WEB_CODE_PATH).'auth/courses.php';
+        $navigation['mycatalog']['title'] = get_lang('CourseManagement');
+        $navigation['mycatalog']['key'] = 'catalog';
+        $navigation['mycatalog']['icon'] = 'catalog.png';
+    }
+
     // Gradebook
     if (api_get_setting('gradebook_enable') == 'true') {
         $navigation['mygradebook']['url'] = api_get_path(WEB_CODE_PATH)
@@ -393,6 +400,14 @@ function return_navigation_array()
             $navigation['myagenda'] = $possible_tabs['myagenda'];
         } else {
             $menu_navigation['myagenda'] = $possible_tabs['myagenda'];
+        }
+
+        // Catalog
+
+        if (api_get_setting('course_catalog_published') == 'true') {
+            $navigation['mycatalog'] = $possible_tabs['mycatalog'];
+        } else {
+            $menu_navigation['mycatalog'] = $possible_tabs['mycatalog'];
         }
 
         // Gradebook
