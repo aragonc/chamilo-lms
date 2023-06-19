@@ -142,6 +142,7 @@ if ($accessGranted == false) {
                     $userId
                 );
 
+
                 if (!empty($certificate['pdf_url']) ||
                     !empty($certificate['badge_link'])
                 ) {
@@ -172,6 +173,25 @@ if ($accessGranted == false) {
                     $categoryId
                 );
             }
+        }
+
+        if (api_get_plugin_setting('easycertificate', 'enable_plugin_congratulations') === 'true') {
+
+            $pluginCertificate = EasyCertificatePlugin::create();
+
+            $finalItemTemplate =$pluginCertificate->getContentCongratulations();
+            $finalItemTemplate = str_replace('((certificate))', $downloadCertificateLink, $finalItemTemplate);
+
+            $user = api_get_user_entity($userId);
+
+            $mailIsSent = api_mail_html(
+                $user->getCompleteName(),
+                $user->getEmail(),
+                $pluginCertificate->get_lang('CongratulationsDownloadYourCertificate'),
+                $finalItemTemplate,
+                UserManager::formatUserFullName($user),
+                (!empty(api_get_mail_configuration_value('SMTP_UNIQUE_SENDER')) ? api_get_mail_configuration_value('SMTP_FROM_EMAIL') : $user->getEmail())
+            );
         }
 
         $finalItemTemplate = generateLPFinalItemTemplate(
@@ -213,16 +233,16 @@ function generateLPFinalItemTemplate(
     $downloadCertificateLink = '',
     $badgeLink = ''
 ) {
-    $documentInfo = DocumentManager::get_document_data_by_id(
-        $lpItemId,
-        $courseCode,
-        true,
-        $sessionId
-    );
 
     if (api_get_plugin_setting('easycertificate', 'enable_plugin_congratulations') === 'true') {
         $finalItemTemplate = EasyCertificatePlugin::getContentCongratulations();
     } else {
+        $documentInfo = DocumentManager::get_document_data_by_id(
+            $lpItemId,
+            $courseCode,
+            true,
+            $sessionId
+        );
         $finalItemTemplate = file_get_contents($documentInfo['absolute_path']);
     }
 
