@@ -108,6 +108,7 @@ if ($accessGranted == false) {
         $sessionId,
         'ORDER By id'
     );
+
     // If not gradebook has been defined
     if (empty($catLoad)) {
         $finalItemTemplate = generateLPFinalItemTemplate(
@@ -122,6 +123,7 @@ if ($accessGranted == false) {
         /** @var Category $category */
         $category = $catLoad[0];
         $categoryId = $category->get_id();
+
         $link = LinkFactory::load(
             null,
             null,
@@ -141,7 +143,6 @@ if ($accessGranted == false) {
                     $categoryId,
                     $userId
                 );
-
 
                 if (!empty($certificate['pdf_url']) ||
                     !empty($certificate['badge_link'])
@@ -167,6 +168,7 @@ if ($accessGranted == false) {
                     $category,
                     true
                 );
+
                 Category::registerCurrentScore(
                     $currentScore,
                     $userId,
@@ -181,17 +183,27 @@ if ($accessGranted == false) {
 
             $finalItemTemplate =$pluginCertificate->getContentCongratulations();
             $finalItemTemplate = str_replace('((certificate))', $downloadCertificateLink, $finalItemTemplate);
-
-            $user = api_get_user_entity($userId);
-
-            $mailIsSent = api_mail_html(
-                $user->getCompleteName(),
-                $user->getEmail(),
-                $pluginCertificate->get_lang('CongratulationsDownloadYourCertificate'),
-                $finalItemTemplate,
-                UserManager::formatUserFullName($user),
-                (!empty(api_get_mail_configuration_value('SMTP_UNIQUE_SENDER')) ? api_get_mail_configuration_value('SMTP_FROM_EMAIL') : $user->getEmail())
-            );
+            $send = $pluginCertificate->getSendCertificate($userId);
+            if(!$send){
+                $user = api_get_user_entity($userId);
+                $mailIsSent = api_mail_html(
+                    $user->getCompleteName(),
+                    $user->getEmail(),
+                    $pluginCertificate->get_lang('CongratulationsDownloadYourCertificate'),
+                    $finalItemTemplate,
+                    UserManager::formatUserFullName($user),
+                    (!empty(api_get_mail_configuration_value('SMTP_UNIQUE_SENDER')) ? api_get_mail_configuration_value('SMTP_FROM_EMAIL') : $user->getEmail())
+                );
+                $certificateID = $pluginCertificate->getCertificateUser($userId);
+                $values = [
+                    'user_id' => $userId,
+                    'course_id' => $courseId,
+                    'session_id' => $sessionId,
+                    'certificate_id' => $certificateID,
+                    'send' => 1
+                ];
+                $pluginCertificate->registerCertificateUserSend($values);
+            }
         }
 
         $finalItemTemplate = generateLPFinalItemTemplate(
