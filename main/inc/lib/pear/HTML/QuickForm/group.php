@@ -558,7 +558,7 @@ class HTML_QuickForm_group extends HTML_QuickForm_element
             case FormValidator::LAYOUT_INLINE:
                 return '
                 <div class="input-group">
-                    <label {label-for} >
+                    <label {label-for} class="label_'.$this->getName().'" >
                         <!-- BEGIN required --><span class="form_required">*</span><!-- END required -->
                         {label}
                     </label>
