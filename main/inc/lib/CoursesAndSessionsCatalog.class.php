@@ -1786,6 +1786,14 @@ class CoursesAndSessionsCatalog
             $plugin = \BuyCoursesPlugin::create();
             $isThisSessionOnSale = $plugin->getBuyCoursePluginPrice($session);
 
+            $sessionFull = false;
+            $maximumUsers = $session->getMaximumUsers();
+            $numberUsers = $session->getNbrUsers();
+
+            if($numberUsers == $maximumUsers){
+                $sessionFull = true;
+            }
+
             $sessionsBlock = [
                 'id' => $session->getId(),
                 'name' => $session->getName(),
@@ -1823,6 +1831,7 @@ class CoursesAndSessionsCatalog
                     ['id' => $session->getId(), 'duration' => $session->getDuration()],
                     $userId
                 ),
+                'session_full' => $sessionFull
             ];
 
             $sessionsBlocks[] = array_merge($sessionsBlock, $sequences);
