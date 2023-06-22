@@ -102,10 +102,10 @@ class HTML_QuickForm_radio extends HTML_QuickForm_input
             $radioClass = $this->radioClass;
 
             $label = '<div class="'.$radioClass.'">
-                <label class="'.$labelClass.'">'.
+                <label class="radio-label '.$labelClass.'">'.
                 HTML_QuickForm_input::toHtml().
                 ''.
-                $this->_text.
+                '<span class="radio-content">'.$this->_text.'</span>'.
                 '</label>
             </div>';
 
