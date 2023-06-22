@@ -18,6 +18,7 @@ $template = new Template(get_lang('Registration'), false, false, false, false, t
  * 03-26-2020  Added check if element exist.
  */
 $template->assign('url_plugin', $content['url_plugin']);
+$template->assign('picture', $content['picture']);
 $template->assign('title', $content['title']);
 $template->assign('form', $content['form']->returnForm());
 $layout = $template->get_template('custompage/registration.tpl');
