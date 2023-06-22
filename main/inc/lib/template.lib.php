@@ -738,6 +738,15 @@ class Template
             $this->assign('css_style_print', $style_print);
         }
 
+        if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
+            $plugin = ProikosPlugin::create();
+            $code_reference = $plugin->getCodeReferenceByUser(api_get_user_id());
+            $picture = null;
+            if($code_reference != 'ALL'){
+                $picture = $plugin->getPictureEntity($code_reference);
+            }
+            $this->assign('entity_proikos', $picture);
+        }
         // Logo
         $logo = return_logo($this->theme);
         $logoPdf = return_logo($this->theme, false);
