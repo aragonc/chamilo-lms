@@ -1493,7 +1493,14 @@ class CoursesAndSessionsCatalog
         $limit = self::getLimitArray();
 
         $countSessions = self::browseSessions($date, [], false, true);
-        $sessions = self::browseSessions($date, $limit);
+
+        if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
+            $plugin = ProikosPlugin::create();
+            $code_reference = $plugin->getCodeReferenceByUser(api_get_user_id());
+            $sessions = $plugin->browseSessions($date, $limit,false,false, $code_reference);
+        } else {
+            $sessions = self::browseSessions($date, $limit);
+        }
 
         $pagination = self::getSessionPagination('display_sessions', $countSessions, $limit);
         $sessionsBlocks = self::getFormattedSessionsBlock($sessions);
@@ -1807,6 +1814,8 @@ class CoursesAndSessionsCatalog
                 ),
                 'show_description' => $session->getShowDescription(),
                 'description' => $session->getDescription(),
+                'maximum_users' => $session->getMaximumUsers(),
+                'code_reference' => $session->getCodeReference(),
                 'category' => $catName,
                 'tags' => $sessionCourseTags,
                 'edit_actions' => $actions,

@@ -242,6 +242,7 @@ class Session
 
         $this->nbrClasses = 0;
         $this->nbrUsers = 0;
+        $this->codeReference = null;
 
         $this->displayStartDate = new \DateTime();
         $this->displayEndDate = new \DateTime();
@@ -744,14 +745,20 @@ class Session
         return $this->codeReference;
     }
 
+
     /**
+     * Set codeReference.
+     *
      * @param string $codeReference
+     *
+     * @return Session
      */
-    public function setCodeReference(string $codeReference): void
+    public function setCodeReference($codeReference)
     {
         $this->codeReference = $codeReference;
-    }
 
+        return $this;
+    }
 
 
     /**
