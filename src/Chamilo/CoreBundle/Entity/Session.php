@@ -140,6 +140,20 @@ class Session
     protected $promotionId;
 
     /**
+     * @var int
+     *
+     * @ORM\Column(name="maximum_users", type="integer", nullable=true, unique=false)
+     */
+    protected $maximumUsers;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="code_reference", type="text", nullable=true, unique=false)
+     */
+    protected $codeReference;
+
+    /**
      * @var \DateTime
      *
      * @ORM\Column(name="display_start_date", type="datetime", nullable=true, unique=false)
@@ -705,6 +719,40 @@ class Session
     {
         return $this->promotionId;
     }
+
+    /**
+     * @return int
+     */
+    public function getMaximumUsers(): int
+    {
+        return $this->maximumUsers;
+    }
+
+    /**
+     * @param int $maximumUsers
+     */
+    public function setMaximumUsers(int $maximumUsers): void
+    {
+        $this->maximumUsers = $maximumUsers;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCodeReference(): string
+    {
+        return $this->codeReference;
+    }
+
+    /**
+     * @param string $codeReference
+     */
+    public function setCodeReference(string $codeReference): void
+    {
+        $this->codeReference = $codeReference;
+    }
+
+
 
     /**
      * Set displayStartDate.

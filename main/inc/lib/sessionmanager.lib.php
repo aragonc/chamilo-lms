@@ -75,6 +75,8 @@ class SessionManager
             'session_admin_id' => $session->getSessionAdminId(),
             'visibility' => $session->getVisibility(),
             'promotion_id' => $session->getPromotionId(),
+            'maximum_users' => $session->getMaximumUsers(),
+            'code_reference' => $session->getCodeReference(),
             'display_start_date' => $session->getDisplayStartDate()
                 ? $session->getDisplayStartDate()->format('Y-m-d H:i:s')
                 : null,
@@ -177,7 +179,9 @@ class SessionManager
         $sessionAdminId = 0,
         $sendSubscriptionNotification = false,
         $accessUrlId = 0,
-        $status = 0
+        $status = 0,
+        $maximum_users = null,
+        $code_reference = null
     ) {
         global $_configuration;
 
@@ -285,6 +289,13 @@ class SessionManager
 
                 if (!empty($sessionCategoryId)) {
                     $values['session_category_id'] = $sessionCategoryId;
+                }
+
+                if (!empty($maximum_users)) {
+                    $values['maximum_users'] = $maximum_users;
+                }
+                if (!empty($code_reference)) {
+                    $values['code_reference'] = $code_reference;
                 }
 
                 if (api_get_configuration_value('allow_session_status')) {
@@ -1609,7 +1620,9 @@ class SessionManager
         $extraFields = [],
         $sessionAdminId = 0,
         $sendSubscriptionNotification = false,
-        $status = 0
+        $status = 0,
+        $maximum_users = null,
+        $code_reference = null
     ) {
         $status = (int) $status;
         $coachId = (int) $coachId;
@@ -1711,6 +1724,13 @@ class SessionManager
                 }
                 if (!empty($coachEndDate)) {
                     $values['coach_access_end_date'] = api_get_utc_datetime($coachEndDate);
+                }
+
+                if (!empty($maximum_users)) {
+                    $values['maximum_users'] = $maximum_users;
+                }
+                if (!empty($code_reference)) {
+                    $values['code_reference'] = $code_reference;
                 }
 
                 $values['session_category_id'] = null;
@@ -8190,6 +8210,16 @@ class SessionManager
             ]
         );
 
+        if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
+            $plugin = ProikosPlugin::create();
+            $form->addText('maximum_users', [$plugin->get_lang('MaximumUsers'), $plugin->get_lang('MaximumUsersHelp')],false);
+            $entities = $plugin->getListEntity();
+            $list = [];
+            foreach ($entities as $entity){
+                $list[$entity['code_reference']] = $entity['name_entity'];
+            }
+            $form->addSelect('code_reference', $plugin->get_lang('CodeReference'), $list);
+        }
         // Extra fields
         $setExtraFieldsMandatory = api_get_configuration_value('session_creation_form_set_extra_fields_mandatory');
         $fieldsRequired = [];

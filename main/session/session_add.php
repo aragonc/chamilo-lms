@@ -394,6 +394,8 @@ if ($form->validate()) {
     $sendSubscriptionNotification = isset($params['send_subscription_notification']);
     $isThisImageCropped = isset($params['picture_crop_result']);
     $status = isset($params['status']) ? $params['status'] : 0;
+    $maximum_users = $params['maximum_users'];
+    $code_reference = $params['code_reference'];
 
     $extraFields = [];
     foreach ($params as $key => $value) {
@@ -448,7 +450,9 @@ if ($form->validate()) {
         null,
         $sendSubscriptionNotification,
         api_get_current_access_url_id(),
-        $status
+        $status,
+        $maximum_users,
+        $code_reference
     );
 
     if ($return == strval(intval($return))) {

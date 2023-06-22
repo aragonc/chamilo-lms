@@ -158,6 +158,8 @@ if ($form->validate()) {
     $showDescription = isset($params['show_description']) ? 1 : 0;
     $sendSubscriptionNotification = isset($params['send_subscription_notification']);
     $isThisImageCropped = isset($params['picture_crop_result']);
+    $maximum_users = $params['maximum_users'];
+    $code_reference = $params['code_reference'];
 
     $extraFields = [];
     foreach ($params as $key => $value) {
@@ -190,7 +192,9 @@ if ($form->validate()) {
         $extraFields,
         null,
         $sendSubscriptionNotification,
-        $status
+        $status,
+        $maximum_users,
+        $code_reference
     );
 
     if ($return) {
