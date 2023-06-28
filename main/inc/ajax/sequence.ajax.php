@@ -409,7 +409,6 @@ switch ($action) {
         switch ($type) {
             case SequenceResource::SESSION_TYPE:
                 $resourceData = api_get_session_info($id);
-
                 $resourceName = $resourceData['name'];
                 $template = 'session_requirements.tpl';
                 break;
@@ -423,16 +422,13 @@ switch ($action) {
         if (empty($resourceData) || empty($template)) {
             exit;
         }
-
-        if ('get_requirements' === $action) {
+        if ($action == 'get_requirements') {
             $sequences = $sequenceResourceRepository->getRequirements($id, $type);
             $sequenceList = $sequenceResourceRepository->checkRequirementsForUser($sequences, $type, $userId, $sessionId);
-
             $allowSubscription = $sequenceResourceRepository->checkSequenceAreCompleted($sequenceList);
         } else {
             $sequences = $sequenceResourceRepository->getDependents($id, $type);
             $sequenceList = $sequenceResourceRepository->checkDependentsForUser($sequences, $type, $userId, $sessionId);
-
             $allowSubscription = $sequenceResourceRepository->checkSequenceAreCompleted(
                 $sequenceList,
                 SequenceResourceRepository::VERTICES_TYPE_DEP

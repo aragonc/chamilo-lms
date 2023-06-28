@@ -1334,30 +1334,30 @@ class CoursesAndSessionsCatalog
     /**
      * Get a HTML button for subscribe to session.
      *
-     * @param int    $sessionId         The session ID
+     * @param int $sessionId         The session ID
      * @param string $sessionName       The session name
-     * @param bool   $checkRequirements Optional.
+     * @param bool $checkRequirements Optional.
      *                                  Whether the session has requirement. Default is false
-     * @param bool   $includeText       Optional. Whether show the text in button
-     * @param bool   $btnBing
+     * @param bool $includeText       Optional. Whether show the text in button
+     * @param bool $btnBing
      *
      * @return string The button HTML
      */
     public static function getRegisteredInSessionButton(
-        $sessionId,
-        $sessionName,
-        $checkRequirements = false,
-        $includeText = false,
-        $btnBing = false
+        int    $sessionId,
+        string $sessionName,
+        bool   $checkRequirements = false,
+        bool   $includeText = false,
+        bool $btnBing = false
     ) {
-        $sessionId = (int) $sessionId;
         $class = 'btn-sm';
         if ($btnBing) {
             $class = 'btn-lg btn-block';
         }
 
         if ($checkRequirements) {
-            return self::getRequirements($sessionId, SequenceResource::SESSION_TYPE, $includeText, $class);
+
+            return self::getRequirements($sessionId, SequenceResource::SESSION_TYPE, $includeText, $class,$sessionId);
         }
 
         $catalogSessionAutoSubscriptionAllowed = false;
@@ -1419,7 +1419,7 @@ class CoursesAndSessionsCatalog
         return $result;
     }
 
-    public static function getRequirements($id, $type, $includeText, $class, $sessionId = 0)
+    public static function getRequirements($id, $type, $includeText, $class, $sessionId = 0): string
     {
         $id = (int) $id;
         $type = (int) $type;
@@ -1432,7 +1432,6 @@ class CoursesAndSessionsCatalog
                 'sid' => $sessionId,
             ]
         );
-
         return Display::toolbarButton(
             get_lang('CheckRequirements'),
             $url,
@@ -1762,6 +1761,7 @@ class CoursesAndSessionsCatalog
             foreach ($sequences as $sequence) {
                 if (count($sequence['requirements']) === 0) {
                     continue;
+
                 }
                 $hasRequirements = true;
                 break;
@@ -1815,11 +1815,13 @@ class CoursesAndSessionsCatalog
                 ),
                 'date' => $sessionDates['display'],
                 'price' => !empty($isThisSessionOnSale['html']) ? $isThisSessionOnSale['html'] : '',
-                'subscribe_button' => isset($isThisSessionOnSale['buy_button']) ? $isThisSessionOnSale['buy_button'] : self::getRegisteredInSessionButton(
-                    $session->getId(),
-                    $session->getName(),
-                    $hasRequirements
-                ),
+                'subscribe_button' => $isThisSessionOnSale['buy_button'] ?? self::getRegisteredInSessionButton(
+                        $session->getId(),
+                        $session->getName(),
+                        $hasRequirements,
+                        true,
+                        true
+                    ),
                 'show_description' => $session->getShowDescription(),
                 'description' => $session->getDescription(),
                 'maximum_users' => $session->getMaximumUsers(),

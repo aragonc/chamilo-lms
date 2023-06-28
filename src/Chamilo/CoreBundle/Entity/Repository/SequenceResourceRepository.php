@@ -114,7 +114,7 @@ class SequenceResourceRepository extends EntityRepository
      * @param int $resourceId The resource ID
      * @param int $type       The type of sequence resource
      */
-    public function getRequirements($resourceId, $type): array
+    public function getRequirements(int $resourceId, int $type): array
     {
         return $this->getRequirementsOrDependents($resourceId, $type, self::VERTICES_TYPE_REQ);
     }
@@ -169,10 +169,10 @@ class SequenceResourceRepository extends EntityRepository
      *
      * @param array $sequences The sequences
      * @param int   $type      The type of sequence resource
-     * @param int   $userId
-     * @param int   $sessionId
+     * @param int $userId
+     * @param int $sessionId
      */
-    public function checkRequirementsForUser(array $sequences, int $type, $userId, $sessionId = 0): array
+    public function checkRequirementsForUser(array $sequences, int $type, int $userId, int $sessionId = 0): array
     {
         return $this->checkRequirementsOrDependentsForUser(
             $sequences,
@@ -303,7 +303,6 @@ class SequenceResourceRepository extends EntityRepository
         $sequenceList = [];
         $em = $this->getEntityManager();
         $gradebookCategoryRepo = $em->getRepository(GradebookCategory::class);
-
         $sessionUserList = [];
         $checkOnlySameSession = api_get_configuration_value('course_sequence_valid_only_in_same_session');
         if (SequenceResource::COURSE_TYPE === $resourceType) {
@@ -333,12 +332,10 @@ class SequenceResourceRepository extends EntityRepository
                     case SequenceResource::SESSION_TYPE:
                         /** @var Session $resource */
                         $id = $resource->getId();
-                        $resourceItem = [
-                            'name' => $resource->getName(),
-                            'status' => true,
-                        ];
+
 
                         $sessionsCourses = $resource->getCourses();
+                        $status = false;
                         foreach ($sessionsCourses as $sessionCourse) {
                             $course = $sessionCourse->getCourse();
                             $gradebooks = $gradebookCategoryRepo->findBy(
@@ -350,15 +347,26 @@ class SequenceResourceRepository extends EntityRepository
                             );
 
                             foreach ($gradebooks as $gradebook) {
-                                $category = Category::createCategoryObjectFromEntity($gradebook);
-                                if (!empty($userId)) {
+                                $idCategory = $gradebook->getID();
+                                //$category = Category::createCategoryObjectFromEntity($gradebook);
+                                $idCert = self::getCertificateForUser($idCategory, $userId);
+                                //var_dump($idCert);
+                                if(!empty($idCert)){
+                                    $status = true;
+                                }
+                                /*if (!empty($userId)) {
                                     $resourceItem['status'] = $resourceItem['status'] && Category::userFinishedCourse(
                                         $userId,
                                         $category
                                     );
-                                }
+                                }*/
                             }
                         }
+                        $resourceItem = [
+                            'name' => $resource->getName(),
+                            'status' => $status,
+                        ];
+                        //var_dump($status);
                         break;
                     case SequenceResource::COURSE_TYPE:
                         $id = $resource->getId();
@@ -367,7 +375,6 @@ class SequenceResourceRepository extends EntityRepository
                             $checkSessionId = $sessionId;
                         }
                         $status = $this->checkCourseRequirements($userId, $resource, $checkSessionId);
-
                         if (false === $status) {
                             $sessionsInCourse = SessionManager::get_session_by_course($id);
                             foreach ($sessionsInCourse as $session) {
@@ -399,6 +406,21 @@ class SequenceResourceRepository extends EntityRepository
         }
 
         return $sequenceList;
+    }
+
+    public function getCertificateForUser($idGradebook, $idUser){
+        $table = \Database::get_main_table(TABLE_MAIN_GRADEBOOK_CERTIFICATE);
+        $sql = "SELECT * FROM $table gc WHERE gc.user_id = '$idUser' AND gc.cat_id = '$idGradebook' ";
+        $result = \Database::query($sql);
+        $item = null;
+        if (\Database::num_rows($result) > 0) {
+            while ($row = \Database::fetch_array($result)) {
+                $item = [
+                    'id_certificate' => $row['id']
+                ];
+            }
+        }
+        return $item['id_certificate'];
     }
 
     /**
