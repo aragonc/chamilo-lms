@@ -1347,7 +1347,7 @@ class CoursesAndSessionsCatalog
         int    $sessionId,
         string $sessionName,
         bool   $checkRequirements = false,
-        bool   $includeText = false,
+        bool   $includeText = true,
         bool $btnBing = false
     ) {
         $class = 'btn-sm';
@@ -1756,16 +1756,23 @@ class CoursesAndSessionsCatalog
                 $session->getId(),
                 SequenceResource::SESSION_TYPE
             );
-
+            $enabledRequirements = false;
+            $sessionId = $session->getId();
+            if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
+                $plugin = ProikosPlugin::create();
+                $enabledRequirements  = $plugin->getRequirementsSessionUser($sequences,2,$userId,$sessionId);
+            }
             $hasRequirements = false;
             foreach ($sequences as $sequence) {
                 if (count($sequence['requirements']) === 0) {
                     continue;
-
                 }
                 $hasRequirements = true;
                 break;
             }
+
+
+
             $cat = $session->getCategory();
             if (empty($cat)) {
                 $cat = null;
@@ -1833,8 +1840,14 @@ class CoursesAndSessionsCatalog
                     ['id' => $session->getId(), 'duration' => $session->getDuration()],
                     $userId
                 ),
-                'session_full' => $sessionFull
+                'session_full' => $sessionFull,
+                'has_requirements' => $hasRequirements
             ];
+            if($enabledRequirements){
+                $sessionsBlock['session_enabled_user'] = 'enabled_user';
+            } else {
+                $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
+            }
 
             $sessionsBlocks[] = array_merge($sessionsBlock, $sequences);
         }
