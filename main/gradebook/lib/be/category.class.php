@@ -2605,13 +2605,13 @@ class Category implements GradebookItem
             );
         }
 
-        $viewLink = $certificate['certificate_link'];
+        //$viewLink = $certificate['certificate_link'];
 
         return "
             <div class='panel panel-default'>
                 <div class='panel-body'>
                     <h3 class='text-center'>".get_lang('NowDownloadYourCertificateClickHere')."</h3>
-                    <div class='text-center'>$downloadLink $viewLink</div>
+                    <div class='text-center'>$downloadLink</div>
                 </div>
             </div>
         ";
