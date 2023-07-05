@@ -249,6 +249,9 @@ class SequenceResourceRepository extends EntityRepository
      */
     public function checkSequenceAreCompleted(array $sequences, $itemType = self::VERTICES_TYPE_REQ): bool
     {
+        if(empty($sequences)){
+            return true;
+        }
         foreach ($sequences as $sequence) {
             $status = true;
 
@@ -345,28 +348,18 @@ class SequenceResourceRepository extends EntityRepository
                                     'isRequirement' => true,
                                 ]
                             );
-
                             foreach ($gradebooks as $gradebook) {
                                 $idCategory = $gradebook->getID();
-                                //$category = Category::createCategoryObjectFromEntity($gradebook);
                                 $idCert = self::getCertificateForUser($idCategory, $userId);
-                                //var_dump($idCert);
                                 if(!empty($idCert)){
                                     $status = true;
                                 }
-                                /*if (!empty($userId)) {
-                                    $resourceItem['status'] = $resourceItem['status'] && Category::userFinishedCourse(
-                                        $userId,
-                                        $category
-                                    );
-                                }*/
                             }
                         }
                         $resourceItem = [
                             'name' => $resource->getName(),
                             'status' => $status,
                         ];
-                        //var_dump($status);
                         break;
                     case SequenceResource::COURSE_TYPE:
                         $id = $resource->getId();
@@ -412,15 +405,20 @@ class SequenceResourceRepository extends EntityRepository
         $table = \Database::get_main_table(TABLE_MAIN_GRADEBOOK_CERTIFICATE);
         $sql = "SELECT * FROM $table gc WHERE gc.user_id = '$idUser' AND gc.cat_id = '$idGradebook' ";
         $result = \Database::query($sql);
-        $item = null;
+        $item = [];
         if (\Database::num_rows($result) > 0) {
             while ($row = \Database::fetch_array($result)) {
                 $item = [
                     'id_certificate' => $row['id']
                 ];
             }
+            if(isset($item['id_certificate'])){
+                return $item;
+            } else {
+                return $item['id_certificate'];
+            }
         }
-        return $item['id_certificate'];
+
     }
 
     /**

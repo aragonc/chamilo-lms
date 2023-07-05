@@ -1337,6 +1337,7 @@ class CoursesAndSessionsCatalog
      * @param int $sessionId         The session ID
      * @param string $sessionName       The session name
      * @param bool $checkRequirements Optional.
+     * @param bool $enabledRequirements Optional.
      *                                  Whether the session has requirement. Default is false
      * @param bool $includeText       Optional. Whether show the text in button
      * @param bool $btnBing
@@ -1348,23 +1349,20 @@ class CoursesAndSessionsCatalog
         string $sessionName,
         bool   $checkRequirements = false,
         bool   $includeText = true,
-        bool $btnBing = false
+        bool $btnBing = false,
+        bool $enabledRequirements = false
     ) {
         $class = 'btn-sm';
         if ($btnBing) {
-            $class = 'btn-lg btn-block';
-        }
-
-        if ($checkRequirements) {
-
-            return self::getRequirements($sessionId, SequenceResource::SESSION_TYPE, $includeText, $class,$sessionId);
+            $class = 'btn-lg';
         }
 
         $catalogSessionAutoSubscriptionAllowed = false;
+
         if (api_get_setting('catalog_allow_session_auto_subscription') === 'true') {
             $catalogSessionAutoSubscriptionAllowed = true;
         }
-
+        $viewRequirements = null;
         $url = api_get_path(WEB_CODE_PATH);
 
         if ($catalogSessionAutoSubscriptionAllowed) {
@@ -1414,6 +1412,10 @@ class CoursesAndSessionsCatalog
             } catch (Exception $exception) {
                 $result = $exception->getMessage();
             }
+        }
+
+        if ($checkRequirements && !$enabledRequirements) {
+            return self::getRequirements($sessionId, SequenceResource::SESSION_TYPE, $includeText, $class,$sessionId);
         }
 
         return $result;
@@ -1760,8 +1762,9 @@ class CoursesAndSessionsCatalog
             $sessionId = $session->getId();
             if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
                 $plugin = ProikosPlugin::create();
-                $enabledRequirements  = $plugin->getRequirementsSessionUser($sequences,2,$userId,$sessionId);
+                $enabledRequirements  = $plugin->getRequirementsSessionUser(2,$userId,$sessionId);
             }
+
             $hasRequirements = false;
             foreach ($sequences as $sequence) {
                 if (count($sequence['requirements']) === 0) {
@@ -1770,8 +1773,6 @@ class CoursesAndSessionsCatalog
                 $hasRequirements = true;
                 break;
             }
-
-
 
             $cat = $session->getCategory();
             if (empty($cat)) {
@@ -1797,7 +1798,7 @@ class CoursesAndSessionsCatalog
             $maximumUsers = $session->getMaximumUsers();
             $numberUsers = $session->getNbrUsers();
 
-            if($numberUsers == $maximumUsers){
+            if($numberUsers >= $maximumUsers && $maximumUsers > 0 ){
                 $sessionFull = true;
             }
 
@@ -1827,7 +1828,8 @@ class CoursesAndSessionsCatalog
                         $session->getName(),
                         $hasRequirements,
                         true,
-                        true
+                        true,
+                        $enabledRequirements
                     ),
                 'show_description' => $session->getShowDescription(),
                 'description' => $session->getDescription(),
@@ -1843,6 +1845,7 @@ class CoursesAndSessionsCatalog
                 'session_full' => $sessionFull,
                 'has_requirements' => $hasRequirements
             ];
+
             if($enabledRequirements){
                 $sessionsBlock['session_enabled_user'] = 'enabled_user';
             } else {
