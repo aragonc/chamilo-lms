@@ -724,16 +724,22 @@ class Session
     /**
      * @return int
      */
-    public function getMaximumUsers(): int
+    public function getMaximumUsers(): ?int
     {
+        if($this->maximumUsers === null){
+            return 0;
+        }
         return $this->maximumUsers;
     }
 
     /**
-     * @param int $maximumUsers
+     * @param int|null $maximumUsers
      */
-    public function setMaximumUsers(int $maximumUsers): void
+    public function setMaximumUsers(?int $maximumUsers): void
     {
+        if($this->maximumUsers === null){
+            $this->maximumUsers = 0;
+        }
         $this->maximumUsers = $maximumUsers;
     }
 

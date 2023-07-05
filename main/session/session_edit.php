@@ -158,7 +158,7 @@ if ($form->validate()) {
     $showDescription = isset($params['show_description']) ? 1 : 0;
     $sendSubscriptionNotification = isset($params['send_subscription_notification']);
     $isThisImageCropped = isset($params['picture_crop_result']);
-    $maximum_users = $params['maximum_users'];
+    $maximum_users = $params['maximum_users'] ?? 0;
     $code_reference = $params['code_reference'];
 
     $extraFields = [];

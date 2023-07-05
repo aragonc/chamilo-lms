@@ -394,7 +394,7 @@ if ($form->validate()) {
     $sendSubscriptionNotification = isset($params['send_subscription_notification']);
     $isThisImageCropped = isset($params['picture_crop_result']);
     $status = isset($params['status']) ? $params['status'] : 0;
-    $maximum_users = $params['maximum_users'];
+    $maximum_users = $params['maximum_users'] ?? 0;
     $code_reference = $params['code_reference'];
 
     $extraFields = [];
