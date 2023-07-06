@@ -183,7 +183,8 @@ if ($accessGranted == false) {
 
             $finalItemTemplate =$pluginCertificate->getContentCongratulations();
             $finalItemTemplate = str_replace('((certificate))', $downloadCertificateLink, $finalItemTemplate);
-            $send = $pluginCertificate->getSendCertificate($userId);
+            $send = $pluginCertificate->getSendCertificate($userId, $courseId, $sessionId);
+
             if(!$send){
                 $user = api_get_user_entity($userId);
                 $mailIsSent = api_mail_html(
