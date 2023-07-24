@@ -744,10 +744,13 @@ class Session
     }
 
     /**
-     * @return string
+     * @return string|null
      */
     public function getCodeReference(): string
     {
+        if($this->codeReference === null){
+            return '';
+        }
         return $this->codeReference;
     }
 

@@ -4631,7 +4631,13 @@ class SessionManager
             $s['duration'],
             $s['description'],
             $s['show_description'],
-            $extraFieldsValuesToCopy
+            $extraFieldsValuesToCopy,
+            0,
+            false,
+            0,
+            0,
+            $s['maximum_users'],
+            $s['code_reference']
         );
 
         if (!is_numeric($sid) || empty($sid)) {
