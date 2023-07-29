@@ -4034,12 +4034,18 @@ function api_not_allowed(
     if (isset($message)) {
         $msg = $message;
     } else {
-        $msg = Display::return_message(
-            get_lang('NotAllowedClickBack').'
+
+        if(api_is_student() && api_get_session_id()){
+            $msg = '<div class="msg-content-available">'.get_lang('ContentNotAvailable').'</div>';
+        } else {
+            $msg = Display::return_message(
+                get_lang('NotAllowedClickBack').'
             <script>function goBack(){window.history.back();}</script>',
-            'error',
-            false
-        );
+                'error',
+                false
+            );
+        }
+
         $msg .= '<p class="text-center">
              <a onclick="goBack();" class="btn btn-default" href="'.$home_url.'">'.get_lang('GoBack').'</a>
              </p>';

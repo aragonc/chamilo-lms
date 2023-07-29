@@ -9059,4 +9059,4 @@ $ShowCareersHierarchy = "Mostrar jerarquías";
 $ParentCareer = "Carrera padre";
 $CareerCannotBeDeletedAsItHasChildren = "Esta carrera no puede ser eliminada hasta que las carreras hijas a ésta sean eliminadas o movidas a otra carrera.";
 $ExtraWelcomeMessage = 'Es obligatorio llevar su <strong>teléfono móvil</strong> con datos, ya que el uso de este dispositivo es imprescindible para realizar el examen  en línea a través de la plataforma <strong>Proikos Academy</strong>';
-?>
+$ContentNotAvailable = '<strong>¡Gracias por inscribirte en el curso!</strong> Recuerda que el acceso al contenido estará disponible a partir de la fecha indicada.';
