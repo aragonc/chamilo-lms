@@ -1485,10 +1485,49 @@ class CoursesAndSessionsCatalog
         return $pagination;
     }
 
+    public static function categorySessionList(bool $returnHtml = false): ?string
+    {
+
+        $table = Database::get_main_table(TABLE_MAIN_SESSION_CATEGORY);
+        $sql = "SELECT * FROM $table sc";
+        $result = Database::query($sql);
+
+        $list = [];
+        if (Database::num_rows($result) > 0) {
+            while ($row = Database::fetch_array($result)) {
+                $list[] = [
+                    'id' => $row['id'],
+                    'access_url_id' => $row['access_url_id'],
+                    'name' => $row['name'],
+                    'date_start' => $row['date_start'],
+                    'date_end' => $row['date_end'],
+                    'color' => $row['color'],
+                ];
+            }
+        }
+
+
+        $tpl = new Template();
+        $tpl->assign('categories', $list);
+
+        $templateContent = $tpl->fetch(
+            $tpl->get_template('catalog/session_category.tpl')
+        );
+
+        if ($returnHtml) {
+            return $templateContent;
+        }
+
+        $tpl->assign('content', $templateContent);
+        $tpl->display_one_col_template();
+
+        return null;
+    }
+
     /**
      * Return Session catalog rendered view.
      */
-    public static function sessionList(bool $returnHtml = false): ?string
+    public static function sessionList(bool $returnHtml = false, $categoryID): ?string
     {
         $date = $_POST['date'] ?? '';
         $limit = self::getLimitArray();
@@ -1498,7 +1537,8 @@ class CoursesAndSessionsCatalog
         if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
             $plugin = ProikosPlugin::create();
             $code_reference = $plugin->getCodeReferenceByUser(api_get_user_id());
-            $sessions = $plugin->browseSessions($date, $limit,false,false, $code_reference);
+            $sessions = $plugin->browseSessions($date, $limit,false,false, $code_reference, $categoryID);
+
         } else {
             $sessions = self::browseSessions($date, $limit);
         }

@@ -57,6 +57,7 @@ if (isset($_POST['formSent']) && $_POST['formSent']) {
     $year_end = $_POST['year_end'];
     $month_end = $_POST['month_end'];
     $day_end = $_POST['day_end'];
+    $color = $_POST['color'];
     $return = SessionManager::edit_category_session(
         $id,
         $name,
@@ -65,7 +66,8 @@ if (isset($_POST['formSent']) && $_POST['formSent']) {
         $day_start,
         $year_end,
         $month_end,
-        $day_end
+        $day_end,
+        $color
     );
     if ($return == strval(intval($return))) {
         Display::addFlash(Display::return_message(get_lang('SessionCategoryUpdate')));
@@ -100,6 +102,20 @@ if (!empty($return)) {
             </div>
             <div class="col-sm-3"></div>
         </div>
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label"><?php echo get_lang('Color'); ?></label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="color" name="color" size="50" maxlength="50" value="<?php if ($formSent) {
+                        echo api_htmlentities($color, ENT_QUOTES, $charset);
+                    } else {
+                        echo api_htmlentities($infos['color'], ENT_QUOTES, $charset);
+                    } ?>">
+                </div>
+                <div class="col-sm-3"></div>
+            </div>
+
+
         <div class="form-group">
             <div class="col-sm-offset-3 col-sm-6">
                 <?php echo get_lang('TheTimeLimitsAreReferential'); ?>

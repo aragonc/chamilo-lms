@@ -19,7 +19,7 @@ if ('true' !== api_get_setting('course_catalog_published')) {
 
 $userCanViewPage = CoursesAndSessionsCatalog::userCanView();
 
-$defaultAction = CoursesAndSessionsCatalog::is(CATALOG_SESSIONS) ? 'display_sessions' : 'display_courses';
+$defaultAction = CoursesAndSessionsCatalog::is(CATALOG_SESSIONS) ? 'display_catalog' : 'display_courses';
 $action = isset($_REQUEST['action']) ? Security::remove_XSS($_REQUEST['action']) : $defaultAction;
 $categoryCode = isset($_REQUEST['category_code']) ? Security::remove_XSS($_REQUEST['category_code']) : '';
 $searchTerm = isset($_REQUEST['search_term']) ? Security::remove_XSS($_REQUEST['search_term']) : '';
@@ -136,13 +136,24 @@ switch ($action) {
 
         CoursesAndSessionsCatalog::displayCoursesList($action, $searchTerm, $categoryCode);
         exit;
+    case 'display_catalog':
+        if (!$userCanViewPage) {
+            api_not_allowed(true);
+        }
+        CoursesAndSessionsCatalog::categorySessionList();
+
+        exit;
+
     case 'display_sessions':
         if (!$userCanViewPage) {
             api_not_allowed(true);
         }
+        $categoryID = isset($_REQUEST['category']) ? Security::remove_XSS($_REQUEST['category']) : '';
 
-        CoursesAndSessionsCatalog::sessionList();
+        CoursesAndSessionsCatalog::sessionList(false,$categoryID);
+
         exit;
+
     case 'subscribe_to_session':
         if (!$userCanViewPage) {
             api_not_allowed(true);

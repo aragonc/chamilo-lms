@@ -3153,10 +3153,12 @@ class SessionManager
         $sday_start,
         $syear_end,
         $smonth_end,
-        $sday_end
+        $sday_end,
+        $color
     ) {
         $tbl_session_category = Database::get_main_table(TABLE_MAIN_SESSION_CATEGORY);
         $name = html_filter(trim($sname));
+        $color = html_filter(trim($color));
         $year_start = intval($syear_start);
         $month_start = intval($smonth_start);
         $day_start = intval($sday_start);
@@ -3191,13 +3193,15 @@ class SessionManager
                     SET
                         name = '".Database::escape_string($name)."',
                         date_start = '$date_start' ,
-                        date_end = '$date_end'
+                        date_end = '$date_end',
+                        color = '$color'
                     WHERE id= $id";
         } else {
             $sql = "UPDATE $tbl_session_category SET
                         name = '".Database::escape_string($name)."',
                         date_start = '$date_start',
-                        date_end = NULL
+                        date_end = NULL,
+                        color = '$color'
                     WHERE id= $id";
         }
         $result = Database::query($sql);
