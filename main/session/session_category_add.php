@@ -39,6 +39,7 @@ if (isset($_POST['formSent']) && $_POST['formSent']) {
     $year_end = $_POST['year_end'];
     $month_end = $_POST['month_end'];
     $day_end = $_POST['day_end'];
+    $color = $_POST['color'];
     $return = SessionManager::create_category_session(
         $name,
         $year_start,
@@ -46,7 +47,8 @@ if (isset($_POST['formSent']) && $_POST['formSent']) {
         $day_start,
         $year_end,
         $month_end,
-        $day_end
+        $day_end,
+        $color
     );
 
     if ($return == strval(intval($return))) {
@@ -80,6 +82,17 @@ if (!empty($return)) {
                 </div>
                 <div class="col-md-3"></div>
             </div>
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label"><?php echo get_lang('Color'); ?></label>
+                <div class="col-sm-6">
+                    <input type="color" class="form-control" name="color" placeholder="<?php echo get_lang('Color'); ?>" size="50" maxlength="50" value="<?php if ($formSent) {
+                        echo api_htmlentities($color, ENT_QUOTES, $charset);
+                    } ?>">
+                </div>
+                <div class="col-md-3"></div>
+            </div>
+
             <div class="form-group">
                 <div class="col-sm-offset-3 col-sm-6">
                     <?php echo get_lang('TheTimeLimitsAreReferential'); ?> <a href="javascript://" onclick="if(document.getElementById('options').style.display == 'none'){document.getElementById('options').style.display = 'block';}else{document.getElementById('options').style.display = 'none';}"><?php echo get_lang('AddTimeLimit'); ?></a>

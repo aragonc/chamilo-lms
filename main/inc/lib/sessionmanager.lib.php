@@ -3068,7 +3068,8 @@ class SessionManager
         $sday_start,
         $syear_end,
         $smonth_end,
-        $sday_end
+        $sday_end,
+        $color
     ) {
         $tbl_session_category = Database::get_main_table(TABLE_MAIN_SESSION_CATEGORY);
         $name = html_filter(trim($sname));
@@ -3078,6 +3079,7 @@ class SessionManager
         $year_end = intval($syear_end);
         $month_end = intval($smonth_end);
         $day_end = intval($sday_end);
+        $color = html_filter(trim($color));
 
         $date_start = "$year_start-".(($month_start < 10) ? "0$month_start" : $month_start)."-".(($day_start < 10) ? "0$day_start" : $day_start);
         $date_end = "$year_end-".(($month_end < 10) ? "0$month_end" : $month_end)."-".(($day_end < 10) ? "0$day_end" : $day_end);
@@ -3107,6 +3109,7 @@ class SessionManager
             'name' => $name,
             'date_start' => $date_start,
             'access_url_id' => $access_url_id,
+            'color' => $color
         ];
 
         if (!empty($date_end)) {
