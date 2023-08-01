@@ -426,6 +426,7 @@ switch ($action) {
             $sequences = $sequenceResourceRepository->getRequirements($id, $type);
             $sequenceList = $sequenceResourceRepository->checkRequirementsForUser($sequences, $type, $userId, $sessionId);
             $allowSubscription = $sequenceResourceRepository->checkSequenceAreCompleted($sequenceList);
+
         } else {
             $sequences = $sequenceResourceRepository->getDependents($id, $type);
             $sequenceList = $sequenceResourceRepository->checkDependentsForUser($sequences, $type, $userId, $sessionId);

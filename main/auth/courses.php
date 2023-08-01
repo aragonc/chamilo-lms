@@ -149,9 +149,7 @@ switch ($action) {
             api_not_allowed(true);
         }
         $categoryID = isset($_REQUEST['category']) ? Security::remove_XSS($_REQUEST['category']) : '';
-
         CoursesAndSessionsCatalog::sessionList(false,$categoryID);
-
         exit;
 
     case 'subscribe_to_session':

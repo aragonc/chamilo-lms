@@ -1804,7 +1804,7 @@ class CoursesAndSessionsCatalog
                 $plugin = ProikosPlugin::create();
                 $enabledRequirements  = $plugin->getRequirementsSessionUser(2,$userId,$sessionId);
             }
-
+            //var_dump($enabledRequirements);
             $hasRequirements = false;
             foreach ($sequences as $sequence) {
                 if (count($sequence['requirements']) === 0) {
@@ -1885,8 +1885,8 @@ class CoursesAndSessionsCatalog
                 'session_full' => $sessionFull,
                 'has_requirements' => $hasRequirements
             ];
-
-            if($enabledRequirements){
+            
+            if($enabledRequirements == $hasRequirements){
                 $sessionsBlock['session_enabled_user'] = 'enabled_user';
             } else {
                 $sessionsBlock['session_enabled_user'] = 'not_enabled_user';

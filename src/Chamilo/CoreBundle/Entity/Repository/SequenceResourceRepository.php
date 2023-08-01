@@ -303,6 +303,7 @@ class SequenceResourceRepository extends EntityRepository
         int $userId,
         int $sessionId = 0
     ): array {
+
         $sequenceList = [];
         $em = $this->getEntityManager();
         $gradebookCategoryRepo = $em->getRepository(GradebookCategory::class);
@@ -335,8 +336,6 @@ class SequenceResourceRepository extends EntityRepository
                     case SequenceResource::SESSION_TYPE:
                         /** @var Session $resource */
                         $id = $resource->getId();
-
-
                         $sessionsCourses = $resource->getCourses();
                         $status = false;
                         foreach ($sessionsCourses as $sessionCourse) {
@@ -344,10 +343,11 @@ class SequenceResourceRepository extends EntityRepository
                             $gradebooks = $gradebookCategoryRepo->findBy(
                                 [
                                     'courseCode' => $course->getCode(),
-                                    'sessionId' => $resource->getId(),
+                                    'sessionId' => $id,
                                     'isRequirement' => true,
                                 ]
                             );
+
                             foreach ($gradebooks as $gradebook) {
                                 $idCategory = $gradebook->getID();
                                 $idCert = self::getCertificateForUser($idCategory, $userId);
@@ -360,6 +360,7 @@ class SequenceResourceRepository extends EntityRepository
                             'name' => $resource->getName(),
                             'status' => $status,
                         ];
+
                         break;
                     case SequenceResource::COURSE_TYPE:
                         $id = $resource->getId();
