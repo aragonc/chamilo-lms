@@ -5,6 +5,7 @@
 use Chamilo\CoreBundle\Entity\ExtraField;
 use Chamilo\CoreBundle\Entity\Repository\SequenceResourceRepository;
 use Chamilo\CoreBundle\Entity\SequenceResource;
+use Chamilo\CoreBundle\Entity\Session;
 use Chamilo\CoreBundle\Entity\SessionRelCourse;
 use Chamilo\CoreBundle\Entity\Tag;
 use Doctrine\ORM\Query\Expr\Join;
@@ -1754,9 +1755,11 @@ class CoursesAndSessionsCatalog
             'extraFieldType' => Chamilo\CoreBundle\Entity\ExtraField::COURSE_FIELD_TYPE,
             'variable' => 'tags',
         ]);
-
-        /** @var \Chamilo\CoreBundle\Entity\Session $session */
+        $currentDate = new DateTime();
+        //var_dump($currentDate);
+        /** @var Session $session */
         foreach ($sessions as $session) {
+
             $sessionDates = SessionManager::parseSessionDates([
                 'display_start_date' => $session->getDisplayStartDate(),
                 'display_end_date' => $session->getDisplayEndDate(),
@@ -1885,11 +1888,17 @@ class CoursesAndSessionsCatalog
                 'session_full' => $sessionFull,
                 'has_requirements' => $hasRequirements
             ];
-            
+
             if($enabledRequirements == $hasRequirements){
                 $sessionsBlock['session_enabled_user'] = 'enabled_user';
             } else {
                 $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
+            }
+
+            if($session->getDisplayStartDate() <= $currentDate){
+                $sessionsBlock['session_hide'] = true;
+            } else {
+                $sessionsBlock['session_hide'] = false;
             }
 
             $sessionsBlocks[] = array_merge($sessionsBlock, $sequences);
