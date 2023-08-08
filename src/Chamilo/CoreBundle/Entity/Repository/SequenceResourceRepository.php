@@ -256,7 +256,7 @@ class SequenceResourceRepository extends EntityRepository
             $status = true;
 
             foreach ($sequence[$itemType] as $item) {
-                $status = $status && $item['status'];
+                $status = $status || $item['status'];
             }
 
             if ($status) {
