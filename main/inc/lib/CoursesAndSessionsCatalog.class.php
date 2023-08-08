@@ -1894,8 +1894,8 @@ class CoursesAndSessionsCatalog
             } else {
                 $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
             }
-
-            if($session->getDisplayStartDate() <= $currentDate){
+            //var_dump($session->getDisplayEndDate() >= $currentDate);
+            if(($session->getDisplayStartDate() <= $currentDate) && ($session->getDisplayEndDate() >= $currentDate)){
                 $sessionsBlock['session_hide'] = true;
             } else {
                 $sessionsBlock['session_hide'] = false;
