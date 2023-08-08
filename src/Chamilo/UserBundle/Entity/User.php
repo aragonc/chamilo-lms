@@ -422,6 +422,14 @@ class User implements UserInterface //implements ParticipantInterface, ThemeUser
      */
     private $hrDeptId;
 
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="code_reference", length=255, nullable=true, unique=false)
+     */
+    private $codeReference;
+
     /**
      * Constructor.
      */
@@ -1364,6 +1372,27 @@ class User implements UserInterface //implements ParticipantInterface, ThemeUser
     {
         return $this->hrDeptId;
     }
+
+    /**
+     * @return string
+     */
+    public function getCodeReference(): string
+    {
+        return $this->codeReference;
+    }
+
+    /**
+     * @param string $codeReference
+     * @return User
+     */
+    public function setCodeReference(string $codeReference)
+    {
+        $this->codeReference = $codeReference;
+
+        return $this;
+    }
+
+
 
     /**
      * @return Media

@@ -306,13 +306,14 @@ $form->addGroup($group, 'max_member_group', $lblExpiration, null, false);
 // Active account or inactive account
 $form->addElement('radio', 'active', get_lang('ActiveAccount'), get_lang('Active'), 1);
 $form->addElement('radio', 'active', '', get_lang('Inactive'), 0);
+$form->addText('code_reference',get_lang('CodeReference'),false);
 
 $extraField = new ExtraField('user');
 $returnParams = $extraField->addElements(
     $form,
     null,
     [],
-    false,
+    true,
     false,
     [],
     [],
@@ -385,6 +386,7 @@ if ($form->validate()) {
         $platform_admin = (int) $user['admin']['platform_admin'];
         $send_mail = (int) $user['mail']['send_mail'];
         $hr_dept_id = isset($user['hr_dept_id']) ? (int) $user['hr_dept_id'] : 0;
+        $codeReference = $user['code_reference'];
 
         if (isset($extAuthSource) && count($extAuthSource) > 0 &&
             $user['password']['password_auto'] == '2'
@@ -440,7 +442,9 @@ if ($form->validate()) {
             false,
             null,
             0,
-            $template
+            $template,
+            '',
+            $codeReference
         );
 
         Security::clear_token();
@@ -470,7 +474,13 @@ if ($form->validate()) {
                     null,
                     $hr_dept_id,
                     null,
-                    $language
+                    $language,
+                    '',
+                    false,
+                    0,
+                    null,
+                    [],
+                    $codeReference
                 );
             }
 

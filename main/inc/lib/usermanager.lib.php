@@ -303,7 +303,8 @@ class UserManager
         $form = null,
         $creatorId = 0,
         $emailTemplate = [],
-        $redirectToURLAfterLogin = ''
+        $redirectToURLAfterLogin = '',
+        $codeReference
     ) {
         $creatorId = empty($creatorId) ? api_get_user_id() : 0;
         $creatorInfo = api_get_user_info($creatorId);
@@ -494,6 +495,7 @@ class UserManager
             ->setHrDeptId($hr_dept_id)
             ->setActive($active)
             ->setEnabled($active)
+            ->setCodeReference($codeReference)
         ;
 
         if (!empty($expirationDate)) {
@@ -1574,7 +1576,8 @@ class UserManager
         $send_email = false,
         $reset_password = 0,
         $address = null,
-        $emailTemplate = []
+        $emailTemplate = [],
+        $codeReference
     ) {
         $hook = HookUpdateUser::create();
         if (!empty($hook)) {
@@ -1656,6 +1659,7 @@ class UserManager
             ->setActive($active)
             ->setEnabled($active)
             ->setHrDeptId($hr_dept_id)
+            ->setCodeReference($codeReference)
         ;
 
         if (!is_null($password)) {
