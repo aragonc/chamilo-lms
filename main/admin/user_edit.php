@@ -349,6 +349,8 @@ if (!$user_data['platform_admin']) {
     // Active account or inactive account
     $form->addElement('radio', 'active', get_lang('ActiveAccount'), get_lang('Active'), 1);
     $form->addElement('radio', 'active', '', get_lang('Inactive'), 0);
+    $form->addText('code_reference',get_lang('CodeReference'),false);
+
 }
 $studentBossList = UserManager::getStudentBossList($user_data['user_id']);
 
@@ -376,7 +378,7 @@ $returnParams = $extraField->addElements(
     $form,
     $user_data['user_id'],
     [],
-    false,
+    true,
     false,
     [],
     [],
@@ -474,6 +476,7 @@ if ($form->validate()) {
     $send_mail = (int) $user['send_mail'];
     $reset_password = (int) $user['reset_password'];
     $hr_dept_id = isset($user['hr_dept_id']) ? intval($user['hr_dept_id']) : null;
+    $codeReference = $user['code_reference'];
     $language = $user['language'];
     $address = isset($user['address']) ? $user['address'] : null;
 
@@ -517,7 +520,8 @@ if ($form->validate()) {
         $send_mail,
         $reset_password,
         $address,
-        $template
+        $template,
+        $codeReference
     );
 
     $studentBossListSent = isset($user['student_boss']) ? $user['student_boss'] : [];
