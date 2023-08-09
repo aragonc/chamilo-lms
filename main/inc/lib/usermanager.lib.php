@@ -272,6 +272,7 @@ class UserManager
      * @param int           $creatorId
      * @param array         $emailTemplate
      * @param string        $redirectToURLAfterLogin
+     * @param string        $codeReference
      *
      * @return mixed new user id - if the new user creation succeeds, false otherwise
      * @desc The function tries to retrieve user id from the session.
@@ -304,7 +305,7 @@ class UserManager
         $creatorId = 0,
         $emailTemplate = [],
         $redirectToURLAfterLogin = '',
-        $codeReference
+        $codeReference = null
     ) {
         $creatorId = empty($creatorId) ? api_get_user_id() : 0;
         $creatorInfo = api_get_user_info($creatorId);

@@ -244,6 +244,10 @@ function complete_missing_data($user)
         $user['OfficialCode'] = '';
     }
 
+    if (empty($user['CodeReference'])) {
+        $user['CodeReference'] = '';
+    }
+
     return $user;
 }
 
@@ -314,7 +318,8 @@ function save_data(
                 null,
                 null,
                 null,
-                $redirection
+                $redirection,
+                $user['CodeReference']
             );
 
             if ($user_id) {
