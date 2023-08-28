@@ -141,7 +141,6 @@ switch ($action) {
             api_not_allowed(true);
         }
         CoursesAndSessionsCatalog::categorySessionList();
-
         exit;
 
     case 'display_sessions':

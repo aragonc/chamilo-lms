@@ -1490,7 +1490,12 @@ class CoursesAndSessionsCatalog
     {
 
         $table = Database::get_main_table(TABLE_MAIN_SESSION_CATEGORY);
-        $sql = "SELECT * FROM $table sc";
+        // Get the current month and year
+        $currentMonth = date('m');
+        $currentYear = date('Y');
+        $sql = "SELECT * FROM $table sc
+        WHERE MONTH(date_start) = $currentMonth
+        AND YEAR(date_start) = $currentYear";
         $result = Database::query($sql);
 
         $list = [];
@@ -1506,7 +1511,6 @@ class CoursesAndSessionsCatalog
                 ];
             }
         }
-
 
         $tpl = new Template();
         $tpl->assign('categories', $list);
