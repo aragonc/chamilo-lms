@@ -877,6 +877,7 @@ if (isset($first_time) && $first_time == 1 && api_is_allowed_to_edit(null, true)
         false
     );
 
+
     if (!empty($cats)) {
         if ((api_get_setting('gradebook_enable_grade_model') === 'true') &&
             (
@@ -956,6 +957,7 @@ if (isset($first_time) && $first_time == 1 && api_is_allowed_to_edit(null, true)
 
         /** @var Category $cat */
         foreach ($cats as $cat) {
+
             $allcat = $cat->get_subcategories($stud_id, $course_code, $session_id);
             $alleval = $cat->get_evaluations($stud_id, false, $course_code, $session_id);
             $alllink = $cat->get_links($stud_id, true, $course_code, $session_id);
@@ -976,6 +978,24 @@ if (isset($first_time) && $first_time == 1 && api_is_allowed_to_edit(null, true)
                     true,
                     $certificate
                 );
+                if(api_is_student()){
+                    if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
+                        $plugin = ProikosPlugin::create();
+                        $score = $plugin->getScoreCertificate($stud_id,$course_code,$session_id );
+                        $style = "text-align: center; font-weight: bold;";
+                        if($score['has_certificate']){
+                            echo '<div class="alert alert-success" style="'.$style.'">
+                                <div class="icon"><img src="'.$score['icon'].'" alt="'.$plugin->get_lang('CongratulationsYouPassedTheCourse').'" ></div>
+                                '.$plugin->get_lang('CongratulationsYouPassedTheCourse').'</div>';
+                        } else {
+                            echo '<div class="alert alert-danger" style="'.$style.'">
+                                <div class="icon"><img src="'.$score['icon'].'" alt="'.$plugin->get_lang('SorryYouReachTheProperScore').'" ></div>
+                                '.$plugin->get_lang('SorryYouReachTheProperScore').'</div>';
+                        }
+
+                    }
+                }
+
 
                 if ($isAllowed && api_get_setting('gradebook_enable_grade_model') === 'true') {
                     // Showing the grading system
@@ -992,7 +1012,6 @@ if (isset($first_time) && $first_time == 1 && api_is_allowed_to_edit(null, true)
                 }
 
                 $loadStats = $isAllowed ? [] : GradebookTable::getExtraStatsColumnsToDisplay();
-
                 $gradebookTable = new GradebookTable(
                     $cat,
                     $allcat,
