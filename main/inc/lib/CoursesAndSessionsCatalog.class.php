@@ -1759,6 +1759,12 @@ class CoursesAndSessionsCatalog
             'extraFieldType' => Chamilo\CoreBundle\Entity\ExtraField::COURSE_FIELD_TYPE,
             'variable' => 'tags',
         ]);
+        $stakeholdersCurrent = 0;
+        if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
+            $pluginProikos = ProikosPlugin::create();
+            $stakeholdersCurrent = $pluginProikos->getStakeholdersUser($userId);
+        }
+        $array_stakeholders = [];
         $currentDate = new DateTime();
         //var_dump($currentDate);
         /** @var Session $session */
@@ -1808,8 +1814,7 @@ class CoursesAndSessionsCatalog
             $enabledRequirements = false;
             $sessionId = $session->getId();
             if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
-                $plugin = ProikosPlugin::create();
-                $enabledRequirements  = $plugin->getRequirementsSessionUser(2,$userId,$sessionId);
+                $enabledRequirements  = $pluginProikos->getRequirementsSessionUser(2,$userId,$sessionId);
             }
             //var_dump($enabledRequirements);
             $hasRequirements = false;
@@ -1849,6 +1854,10 @@ class CoursesAndSessionsCatalog
                 $sessionFull = true;
             }
 
+            if(!empty($session->getStakeholders())){
+                $array_stakeholders = json_decode($session->getStakeholders(), true);
+            }
+
             $sessionsBlock = [
                 'id' => $session->getId(),
                 'name' => $session->getName(),
@@ -1882,6 +1891,7 @@ class CoursesAndSessionsCatalog
                 'description' => $session->getDescription(),
                 'maximum_users' => $session->getMaximumUsers(),
                 'code_reference' => $session->getCodeReference(),
+                'stakeholders' => $array_stakeholders,
                 'category' => $catName,
                 'tags' => $sessionCourseTags,
                 'edit_actions' => $actions,
@@ -1903,6 +1913,11 @@ class CoursesAndSessionsCatalog
                 $sessionsBlock['session_hide'] = true;
             } else {
                 $sessionsBlock['session_hide'] = false;
+            }
+
+            if (!in_array($stakeholdersCurrent, $array_stakeholders)) {
+                $sessionsBlock['subscribe_button'] = false;
+                $sessionsBlock['session_full'] = true;
             }
 
             $sessionsBlocks[] = array_merge($sessionsBlock, $sequences);
