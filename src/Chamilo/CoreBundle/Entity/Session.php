@@ -154,6 +154,13 @@ class Session
     protected $codeReference;
 
     /**
+     * @var string
+     *
+     * @ORM\Column(name="stakeholders", type="text", nullable=true, unique=false)
+     */
+    protected $stakeholders;
+
+    /**
      * @var \DateTime
      *
      * @ORM\Column(name="display_start_date", type="datetime", nullable=true, unique=false)
@@ -766,6 +773,27 @@ class Session
     {
         $this->codeReference = $codeReference;
 
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getStakeholders(): string
+    {
+        if($this->stakeholders === null){
+            return '';
+        }
+        return $this->stakeholders;
+    }
+
+    /**
+     * @param string $stakeholders
+     * @return Session
+     */
+    public function setStakeholders(string $stakeholders)
+    {
+        $this->stakeholders = $stakeholders;
         return $this;
     }
 

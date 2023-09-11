@@ -113,6 +113,7 @@ $form = new FormValidator('edit_session', 'post', $formAction);
 $form->addElement('header', $tool_name);
 $result = SessionManager::setForm($form, $sessionInfo);
 
+
 $htmlHeadXtra[] = '
 <script>
 $(function() {
@@ -127,8 +128,16 @@ $formDefaults = $sessionInfo;
 $formDefaults['coach_username'] = $sessionInfo['id_coach'];
 $formDefaults['session_category'] = $sessionInfo['session_category_id'];
 $formDefaults['session_visibility'] = $sessionInfo['visibility'];
+$array_stakeholders = [];
+if(!empty($sessionInfo['stakeholders'])){
+    $array_stakeholders = json_decode($sessionInfo['stakeholders'], true);
+}
+
+$formDefaults['stakeholders'] = $array_stakeholders;
 
 if ($formSent) {
+    $name = null;
+    $charset = null;
     $formDefaults['name'] = api_htmlentities($name, ENT_QUOTES, $charset);
 } else {
     $formDefaults['name'] = Security::remove_XSS($sessionInfo['name']);
@@ -160,7 +169,7 @@ if ($form->validate()) {
     $isThisImageCropped = isset($params['picture_crop_result']);
     $maximum_users = $params['maximum_users'] ?? 0;
     $code_reference = $params['code_reference'];
-
+    $stakeholders = json_encode($params['stakeholders']);
     $extraFields = [];
     foreach ($params as $key => $value) {
         if (strpos($key, 'extra_') === 0) {
@@ -194,7 +203,8 @@ if ($form->validate()) {
         $sendSubscriptionNotification,
         $status,
         $maximum_users,
-        $code_reference
+        $code_reference,
+        $stakeholders
     );
 
     if ($return) {

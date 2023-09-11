@@ -454,6 +454,26 @@ if (!empty($sessionInfo['promotion_id'])) {
     $promotion = $em->getRepository('ChamiloCoreBundle:Promotion');
     $promotion = $promotion->find($sessionInfo['promotion_id']);
 }
+$stakeholdersSelect = [];
+if(!empty($sessionInfo['stakeholders'])){
+    $stakeholdersSelect = json_decode($sessionInfo['stakeholders'], true);
+}
+
+$stakeholders = [
+    '1' => 'Petroperu',
+    '2' => 'Contratista',
+    '3' => 'Cliente',
+    '99' => 'Otros',
+];
+
+$selectedStakeholders = [];
+foreach ($stakeholdersSelect as $value) {
+    if (isset($stakeholders[$value])) {
+        $selectedStakeholders[] = $stakeholders[$value];
+    }
+}
+$selectedStakeholdersText = implode(' - ', $selectedStakeholders);
+$sessionInfo['stakeholders'] = $selectedStakeholdersText;
 
 $programmedAnnouncement = new ScheduledAnnouncement();
 $programmedAnnouncement = $programmedAnnouncement->allowed();

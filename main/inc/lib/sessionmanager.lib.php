@@ -77,6 +77,7 @@ class SessionManager
             'promotion_id' => $session->getPromotionId(),
             'maximum_users' => $session->getMaximumUsers(),
             'code_reference' => $session->getCodeReference(),
+            'stakeholders' => $session->getStakeholders(),
             'display_start_date' => $session->getDisplayStartDate()
                 ? $session->getDisplayStartDate()->format('Y-m-d H:i:s')
                 : null,
@@ -1622,7 +1623,8 @@ class SessionManager
         $sendSubscriptionNotification = false,
         $status = 0,
         $maximum_users = null,
-        $code_reference = null
+        $code_reference = null,
+        $stakeholders = null
     ) {
         $status = (int) $status;
         $coachId = (int) $coachId;
@@ -1731,6 +1733,10 @@ class SessionManager
                 }
                 if (!empty($code_reference)) {
                     $values['code_reference'] = $code_reference;
+                }
+
+                if (!empty($stakeholders)) {
+                    $values['stakeholders'] = $stakeholders;
                 }
 
                 $values['session_category_id'] = null;
@@ -8232,6 +8238,14 @@ class SessionManager
                 $list[$entity['code_reference']] = $entity['name_entity'];
             }
             $form->addSelect('code_reference', $plugin->get_lang('CodeReference'), $list);
+            $stakeholders = [
+                '1' => 'Petroperu',
+                '2' => 'Contratista',
+                '3' => 'Cliente',
+                '99' => 'Otros',
+            ];
+            $form->addSelect('stakeholders',  $plugin->get_lang('StakeholdersForRegistration'), $stakeholders, ['multiple' => 'multiple']);
+
         }
         // Extra fields
         $setExtraFieldsMandatory = api_get_configuration_value('session_creation_form_set_extra_fields_mandatory');

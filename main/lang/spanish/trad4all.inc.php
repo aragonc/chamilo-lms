@@ -9061,3 +9061,5 @@ $CareerCannotBeDeletedAsItHasChildren = "Esta carrera no puede ser eliminada has
 $ExtraWelcomeMessage = 'Es obligatorio llevar su <strong>teléfono móvil</strong> con datos, ya que el uso de este dispositivo es imprescindible para realizar el examen  en línea a través de la plataforma <strong>Proikos Academy</strong>';
 $ContentNotAvailable = '<strong>¡Gracias por inscribirte en el curso!</strong> Recuerda que el acceso al contenido estará disponible a partir de la fecha indicada.';
 $CodeReference = 'Entidad de referencia';
+$CodeReference = 'Entidad de referencia';
+$Stakeholders = 'Stakeholders';
