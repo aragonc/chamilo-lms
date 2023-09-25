@@ -982,6 +982,7 @@ if (isset($first_time) && $first_time == 1 && api_is_allowed_to_edit(null, true)
                     if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
                         $plugin = ProikosPlugin::create();
                         $score = $plugin->getScoreCertificate($stud_id,$course_code,$session_id );
+                        //var_dump($score);
                         $style = "text-align: center; font-weight: bold;";
                         if($score['has_certificate']){
                             echo '<div class="alert alert-success" style="'.$style.'">

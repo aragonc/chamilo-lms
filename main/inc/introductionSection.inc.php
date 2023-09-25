@@ -374,7 +374,7 @@ if (api_get_configuration_value('resource_sequence_show_dependency_in_course_int
     $showSequencesBlock = !empty($firstSequence['dependents']);
 }
 
-$introduction_section .= $showSequencesBlock ? '<div class="col-md-10">' : '<div class="col-md-12">';
+$introduction_section .= $showSequencesBlock ? '<div class="col-md-12">' : '<div class="col-md-12">';
 
 if ($intro_dispDefault) {
     if (!empty($intro_content)) {
@@ -392,7 +392,7 @@ if ($intro_dispDefault) {
 
 $introduction_section .= $toolbar;
 $introduction_section .= '</div>';
-
+/*
 if ($showSequencesBlock) {
     $sequenceUrl = http_build_query(
         [
@@ -413,7 +413,7 @@ if ($showSequencesBlock) {
         </script>
     ';
 }
-
+*/
 $introduction_section .= '</div>'; //div.row
 
 $browser = api_get_navigator();

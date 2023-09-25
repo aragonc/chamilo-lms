@@ -1353,6 +1353,12 @@ class CoursesAndSessionsCatalog
         bool $btnBing = false,
         bool $enabledRequirements = false
     ) {
+        $courseID = 0;
+        if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
+            $plugin = ProikosPlugin::create();
+            $courseID = $plugin->getIdCourseSession($sessionId);
+        }
+
         $class = 'btn-sm';
         if ($btnBing) {
             $class = 'btn-lg';
@@ -1416,7 +1422,7 @@ class CoursesAndSessionsCatalog
         }
 
         if ($checkRequirements && !$enabledRequirements) {
-            return self::getRequirements($sessionId, SequenceResource::SESSION_TYPE, $includeText, $class,$sessionId);
+            return self::getRequirements($courseID, SequenceResource::COURSE_TYPE, $includeText, $class,$sessionId);
         }
 
         return $result;
@@ -1766,9 +1772,20 @@ class CoursesAndSessionsCatalog
         }
         $array_stakeholders = [];
         $currentDate = new DateTime();
-        //var_dump($currentDate);
-        /** @var Session $session */
+
+        $count = 0;
+        $sessionList = [];
         foreach ($sessions as $session) {
+            if(!(($session->getDisplayStartDate() <= $currentDate) && ($session->getDisplayEndDate() >= $currentDate))){
+                unset($sessions[$count]);
+            } else {
+                $sessionList[]=$session;
+            }
+            $count++;
+        }
+        //var_dump($sessionList);
+        /** @var Session $session */
+        foreach ($sessionList as $session) {
 
             $sessionDates = SessionManager::parseSessionDates([
                 'display_start_date' => $session->getDisplayStartDate(),
@@ -1805,19 +1822,23 @@ class CoursesAndSessionsCatalog
                 $sessionCourseTags = array_unique($sessionCourseTags);
             }
 
-            /** @var SequenceResourceRepository $repo */
+            $courseID = $pluginProikos->getIdCourseSession( $session->getId());
+            /** @var SequenceResourceRepository $repo*/
             $repo = $entityManager->getRepository('ChamiloCoreBundle:SequenceResource');
             $sequences = $repo->getRequirementsAndDependenciesWithinSequences(
-                $session->getId(),
-                SequenceResource::SESSION_TYPE
+                $courseID,
+                SequenceResource::COURSE_TYPE
             );
+
             $enabledRequirements = false;
             $sessionId = $session->getId();
+
             if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
-                $enabledRequirements  = $pluginProikos->getRequirementsSessionUser(2,$userId,$sessionId);
+                $enabledRequirements  = $pluginProikos->getRequirementsSessionCourseUser($sessionId);
             }
-            //var_dump($enabledRequirements);
+
             $hasRequirements = false;
+
             foreach ($sequences as $sequence) {
                 if (count($sequence['requirements']) === 0) {
                     continue;
@@ -1908,13 +1929,8 @@ class CoursesAndSessionsCatalog
             } else {
                 $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
             }
-            //var_dump($session->getDisplayEndDate() >= $currentDate);
-            if(($session->getDisplayStartDate() <= $currentDate) && ($session->getDisplayEndDate() >= $currentDate)){
-                $sessionsBlock['session_hide'] = true;
-            } else {
-                $sessionsBlock['session_hide'] = false;
-            }
 
+            $sessionsBlock['session_hide'] = true;
             if (!in_array($stakeholdersCurrent, $array_stakeholders)) {
                 $sessionsBlock['subscribe_button'] = false;
                 $sessionsBlock['session_full'] = true;
