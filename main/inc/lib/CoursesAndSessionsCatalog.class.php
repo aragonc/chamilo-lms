@@ -1544,12 +1544,13 @@ class CoursesAndSessionsCatalog
         $limit = self::getLimitArray();
 
         $countSessions = self::browseSessions($date, [], false, true);
+        $nextSessions = null;
 
         if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
             $plugin = ProikosPlugin::create();
             $code_reference = $plugin->getCodeReferenceByUser(api_get_user_id());
             $sessions = $plugin->browseSessions($date, $limit,false,false, $code_reference, $categoryID);
-
+            $nextSessions = $plugin->getSessionDatesNext();
         } else {
             $sessions = self::browseSessions($date, $limit);
         }
@@ -1576,6 +1577,7 @@ class CoursesAndSessionsCatalog
         $tpl->assign('search_date', $date);
         $tpl->assign('web_session_courses_ajax_url', api_get_path(WEB_AJAX_PATH).'course.ajax.php');
         $tpl->assign('sessions', $sessionsBlocks);
+        $tpl->assign('nexts', $nextSessions);
         $tpl->assign('already_subscribed_label', self::getAlreadyRegisteredInSessionLabel());
         $tpl->assign('catalog_settings', self::getCatalogSearchSettings());
 
