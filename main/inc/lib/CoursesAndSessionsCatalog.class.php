@@ -1550,7 +1550,7 @@ class CoursesAndSessionsCatalog
             $plugin = ProikosPlugin::create();
             $code_reference = $plugin->getCodeReferenceByUser(api_get_user_id());
             $sessions = $plugin->browseSessions($date, $limit,false,false, $code_reference, $categoryID);
-            $nextSessions = $plugin->getSessionDatesNext();
+            $nextSessions = $plugin->getSessionDatesNext($categoryID);
         } else {
             $sessions = self::browseSessions($date, $limit);
         }
