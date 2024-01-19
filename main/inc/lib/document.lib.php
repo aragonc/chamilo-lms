@@ -2018,7 +2018,10 @@ class DocumentManager
     {
         $info_list = [];
         $user_id = (int) $user_id;
-        $course_info = api_get_course_info($courseCode);
+        if(!empty($courseCode)){
+            $course_info = api_get_course_info($courseCode);
+        }
+
         $sessionId = (int) $sessionId;
 
         // Portal info
@@ -2049,14 +2052,17 @@ class DocumentManager
         // Teacher information
         $teacher_first_name = '';
         $teacher_last_name = '';
-        $info_teacher_id = UserManager::get_user_id_of_course_admin_or_session_admin($course_info);
 
-        if ($info_teacher_id) {
-            [
-                'firstname' => $teacher_first_name,
-                'lastname' => $teacher_last_name,
-            ] = api_get_user_info($info_teacher_id);
+        if(!is_null($course_info)){
+            $info_teacher_id = UserManager::get_user_id_of_course_admin_or_session_admin($course_info);
+            if ($info_teacher_id) {
+                [
+                    'firstname' => $teacher_first_name,
+                    'lastname' => $teacher_last_name,
+                ] = api_get_user_info($info_teacher_id);
+            }
         }
+
 
         // info gradebook certificate
         $info_grade_certificate = UserManager::get_info_gradebook_certificate($courseCode, $sessionId, $user_id);
@@ -2138,7 +2144,7 @@ class DocumentManager
             $date_short_no_time,
             $courseCode,
             $course_info['name'],
-            isset($info_grade_certificate['grade']) ? $info_grade_certificate['grade'] : '',
+            $info_grade_certificate['grade'] ?? '',
             $url,
             '<a href="'.$url.'" target="_blank">'.get_lang('CertificateOnlineLink').'</a>',
             '((certificate_barcode))',
