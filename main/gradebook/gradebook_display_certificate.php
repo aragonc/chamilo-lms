@@ -74,8 +74,21 @@ if ($filter === 'true') {
 
 $content = '';
 $courseCode = api_get_course_id();
-$allowCustomCertificate = api_get_plugin_setting('customcertificate', 'enable_plugin_customcertificate') === 'true' &&
-    api_get_course_setting('customcertificate_course_enable', $courseInfo) == 1;
+//Type custom certificate
+$settingName = null;
+$pluginPath = null;
+if(api_get_plugin_setting('customcertificate', 'enable_plugin_customcertificate') === 'true'){
+    $settingName = 'customcertificate_course_enable';
+    $pluginPath = 'customcertificate';
+}
+
+if(api_get_plugin_setting('easycertificate', 'enable_plugin_easycertificate') === 'true'){
+    $settingName = 'easycertificate_course_enable';
+    $pluginPath = 'easycertificate';
+}
+$allowCustomCertificate = api_get_course_setting($settingName, $courseInfo) == 1;
+var_dump($allowCustomCertificate);
+
 
 $tags = Certificate::notificationTags();
 
@@ -125,13 +138,38 @@ switch ($action) {
         );
         $content = $form->returnForm();
         break;
+    case 'export_all_certificates':
+        if ($allowCustomCertificate) {
+            $params = 'course_code='.api_get_course_id().
+                '&session_id='.api_get_session_id().
+                '&'.api_get_cidreq().
+                '&cat_id='.$categoryId;
+            $url = api_get_path(WEB_PLUGIN_PATH).
+                $pluginPath.'/src/print_certificate.php?export_all_in_one=1&'.$params;
+        } else {
+            if (api_is_student_boss()) {
+                $userGroup = new UserGroup();
+                $userList = $userGroup->getGroupUsersByUser(api_get_user_id());
+            } else {
+                $userList = [];
+                if (!empty($filterOfficialCodeGet)) {
+                    $userList = UserManager::getUsersByOfficialCode($filterOfficialCodeGet);
+                }
+            }
+
+            Category::exportAllCertificates($categoryId, $userList);
+        }
+
+        header('Location: '.$url);
+        exit;
+        break;
     case 'export_all_certificates_zip':
         if ($allowCustomCertificate) {
             $params = 'course_code='.api_get_course_id().
                 '&session_id='.api_get_session_id().
                 '&'.api_get_cidreq().
                 '&cat_id='.$categoryId;
-            $url = api_get_path(WEB_PLUGIN_PATH).'customcertificate/src/print_certificate.php?export_all=1&'.$params;
+            $url = api_get_path(WEB_PLUGIN_PATH).$pluginPath.'/src/print_certificate.php?export_all=1&'.$params;
 
             header('Location: '.$url);
         }
@@ -357,8 +395,8 @@ if (count($certificate_list) > 0 && $hideCertificateExport !== 'true') {
     }
 
     $actions .= Display::url(
-        Display::return_icon('export_csv.png', get_lang('ExportCertificateReport'), [], ICON_SIZE_MEDIUM),
-        $url.'&action=download_certificates_report'
+        Display::return_icon('pdf.png', get_lang('ExportAllCertificatesToPDF'), [], ICON_SIZE_MEDIUM),
+        $url.'&action=export_all_certificates'
     );
 
     if ($allowCustomCertificate) {
@@ -406,15 +444,15 @@ if (count($certificate_list) == 0) {
                 ['target' => '_blank', 'class' => 'btn btn-default']
             );
             echo $certificateUrl.PHP_EOL;
-            if ($hideCertificateExport !== 'true') {
-                $url .= '&action=export';
-                $pdf = Display::url(
-                    Display::return_icon('pdf.png', get_lang('Download')),
-                    $url,
-                    ['target' => '_blank']
-                );
-                echo $pdf.PHP_EOL;
-            }
+
+            $url .= '&action=export';
+            $pdf = Display::url(
+                Display::return_icon('pdf.png', get_lang('Download')),
+                $url,
+                ['target' => '_blank']
+            );
+            echo $pdf.PHP_EOL;
+
             echo '<a onclick="return confirmation();" href="gradebook_display_certificate.php?sec_token='.$token.'&'.api_get_cidreq().'&action=delete&cat_id='.$categoryId.'&certificate_id='.$valueCertificate['id'].'">
                     '.Display::return_icon('delete.png', get_lang('Delete')).'
                   </a>'.PHP_EOL;
