@@ -293,6 +293,11 @@ if (api_is_platform_admin()) {
         'label' => get_lang('ImportCourses'),
     ];
     $items[] = [
+        'class' => 'item-course-import-update',
+        'url' => 'course_update_import.php',
+        'label' => get_lang('UpdateCourseListXMLCSV'),
+    ];
+    $items[] = [
         'class' => 'item-course-category',
         'url' => 'course_category.php',
         'label' => get_lang('AdminCategories'),
@@ -927,7 +932,7 @@ if (api_is_platform_admin()) {
     ];
     $items[] = [
         'class' => 'item-forum',
-        'url' => 'https://forum.chamilo.org/',
+        'url' => 'https://chamilo.org/en/forum',
         'label' => get_lang('ChamiloForum'),
     ];
     $items[] = [

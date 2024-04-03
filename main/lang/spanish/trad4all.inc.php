@@ -9071,4 +9071,5 @@ $PasswordExpiredPleaseSetNewPassword = "Su contraseña se ha vencido. Por favor,
 $CopyIframeCodeToIncludeExercise = "Copie el código del iframe a continuación para incluir el ejercicio:";
 $MyMissingSignatures = "Mis firmas faltantes";
 $OnlyShowActiveUsers = "Mostrar solo usuarios activos";
+$HoursMinutesSeconds = "%02d h %02d m %02d s";
 ?>
