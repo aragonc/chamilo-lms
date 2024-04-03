@@ -47,7 +47,7 @@ a:hover{
   text-decoration: none;
 }
 header{
-  background: url("images/background.png") repeat-x center -25px;
+  background: #0f5962;
 }
 .navbar-default {
   background: #115761; /* Old browsers */
@@ -58,7 +58,9 @@ header{
   background: -ms-linear-gradient(top, #115761 1%,#364753 100%); /* IE10+ */
   background: linear-gradient(to bottom, #115761 1%,#364753 100%); /* W3C */
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#5a7081', endColorstr='#364753',GradientType=0 ); /* IE6-9 */
-  border-color: #115761;
+    border-color: #167785;
+    border-radius: 0;
+
 }
 .navbar-default .navbar-brand {
   color: #ffffff;
