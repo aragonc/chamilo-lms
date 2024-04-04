@@ -495,9 +495,11 @@ class UserManager
             ->setRegistrationDate($now)
             ->setHrDeptId($hr_dept_id)
             ->setActive($active)
-            ->setEnabled($active)
-            ->setCodeReference($codeReference)
-        ;
+            ->setEnabled($active);
+
+        if ($codeReference !== null) {
+            $user->setCodeReference($codeReference);
+        }
 
         if (!empty($expirationDate)) {
             $user->setExpirationDate($expirationDate);
