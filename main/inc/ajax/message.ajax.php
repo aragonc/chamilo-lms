@@ -36,8 +36,16 @@ switch ($action) {
         }
         break;
     case 'get_count_message':
-        $userId = api_get_user_id();
-        $invitations = MessageManager::getMessagesCountForUser($userId);
+        if (api_get_configuration_value('notification_message')) {
+            $userId = api_get_user_id();
+            $invitations = MessageManager::getMessagesCountForUser($userId);
+        } else {
+            $invitations = [
+                'ms_friends' => 0,
+                'ms_groups' => 0,
+                'ms_inbox' => 0,
+            ];
+        }
         header('Content-type:application/json');
         echo json_encode($invitations);
         break;
