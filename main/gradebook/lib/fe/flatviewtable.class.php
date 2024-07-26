@@ -428,8 +428,12 @@ class FlatViewTable extends SortableTable
 
         $this->set_header(0, $header_names[0], true, $thAttributes);
         $this->set_header(1, $header_names[1], true, $thAttributes);
+        $this->set_header(2, $header_names[2], true, $thAttributes); // Línea 834 (aproximadamente)
+        $this->set_header(3, $header_names[3], true, $thAttributes); // Línea 834 (aproximadamente)
+        $this->set_header(4, $header_names[4], true, $thAttributes); // Línea 835 (aproximadamente)
 
-        $column = 2;
+
+        $column = 5;
         $firstHeader = [];
         while ($column < count($header_names)) {
             $headerData = $header_names[$column];

@@ -108,6 +108,8 @@ class FlatViewDataGenerator
         }
 
         $headers[] = get_lang('Username');
+        $headers[] = get_lang('Company'); // Añadir encabezado para Empresa
+        $headers[] = get_lang('AreaDependency'); // Añadir encabezado para Área-Dependencia
 
         $this->addExtraFieldColumnsHeaders($headers);
 
@@ -445,8 +447,11 @@ class FlatViewDataGenerator
                     }
                 }
             }
-
+            $plugin = ProikosPlugin::create();
+            $companyArea = $plugin->getCompanyArea($user[0]);
             $row[] = $user[1];
+            $row[] = $companyArea['0']; // Línea 382 (aproximadamente)
+            $row[] = $companyArea['1']; // Línea 383 (aproximadamente)
             $this->addExtraFieldColumnsData($row, $user[0]);
             $item_value_total = 0;
             $item_total = 0;
@@ -651,6 +656,7 @@ class FlatViewDataGenerator
             }
 
             unset($score);
+
             $data[] = $row;
         }
 

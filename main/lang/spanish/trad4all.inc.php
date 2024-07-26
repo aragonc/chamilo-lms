@@ -9063,3 +9063,5 @@ $ContentNotAvailable = '<strong>¡Gracias por inscribirte en el curso!</strong> 
 $CodeReference = 'Entidad de referencia';
 $CodeReference = 'Entidad de referencia';
 $Stakeholders = 'Stakeholders';
+$Company = 'Empresa';
+$AreaDependency = 'Aŕea-Dependencia';
