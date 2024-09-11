@@ -1382,16 +1382,14 @@ class User implements UserInterface //implements ParticipantInterface, ThemeUser
     }
 
     /**
-     * @param string $codeReference
+     * @param string|null $codeReference
      * @return User
      */
-    public function setCodeReference(string $codeReference)
+    public function setCodeReference(?string $codeReference): self
     {
         $this->codeReference = $codeReference;
-
         return $this;
     }
-
 
 
     /**

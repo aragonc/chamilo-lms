@@ -1661,9 +1661,11 @@ class UserManager
             ->setExpirationDate($expiration_date)
             ->setActive($active)
             ->setEnabled($active)
-            ->setHrDeptId($hr_dept_id)
-            ->setCodeReference($codeReference)
-        ;
+            ->setHrDeptId($hr_dept_id);
+
+        if ($codeReference !== null) {
+            $user->setCodeReference($codeReference);
+        }
 
         if (!is_null($password)) {
             $user->setPlainPassword($password);
