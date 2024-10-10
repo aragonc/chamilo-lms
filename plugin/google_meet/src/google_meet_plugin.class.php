@@ -11,6 +11,7 @@ class GoogleMeetPlugin extends Plugin
 {
     public const TABLE_MEET_LIST = 'plugin_google_meet_room';
     public const SETTING_TITLE = 'tool_title';
+    public const SETTING_NAME = 'tool_name';
     public const SETTING_ENABLED = 'google_meet_enabled';
     public const GOOGLE_MEET_URL = 'https://meet.google.com/';
 
@@ -25,6 +26,7 @@ class GoogleMeetPlugin extends Plugin
             [
                 self::SETTING_ENABLED => 'boolean',
                 self::SETTING_TITLE => 'text',
+                self::SETTING_NAME => 'text',
             ]
         );
 
@@ -217,6 +219,42 @@ class GoogleMeetPlugin extends Plugin
         }
     }
 
+    public function get_svg_icon($iconName, $altText = '', $size = 64): string
+    {
+        $icon_path = __DIR__ . '/icons/' . $iconName . '.svg';
+        if (file_exists($icon_path)) {
+            $iconPathWeb = api_get_path(WEB_PLUGIN_PATH).'google_meet/src/icons/' . $iconName . '.svg';
+            $img = Display::img($iconPathWeb,$altText,['width' => $size, 'height' => $size]);
+        } else {
+            $img = '<!-- Icono no encontrado -->';
+        }
+        return $img;
+    }
+
+    public static function getBtnMeetSession($sessionId): string
+    {
+        $tableMeetList = Database::get_main_table(self::TABLE_MEET_LIST);
+        $sessionId = (int) $sessionId;
+        $sql = "SELECT * FROM $tableMeetList WHERE session_id = $sessionId AND activate = 1";
+        $result = Database::query($sql);
+        $room = '';
+        $obj = new self();
+        if (Database::num_rows($result) > 0) {
+            while ($row = Database::fetch_array($result)) {
+                $room = Display::url(
+                    $obj->get_svg_icon('google-meet',$row['meet_name'],32).' '.$obj->get(self::SETTING_NAME),
+                    $row['meet_url'],
+                    [
+                        'class' => 'btn btn-default btn-meet',
+                        'target' => '_blank',
+                        'title' => $row['meet_name'],
+                        'style' => 'margin-left: 1rem; border: none; background-color: '.$row['meet_color'].'; color: #000; font-weight: bold;',
+                    ]
+                );
+            }
+        }
+        return $room;
+    }
     public function listMeets($courseId, $sessionId = 0, $global = false): array
     {
         $list = [];

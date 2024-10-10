@@ -2032,6 +2032,9 @@ class IndexManager
 
                                 $params['category_id'] = $session_box['category_id'];
                                 $params['title'] = $session_box['title'];
+
+                                $params['btn_meet'] = GoogleMeetPlugin::getBtnMeetSession($session_id);
+
                                 $params['id_coach'] = $coachId;
                                 $userIdHash = UserManager::generateUserHash($coachId);
                                 $params['coach_url'] = api_get_path(WEB_AJAX_PATH).

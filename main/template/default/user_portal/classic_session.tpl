@@ -19,7 +19,7 @@
                             {% endif %}
 
                             <a href="{{ session_link }}">
-                                {{ session_image }} {{ row.title }}
+                                {{ session_image }} {{ row.title }} {{ row.btn_meet }}
                             </a>
                         {% endif %}
                     {% elseif row.course_list_session_style == 4 %}
