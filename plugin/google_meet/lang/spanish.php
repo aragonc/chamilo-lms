@@ -20,3 +20,4 @@ $strings['MeetingDescription'] = 'Descripción';
 $strings['MeetingDescriptionHelp'] = '(Opcional) Añada una breve descripción sobre la reunión.';
 $strings['MeetColor'] = 'Color de Meet';
 $strings['MeetColorHelp'] = '(Opcional)';
+$strings['ListOfSessions'] = 'Lista de sesiones';

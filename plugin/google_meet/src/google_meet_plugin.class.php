@@ -157,7 +157,7 @@ class GoogleMeetPlugin extends Plugin
      *
      * @return GoogleMeetPlugin
      */
-    public function performActionsAfterConfigure()
+    public function performActionsAfterConfigure(): GoogleMeetPlugin
     {
         $em = Database::getManager();
 
@@ -176,13 +176,22 @@ class GoogleMeetPlugin extends Plugin
 
     public function saveMeet($values)
     {
+
         if (!is_array($values) || empty($values['meet_name'])) {
             return false;
         }
         $table = Database::get_main_table(self::TABLE_MEET_LIST);
 
-        $courseId = api_get_course_int_id();
-        $sessionId = api_get_session_id();
+        $courseId = 0;
+        if(api_get_course_int_id()!=0){
+            $courseId = api_get_session_id();
+        }
+
+        $sessionId = $values['session'];
+        if(api_get_session_id()!=0){
+            $sessionId = api_get_session_id();
+        }
+
         $url = self::filterUrl($values['meet_url']);
         if (!isset($values['type_meet'])) {
             $values['type_meet'] = 1;
@@ -208,14 +217,17 @@ class GoogleMeetPlugin extends Plugin
         }
     }
 
-    public function listMeets($courseId, $sessionId = 0)
+    public function listMeets($courseId, $sessionId = 0, $global = false): array
     {
         $list = [];
         $tableMeetList = Database::get_main_table(self::TABLE_MEET_LIST);
         $courseId = (int) $courseId;
         $sessionId = (int) $sessionId;
-
-        $sql = "SELECT * FROM $tableMeetList WHERE c_id = $courseId AND session_id = $sessionId AND activate = 1";
+        if($global){
+            $sql = "SELECT * FROM $tableMeetList WHERE activate = 1";
+        } else {
+            $sql = "SELECT * FROM $tableMeetList WHERE c_id = $courseId AND session_id = $sessionId AND activate = 1";
+        }
 
         $result = Database::query($sql);
 
@@ -260,6 +272,20 @@ class GoogleMeetPlugin extends Plugin
         return $list;
     }
 
+    public function getSessions(): array
+    {
+        $tableSession = Database::get_main_table(TABLE_MAIN_SESSION);
+        $sql = "SELECT * FROM $tableSession";
+        $result = Database::query($sql);
+        $list = [];
+        if (Database::num_rows($result) > 0) {
+            while ($row = Database::fetch_array($result)) {
+                $list[$row['id']] = $row['name'];
+            }
+        }
+        return $list;
+    }
+
     public function getMeet($idMeet)
     {
         if (empty($idMeet)) {
@@ -299,8 +325,16 @@ class GoogleMeetPlugin extends Plugin
         }
         $table = Database::get_main_table(self::TABLE_MEET_LIST);
 
-        $courseId = api_get_course_int_id();
-        $sessionId = api_get_session_id();
+        $courseId = 0;
+        if(api_get_course_int_id()!=0){
+            $courseId = api_get_session_id();
+        }
+
+        $sessionId = $values['session'];
+        if(api_get_session_id()!=0){
+            $sessionId = api_get_session_id();
+        }
+
         $url = self::filterUrl($values['meet_url']);
         if (!isset($values['type_meet'])) {
             $values['type_meet'] = 1;

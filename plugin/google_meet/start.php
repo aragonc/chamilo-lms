@@ -19,22 +19,32 @@ $message = null;
 $userId = api_get_user_id();
 
 $courseInfo = api_get_course_info();
+
 $isTeacher = api_is_teacher();
 $isAdmin = api_is_platform_admin();
 $isStudent = api_is_student();
 
-$action = isset($_GET['action']) ? $_GET['action'] : null;
+$action = $_GET['action'] ?? null;
 $enable = $plugin->get('google_meet_enabled') == 'true';
 
-$urlAddMeet = api_get_path(WEB_PLUGIN_PATH).'google_meet/meets.php?action=add&'.api_get_cidreq();
+$urlAddMeet = api_get_path(WEB_PLUGIN_PATH).'google_meet/meets_global.php?action=add';
+$urlAddMeetGlobal = api_get_path(WEB_PLUGIN_PATH).'google_meet/meets_global.php?action=add&'.api_get_cidreq();
+$meets = [];
 
 if ($enable) {
-    if ($isAdmin || $isTeacher || $isStudent) {
+    if(empty($courseInfo)){
+        // Meet Global
+        $tpl->assign('global_meet', true);
+        $tpl->assign('url_add_room_global', $urlAddMeetGlobal);
+        $meets = $plugin->listMeets(0, 0, true);
+
+    } else if ($isAdmin || $isTeacher || $isStudent) {
         $meets = $plugin->listMeets($courseInfo['real_id'], api_get_session_id());
+        $tpl->assign('url_add_room', $urlAddMeet);
     }
 }
 
-$tpl->assign('url_add_room', $urlAddMeet);
+
 $tpl->assign('meets', $meets);
 $tpl->assign('is_admin', $isAdmin);
 $tpl->assign('is_student', $isStudent);
