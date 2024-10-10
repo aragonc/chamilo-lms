@@ -2259,6 +2259,7 @@ class IndexManager
                                     $sessionParams[0]['duration'] = isset($session_box['duration']) ? ' '.$session_box['duration'] : null;
                                     $sessionParams[0]['course_list_session_style'] = $coursesListSessionStyle;
                                     $sessionParams[0]['title'] = $session_box['title'];
+                                    $sessionParams[0]['btn_meet'] = GoogleMeetPlugin::getBtnMeetSession($session_id);
                                     $sessionParams[0]['subtitle'] = (!empty($session_box['coach']) ? $session_box['coach'].' | ' : '').$session_box['dates'];
                                     $sessionParams[0]['show_actions'] = SessionManager::cantEditSession($session_id);
                                     $sessionParams[0]['courses'] = $html_courses_session;
