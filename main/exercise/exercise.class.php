@@ -10037,7 +10037,7 @@ class Exercise
                             continue;
                         }
 
-                        $url = '<a '.$alt_title.'  href="overview.php?'.api_get_cidreq().$mylpid.$mylpitemid.'&exerciseId='.$row['iid'].'">'.
+                        $url = '<a class="btn btn-default" '.$alt_title.'  href="overview.php?'.api_get_cidreq().$mylpid.$mylpitemid.'&exerciseId='.$row['iid'].'">'.
                             $cut_title.'</a>';
 
                         // Link of the exercise.
