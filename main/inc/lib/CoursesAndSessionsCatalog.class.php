@@ -317,10 +317,9 @@ class CoursesAndSessionsCatalog
     }
 
     /**
-     * @param string $categoryCode
-     * @param int    $randomValue
-     * @param array  $limit        will be used if $randomValue is not set.
-     *                             This array should contain 'start' and 'length' keys
+     * @param int   $randomValue
+     * @param array $limit       will be used if $randomValue is not set.
+     *                           This array should contain 'start' and 'length' keys
      *
      * @return array
      */
@@ -1853,7 +1852,16 @@ class CoursesAndSessionsCatalog
         $pageTop = min($pageTotal, $pageCurrent + 3);
 
         if ($pageBottom > 1) {
-            $pageDiv .= self::getPageNumberItem(1, $pageLength);
+            $pageDiv .= self::getPageNumberItem(
+                1,
+                $pageLength,
+                   null,
+                '',
+                $categoryCode,
+                $action,
+                   $fields,
+                   $sortKeys
+            );
             if ($pageBottom > 2) {
                 $pageDiv .= self::getPageNumberItem(
                     $pageBottom - 1,
@@ -1990,7 +1998,8 @@ class CoursesAndSessionsCatalog
         $action = isset($action) ? Security::remove_XSS($action) : $requestAction;
         $searchTerm = isset($_REQUEST['search_term']) ? Security::remove_XSS($_REQUEST['search_term']) : '';
         $keyword = isset($_REQUEST['keyword']) ? Security::remove_XSS($_REQUEST['keyword']) : '';
-        $searchTag = $_REQUEST['search_tag'] ? Security::remove_XSS($_REQUEST['search_tag']) : '';
+        $searchTag = isset($_REQUEST['search_tag']) ? Security::remove_XSS($_REQUEST['search_tag']) : '';
+        $languageSelect = isset($_REQUEST['course_language']) ? Security::remove_XSS($_REQUEST['course_language']) : '';
 
         if ($action === 'subscribe_user_with_password') {
             $action = 'subscribe';
@@ -2006,7 +2015,8 @@ class CoursesAndSessionsCatalog
             '&search_tag='.$searchTag.
             '&category_code='.$categoryCode.
             '&pageCurrent='.$pageCurrent.
-            '&pageLength='.$pageLength;
+            '&pageLength='.$pageLength.
+            '&course_language='.$languageSelect;
 
         if (!empty($extraFields)) {
             $params = [];

@@ -3,6 +3,7 @@
 /* For licensing terms, see /license.txt */
 
 use Chamilo\CoreBundle\Component\HTMLPurifier\Filter\AllowIframes;
+use Chamilo\CoreBundle\Component\HTMLPurifier\Filter\RemoveOnAttributes;
 use ChamiloSession as Session;
 
 /**
@@ -44,15 +45,15 @@ class Security
     public const CHAR_DIGITS = '0123456789';
     public const CHAR_SYMBOLS = '!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~';
 
-    public static Array $clean = [];
+    public static $clean = [];
 
     /**
      * Checks if the absolute path (directory) given is really under the
      * checker path (directory).
      *
-     * @param string  $abs_path  Absolute path to be checked (with trailing slash)
-     * @param string  $checker_path  Checker path under which the path
-     * should be (absolute path, with trailing slash, get it from api_get_path(SYS_COURSE_PATH))
+     * @param string $abs_path     Absolute path to be checked (with trailing slash)
+     * @param string $checker_path Checker path under which the path
+     *                             should be (absolute path, with trailing slash, get it from api_get_path(SYS_COURSE_PATH))
      *
      * @return bool True if the path is under the checker, false otherwise
      */
@@ -64,8 +65,7 @@ class Security
         }
 
         // Clean $abs_path.
-        $abs_path = str_replace(['//', '../'], ['/', ''], $abs_path);
-        $true_path = str_replace("\\", '/', realpath($abs_path));
+        $true_path = self::cleanPath($abs_path);
         $checker_path = str_replace("\\", '/', realpath($checker_path));
 
         if (empty($checker_path)) {
@@ -89,13 +89,20 @@ class Security
         return false;
     }
 
+    public static function cleanPath(string $absPath): string
+    {
+        $absPath = str_replace(['//', '../'], ['/', ''], $absPath);
+
+        return str_replace("\\", '/', realpath($absPath));
+    }
+
     /**
      * Checks if the relative path (directory) given is really under the
      * checker path (directory).
      *
-     * @param string  $rel_path  Relative path to be checked (relative to the current directory) (with trailing slash)
-     * @param string  $checker_path  Checker path under which the path
-     * should be (absolute path, with trailing slash, get it from api_get_path(SYS_COURSE_PATH))
+     * @param string $rel_path     Relative path to be checked (relative to the current directory) (with trailing slash)
+     * @param string $checker_path Checker path under which the path
+     *                             should be (absolute path, with trailing slash, get it from api_get_path(SYS_COURSE_PATH))
      *
      * @return bool True if the path is under the checker, false otherwise
      */
@@ -125,17 +132,12 @@ class Security
      * other languages' files extensions).
      *
      * @param string $filename Unfiltered filename
-     *
-     * @return string
      */
     public static function filter_filename(string $filename): string
     {
         return disable_dangerous_file($filename);
     }
 
-    /**
-     * @return string
-     */
     public static function getTokenFromSession(string $prefix = ''): string
     {
         $secTokenVariable = self::generateSecTokenVariable($prefix);
@@ -147,9 +149,8 @@ class Security
      * This function checks that the token generated in get_token() has been kept (prevents
      * Cross-Site Request Forgeries attacks).
      *
-     * @param string $requestType   The array in which to get the token ('get' or 'post')
+     * @param string         $requestType The array in which to get the token ('get' or 'post')
      * @param ?FormValidator $form
-     * @param string $prefix
      *
      * @return bool True if it's the right token, false otherwise
      */
@@ -260,9 +261,6 @@ class Security
         return $token;
     }
 
-    /**
-     * @return string
-     */
     public static function get_existing_token(string $prefix = ''): string
     {
         $secTokenVariable = self::generateSecTokenVariable($prefix);
@@ -289,7 +287,7 @@ class Security
      * This function returns a variable from the clean array. If the variable doesn't exist,
      * it returns null.
      *
-     * @param string  $varname  Variable name
+     * @param string $varname Variable name
      *
      * @return mixed Variable or NULL on error
      */
@@ -307,9 +305,8 @@ class Security
      * Filtering for XSS is very easily done by using the htmlentities() function.
      * This kind of filtering prevents JavaScript snippets to be understood as such.
      *
-     * @param string|array $var The variable to filter for XSS, this params can be a string or an array (example : array(x,y))
-     * @param ?int $user_status The user status,constant allowed (STUDENT, COURSEMANAGER, ANONYMOUS, COURSEMANAGERLOWSECURITY)
-     * @param bool $filter_terms
+     * @param string|array $var         The variable to filter for XSS, this params can be a string or an array (example : array(x,y))
+     * @param ?int         $user_status The user status,constant allowed (STUDENT, COURSEMANAGER, ANONYMOUS, COURSEMANAGERLOWSECURITY)
      *
      * @return mixed Filtered string or array
      */
@@ -351,8 +348,16 @@ class Security
             $config->set('Core.ConvertDocumentToFragment', false);
             $config->set('Core.RemoveProcessingInstructions', true);
 
+            $customFilters = [
+                new RemoveOnAttributes(),
+            ];
+
             if (api_get_setting('enable_iframe_inclusion') == 'true') {
-                $config->set('Filter.Custom', [new AllowIframes()]);
+                $customFilters[] = new AllowIframes();
+            }
+
+            if ($customFilters) {
+                $config->set('Filter.Custom', $customFilters);
             }
 
             // Shows _target attribute in anchors
@@ -457,8 +462,6 @@ class Security
      * Filter content.
      *
      * @param string $text to be filtered
-     *
-     * @return string
      */
     public static function filter_terms(string $text): string
     {
@@ -547,8 +550,6 @@ class Security
      * Get password requirements
      * It checks config value 'password_requirements' or uses the "classic"
      * Chamilo password requirements.
-     *
-     * @return array
      */
     public static function getPasswordRequirements(): array
     {

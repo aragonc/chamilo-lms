@@ -1,7 +1,6 @@
 <?php
 /**
- *
- * (c) Copyright Ascensio System SIA 2021
+ * (c) Copyright Ascensio System SIA 2024.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,187 +13,73 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
-
 require_once __DIR__.'/../../main/inc/global.inc.php';
-
-const USER_AGENT_MOBILE = "/android|avantgo|playbook|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od|ad)|iris|kindle|lge |maemo|midp|mmp|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\\/|plucker|pocket|psp|symbian|treo|up\\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i";
 
 $plugin = OnlyofficePlugin::create();
 
-$isEnable = $plugin->get("enable_onlyoffice_plugin") === 'true';
+$isEnable = 'true' === $plugin->get('enable_onlyoffice_plugin');
 if (!$isEnable) {
-    die ("Document server isn't enabled");
+    exit("Document server isn't enabled");
+
     return;
 }
 
-$documentServerUrl = $plugin->get("document_server_url");
+$appSettings = new OnlyofficeAppsettings($plugin);
+$documentServerUrl = $appSettings->getDocumentServerUrl();
 if (empty($documentServerUrl)) {
-    die ("Document server isn't configured");
+    exit("Document server isn't configured");
+
     return;
 }
 
 $config = [];
-
-$docApiUrl = $documentServerUrl . "/web-apps/apps/api/documents/api.js";
-
-$docId = $_GET["docId"];
-$groupId = isset($_GET["groupId"]) && !empty($_GET["groupId"]) ? $_GET["groupId"] : null;
-
+$docApiUrl = $appSettings->getDocumentServerApiUrl();
+$docId = (int) $_GET['docId'];
+$groupId = isset($_GET['groupId']) && !empty($_GET['groupId']) ? (int) $_GET['groupId'] : (!empty($_GET['gidReq']) ? (int) $_GET['gidReq'] : null);
 $userId = api_get_user_id();
-
 $userInfo = api_get_user_info($userId);
-
 $sessionId = api_get_session_id();
 $courseId = api_get_course_int_id();
 $courseInfo = api_get_course_info();
-$courseCode = $courseInfo["code"];
-
-$docInfo = DocumentManager::get_document_data_by_id($docId, $courseCode, false, $sessionId);
-
-$extension = strtolower(pathinfo($docInfo["title"], PATHINFO_EXTENSION));
-
-$langInfo = LangManager::getLangUser();
-
-$docType = FileUtility::getDocType($extension);
-$key = FileUtility::getKey($courseCode, $docId);
-$fileUrl = FileUtility::getFileUrl($courseId, $userId, $docId, $sessionId, $groupId);
-
-$config = [
-    "type" => "desktop",
-    "documentType" => $docType,
-    "document" => [
-        "fileType" => $extension,
-        "key" => $key,
-        "title" => $docInfo["title"],
-        "url" => $fileUrl
-    ],
-    "editorConfig" => [
-        "lang" => $langInfo["isocode"],
-        "region" => $langInfo["isocode"],
-        "user" => [
-            "id" => strval($userId),
-            "name" => $userInfo["username"]
-        ],
-        "customization" => [
-            "goback" => [
-                "blank" => false,
-                "requestClose" => false,
-                "text" => get_lang("Back"),
-                "url" => FileUtility::getUrlToLocation($courseCode, $sessionId, $groupId, $docInfo["parent_id"])
-            ],
-            "compactHeader" => true,
-            "toolbarNoTabs" => true
-        ]
-    ]
-];
-
-$userAgent = $_SERVER["HTTP_USER_AGENT"];
-
-$isMobileAgent = preg_match(USER_AGENT_MOBILE, $userAgent);
-if ($isMobileAgent) {
-    $config["type"] = "mobile";
-}
-
-$isAllowToEdit = api_is_allowed_to_edit(true, true);
-$isMyDir = DocumentManager::is_my_shared_folder(
-    $userId,
-    $docInfo["absolute_parent_path"],
-    $sessionId
-);
-
-$isGroupAccess = false;
-if (!empty($groupId)) {
-    $groupProperties = GroupManager::get_group_properties($groupId);
-    $docInfoGroup = api_get_item_property_info(
-        api_get_course_int_id(),
-        "document",
-        $docId,
-        $sessionId
-    );
-    $isGroupAccess = GroupManager::allowUploadEditDocument(
-        $userId,
-        $courseCode,
-        $groupProperties,
-        $docInfoGroup
-    );
-
-    $isMemberGroup = GroupManager::is_user_in_group($userId, $groupProperties);
-
-    if (!$isGroupAccess) {
-        if (!$groupProperties["status"]) {
-            api_not_allowed(true);
-        }
-        if (!$isMemberGroup && $groupProperties["doc_state"] != 1) {
-            api_not_allowed(true);
-        }
-    }
-}
-
-$accessRights = $isAllowToEdit || $isMyDir || $isGroupAccess;
-$canEdit = in_array($extension, FileUtility::$can_edit_types);
-
-$isVisible = DocumentManager::check_visibility_tree($docId, $courseInfo, $sessionId, $userId, $groupId);
-$isReadonly = $docInfo["readonly"];
-
-if (!$isVisible) {
+if (empty($courseInfo)) {
     api_not_allowed(true);
 }
-
-if ($canEdit && $accessRights && !$isReadonly) {
-    $config["editorConfig"]["mode"] = "edit";
-    $config["editorConfig"]["callbackUrl"] = getCallbackUrl(
-        $docId,
-        $userId,
-        $courseId,
-        $sessionId,
-        $groupId
-    );
-} else {
-    $canView = in_array($extension, FileUtility::$can_view_types);
-    if ($canView) {
-        $config["editorConfig"]["mode"] = "view";
-    } else {
-        api_not_allowed(true);
-    }
+$courseCode = $courseInfo['code'];
+$docInfo = DocumentManager::get_document_data_by_id($docId, $courseCode, false, $sessionId);
+$langInfo = LangManager::getLangUser();
+$jwtManager = new OnlyofficeJwtManager($appSettings);
+if (isset($_GET['forceEdit']) && (bool) $_GET['forceEdit'] === true) {
+    $docInfo['forceEdit'] = $_GET['forceEdit'];
 }
-$config["document"]["permissions"]["edit"] = $accessRights && !$isReadonly;
+$documentManager = new OnlyofficeDocumentManager($appSettings, $docInfo);
+$extension = $documentManager->getExt($documentManager->getDocInfo('title'));
+$docType = $documentManager->getDocType($extension);
+$key = $documentManager->getDocumentKey($docId, $courseCode);
+$fileUrl = $documentManager->getFileUrl($docId);
 
-if (!empty($plugin->get("jwt_secret"))) {
-    $token = \Firebase\JWT\JWT::encode($config, $plugin->get("jwt_secret"));
-    $config["token"] = $token;
+if (!empty($appSettings->getStorageUrl())) {
+    $fileUrl = str_replace(api_get_path(WEB_PATH), $appSettings->getStorageUrl(), $fileUrl);
 }
 
-/**
- * Return callback url
- */
-function getCallbackUrl(int $docId, int $userId, int $courseId, int $sessionId, int $groupId = null): string
-{
-    $url = "";
+$configService = new OnlyofficeConfigService($appSettings, $jwtManager, $documentManager);
+$editorsMode = $configService->getEditorsMode();
+$config = $configService->createConfig($docId, $editorsMode, $_SERVER['HTTP_USER_AGENT']);
+$config = json_decode(json_encode($config), true);
+$isMobileAgent = $configService->isMobileAgent($_SERVER['HTTP_USER_AGENT']);
 
-    $data = [
-        "type" => "track",
-        "courseId" => $courseId,
-        "userId" => $userId,
-        "docId" => $docId,
-        "sessionId" => $sessionId
-    ];
-
-    if (!empty($groupId)) {
-        $data["groupId"] = $groupId;
-    }
-
-    $hashUrl = Crypt::GetHash($data);
-
-    return $url . api_get_path(WEB_PLUGIN_PATH) . "onlyoffice/callback.php?hash=" . $hashUrl;
+$showHeaders = true;
+$headerHeight = 'calc(100% - 140px)';
+if (!empty($_GET['nh'])) {
+    $showHeaders = false;
+    $headerHeight = '100%';
 }
 
 ?>
 <title>ONLYOFFICE</title>
 <style>
     #app > iframe {
-        height: calc(100% - 140px);
+        height: <?php echo $headerHeight; ?>;
     }
     body {
         height: 100%;
@@ -205,22 +90,22 @@ function getCallbackUrl(int $docId, int $userId, int $courseId, int $sessionId, 
         display: none;
     }
 </style>
-<script type="text/javascript" src=<?php echo $docApiUrl?>></script>
+<script type="text/javascript" src="<?php echo $docApiUrl; ?>"></script>
 <script type="text/javascript">
     var onAppReady = function () {
         innerAlert("Document editor ready");
     };
 
     var onRequestSaveAs = function (event) {
-        var url = <?php echo json_encode(api_get_path(WEB_PLUGIN_PATH))?> + "onlyoffice/ajax/saveas.php";
-        var folderId = <?php echo json_encode($docInfo["parent_id"])?>;
+        var url = <?php echo json_encode(api_get_path(WEB_PLUGIN_PATH)); ?> + "onlyoffice/ajax/saveas.php";
+        var folderId = <?php echo json_encode($docInfo['parent_id']); ?>;
         var saveData = {
             title: event.data.title,
             url: event.data.url,
             folderId: folderId ? folderId : 0,
-            sessionId: <?php echo json_encode($sessionId)?>,
-            courseId: <?php echo json_encode($courseId)?>,
-            groupId: <?php echo json_encode($groupId)?>
+            sessionId: <?php echo json_encode($sessionId); ?>,
+            courseId: <?php echo json_encode($courseId); ?>,
+            groupId: <?php echo json_encode($groupId); ?>
         };
 
         $.ajax(url, {
@@ -240,19 +125,23 @@ function getCallbackUrl(int $docId, int $userId, int $courseId, int $sessionId, 
         });
     };
 
-    var connectEditor = function () {
-        var config = <?php echo json_encode($config)?>;
+    var onRequestEditRights = function () {
+        location.href += "&forceEdit=true";
+    }
 
-        if ((config.document.fileType === "docxf" || config.document.fileType === "oform")
-            && DocsAPI.DocEditor.version().split(".")[0] < 7) {
-            <?php
-                echo Display::addFlash(
-                        Display::return_message(
-                            $plugin->get_lang("UpdateOnlyoffice"),
-                            "error"
-                        )
-                    ); 
-            ?>;
+    var connectEditor = function () {
+        var config = <?php echo json_encode($config); ?>;
+        var errorPage = <?php echo json_encode(api_get_path(WEB_PLUGIN_PATH).'onlyoffice/error.php'); ?>;
+
+        var docsVersion = DocsAPI.DocEditor.version().split(".");
+        if ((config.document.fileType === "pdf")
+            && docsVersion[0] < 8) {
+            window.location.href = errorPage + "?status=" + 1;
+            return;
+        }
+        if (docsVersion[0] < 6
+            || docsVersion[0] == 6 && docsVersion[1] == 0) {
+            window.location.href = errorPage + "?status=" + 2;
             return;
         }
 
@@ -264,11 +153,12 @@ function getCallbackUrl(int $docId, int $userId, int $courseId, int $sessionId, 
                             '</div>' +
                           '</div>');
 
-        var isMobileAgent = <?php echo json_encode($isMobileAgent)?>;
+        var isMobileAgent = <?php echo json_encode($isMobileAgent); ?>;
 
         config.events = {
             "onAppReady": onAppReady,
-            "onRequestSaveAs": onRequestSaveAs
+            "onRequestSaveAs": onRequestSaveAs,
+            "onRequestEditRights": onRequestEditRights
         };
 
         docEditor = new DocsAPI.DocEditor("iframeEditor", config);
@@ -288,4 +178,10 @@ function getCallbackUrl(int $docId, int $userId, int $courseId, int $sessionId, 
     }
 
 </script>
-<?php echo Display::display_header(); ?>
+<?php
+if ($showHeaders) {
+    echo Display::display_header();
+} else {
+    echo Display::display_reduced_header();
+}
+?>

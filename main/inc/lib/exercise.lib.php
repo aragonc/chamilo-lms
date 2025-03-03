@@ -3,6 +3,7 @@
 /* For licensing terms, see /license.txt */
 
 use Chamilo\CoreBundle\Component\Utils\ChamiloApi;
+use Chamilo\CoreBundle\Entity\Session as SessionEntity;
 use Chamilo\CoreBundle\Entity\TrackEExercises;
 use Chamilo\CourseBundle\Entity\CQuizQuestion;
 use ChamiloSession as Session;
@@ -2226,7 +2227,10 @@ HOTSPOT;
         $courseCode = '',
         $showSession = false,
         $searchAllTeacherCourses = false,
-        $status = 0
+        $status = 0,
+        $showAttemptsInSessions = false,
+        $questionType = 0,
+        $originPending = false
     ) {
         return self::get_exam_results_data(
             null,
@@ -2244,7 +2248,10 @@ HOTSPOT;
             false,
             false,
             $searchAllTeacherCourses,
-            $status
+            $status,
+            $showAttemptsInSessions,
+            $questionType,
+            $originPending
         );
     }
 
@@ -2531,7 +2538,10 @@ HOTSPOT;
         $roundValues = false,
         $getOnlyIds = false,
         $searchAllTeacherCourses = false,
-        $status = 0
+        $status = 0,
+        $showAttemptsInSessions = false,
+        $questionType = 0,
+        $originPending = false
     ) {
         //@todo replace all this globals
         global $filter;
@@ -2555,6 +2565,30 @@ HOTSPOT;
         $courseCondition = "c_id = $courseId";
         $statusCondition = '';
 
+        $exercisesFilter = '';
+        $exercises_where = '';
+
+        if ($questionType == 1) {
+            $TBL_EXERCISES_REL_QUESTION = Database::get_course_table(TABLE_QUIZ_TEST_QUESTION);
+            $TBL_EXERCISES_QUESTION = Database::get_course_table(TABLE_QUIZ_QUESTION);
+
+            $sqlExercise = "SELECT exercice_id
+                            FROM $TBL_EXERCISES_REL_QUESTION terq
+                            LEFT JOIN $TBL_EXERCISES_QUESTION teq
+                            ON terq.question_id = teq.iid
+                            WHERE teq.type in (".FREE_ANSWER.", ".ORAL_EXPRESSION.", ".ANNOTATION.", ".UPLOAD_ANSWER.")
+            ";
+
+            $resultExerciseIds = Database::query($sqlExercise);
+            $exercises = Database::store_result($resultExerciseIds, 'ASSOC');
+            $exerciseIds = [];
+            foreach ($exercises as $exercise) {
+                $exerciseIds[] = $exercise['exercice_id'];
+            }
+            $exercises_where = " AND te.exe_exo_id IN(".implode(',', $exerciseIds).")";
+            $exercisesFilter = " AND exe_exo_id IN(".implode(',', $exerciseIds).")";
+        }
+
         if (!empty($status)) {
             switch ($status) {
                 case 2:
@@ -2568,12 +2602,12 @@ HOTSPOT;
             }
         }
 
-        if (false === $searchAllTeacherCourses) {
+        if (false === $searchAllTeacherCourses && true === api_is_teacher()) {
             if (empty($courseInfo)) {
                 return [];
             }
-        } else {
-            $courses = CourseManager::get_courses_list_by_user_id(api_get_user_id(), false, false, false);
+        } elseif (false === api_is_platform_admin(true, false)) {
+            $courses = CourseManager::get_courses_list_by_user_id(api_get_user_id(), $showAttemptsInSessions, false, false);
 
             if (empty($courses)) {
                 return [];
@@ -2593,6 +2627,12 @@ HOTSPOT;
         $TBL_TRACK_EXERCICES = Database::get_main_table(TABLE_STATISTIC_TRACK_E_EXERCISES);
         $TBL_TRACK_HOTPOTATOES = Database::get_main_table(TABLE_STATISTIC_TRACK_E_HOTPOTATOES);
         $TBL_TRACK_ATTEMPT_RECORDING = Database::get_main_table(TABLE_STATISTIC_TRACK_E_ATTEMPT_RECORDING);
+        $TBL_ACCESS_URL_REL_SESSION = Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_SESSION);
+        $TBL_ACCESS_URL_REL_USER = Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_USER);
+
+        $currentUrl = api_get_current_access_url_id();
+        $te_access_url_session_filter = " te.session_id in (select session_id from $TBL_ACCESS_URL_REL_SESSION where access_url_id = $currentUrl)";
+        $te_access_url_user_filter = " te.exe_user_id in (select user_id from $TBL_ACCESS_URL_REL_USER where access_url_id = $currentUrl)";
 
         $session_id_and = '';
         $sessionCondition = '';
@@ -2606,14 +2646,6 @@ HOTSPOT;
             $sessionCondition = " AND ttte.session_id = 0";
         }
 
-        if (empty($sessionId) &&
-            api_get_configuration_value('show_exercise_session_attempts_in_base_course')
-        ) {
-            $session_id_and = '';
-            $sessionCondition = '';
-        }
-
-        $showAttemptsInSessions = api_get_configuration_value('show_exercise_attempts_in_all_user_sessions');
         if ($showAttemptsInSessions) {
             $sessions = SessionManager::get_sessions_by_general_coach(api_get_user_id());
             if (!empty($sessions)) {
@@ -2621,10 +2653,28 @@ HOTSPOT;
                 foreach ($sessions as $session) {
                     $sessionIds[] = $session['id'];
                 }
-                $session_id_and = " AND te.session_id IN(".implode(',', $sessionIds).")";
+                $session_id_and = " AND te.session_id IN(".implode(',', $sessionIds).") AND $te_access_url_session_filter";
                 $sessionCondition = " AND ttte.session_id IN(".implode(',', $sessionIds).")";
+            } elseif (empty($sessionId) &&
+                api_get_configuration_value('show_exercise_session_attempts_in_base_course')
+            ) {
+                $session_id_and = " AND (te.session_id = 0 OR $te_access_url_session_filter)";
+                $sessionCondition = "";
             } else {
                 return false;
+            }
+        } elseif (empty($sessionId) &&
+            api_get_configuration_value('show_exercise_session_attempts_in_base_course')
+        ) {
+            $session_id_and = " AND (te.session_id = 0 OR $te_access_url_session_filter)";
+            $sessionCondition = "";
+        }
+
+        if ((api_is_platform_admin() || true === api_is_session_admin()) && $originPending) {
+            $session_id_and = " AND (te.session_id = 0 OR $te_access_url_session_filter)";
+            $sessionCondition = "";
+            if (false !== $searchAllTeacherCourses) {
+                $courseCondition = "c_id is not null ";
             }
         }
 
@@ -2651,6 +2701,7 @@ HOTSPOT;
             WHERE
                 $courseCondition
                 $exerciseFilter
+                $exercisesFilter
                 $sessionCondition
             GROUP BY ttte.exe_id
         )";
@@ -2804,9 +2855,11 @@ HOTSPOT;
                 WHERE
                     te.$courseCondition
                     $session_id_and AND
+                    $te_access_url_user_filter AND
                     ce.active <> -1 AND
                     ce.$courseCondition
                     $exercise_where
+                    $exercises_where
                     $extra_where_conditions
                     $statusCondition
                 ";
@@ -5316,21 +5369,6 @@ EOT;
             );
         }
 
-        // Display text when test is finished #4074 and for LP #4227
-        // Allows to do a remove_XSS for end text result of exercise with
-        // user status COURSEMANAGERLOWSECURITY BT#20194
-        if (true === api_get_configuration_value('exercise_result_end_text_html_strict_filtering')) {
-            $endOfMessage = Security::remove_XSS($objExercise->getTextWhenFinished(), COURSEMANAGERLOWSECURITY);
-        } else {
-            $endOfMessage = Security::remove_XSS($objExercise->getTextWhenFinished());
-        }
-        if (!empty($endOfMessage)) {
-            echo Display::div(
-                $endOfMessage,
-                ['id' => 'quiz_end_message']
-            );
-        }
-
         $question_list_answers = [];
         $category_list = [];
         $loadChoiceFromSession = false;
@@ -5347,7 +5385,7 @@ EOT;
             $exerciseResult = Session::read('exerciseResult');
             $exerciseResultCoordinates = Session::read('exerciseResultCoordinates');
             $delineationResults = Session::read('hotspot_delineation_result');
-            $delineationResults = isset($delineationResults[$objExercise->iid]) ? $delineationResults[$objExercise->iid] : null;
+            $delineationResults = $delineationResults[$objExercise->iid] ?? null;
         }
 
         $countPendingQuestions = 0;
@@ -5362,8 +5400,8 @@ EOT;
                 $choice = null;
                 $delineationChoice = null;
                 if ($loadChoiceFromSession) {
-                    $choice = isset($exerciseResult[$questionId]) ? $exerciseResult[$questionId] : null;
-                    $delineationChoice = isset($delineationResults[$questionId]) ? $delineationResults[$questionId] : null;
+                    $choice = $exerciseResult[$questionId] ?? null;
+                    $delineationChoice = $delineationResults[$questionId] ?? null;
                 }
 
                 // We're inside *one* question. Go through each possible answer for this question
@@ -5566,6 +5604,22 @@ EOT;
             }
         }
 
+        // Display text when test is finished #4074 and for LP #4227
+        // Allows to do a remove_XSS for end text result of exercise with
+        // user status COURSEMANAGERLOWSECURITY BT#20194
+        $finishMessage = $objExercise->getFinishText($total_score, $total_weight);
+        if (true === api_get_configuration_value('exercise_result_end_text_html_strict_filtering')) {
+            $endOfMessage = Security::remove_XSS($finishMessage, COURSEMANAGERLOWSECURITY);
+        } else {
+            $endOfMessage = Security::remove_XSS($finishMessage);
+        }
+        if (!empty($endOfMessage)) {
+            echo Display::div(
+                $endOfMessage,
+                ['id' => 'quiz_end_message']
+            );
+        }
+
         $totalScoreText = null;
         $certificateBlock = '';
         if (($show_results || $show_only_score) && $showTotalScore) {
@@ -5739,6 +5793,13 @@ EOT;
             $total_weight
         );
 
+        if ($save_user_result
+            && !$passed
+            && true === api_get_configuration_value('exercise_subscribe_session_when_finished_failure')
+        ) {
+            self::subscribeSessionWhenFinishedFailure($objExercise->iid);
+        }
+
         $percentage = 0;
         if (!empty($total_weight)) {
             $percentage = ($total_score / $total_weight) * 100;
@@ -5757,6 +5818,26 @@ EOT;
             'total_percentage' => $percentage,
             'count_pending_questions' => $countPendingQuestions,
         ];
+    }
+
+    public static function getSessionWhenFinishedFailure(int $exerciseId): ?SessionEntity
+    {
+        $objExtraField = new ExtraField('exercise');
+        $objExtraFieldValue = new ExtraFieldValue('exercise');
+
+        $subsSessionWhenFailureField = $objExtraField->get_handler_field_info_by_field_variable(
+            'subscribe_session_when_finished_failure'
+        );
+        $subsSessionWhenFailureValue = $objExtraFieldValue->get_values_by_handler_and_field_id(
+            $exerciseId,
+            $subsSessionWhenFailureField['id']
+        );
+
+        if (!empty($subsSessionWhenFailureValue['value'])) {
+            return api_get_session_entity((int) $subsSessionWhenFailureValue['value']);
+        }
+
+        return null;
     }
 
     /**
@@ -7320,5 +7401,19 @@ EOT;
         }
 
         return false;
+    }
+
+    private static function subscribeSessionWhenFinishedFailure(int $exerciseId): void
+    {
+        $failureSession = self::getSessionWhenFinishedFailure($exerciseId);
+
+        if ($failureSession) {
+            SessionManager::subscribeUsersToSession(
+                $failureSession->getId(),
+                [api_get_user_id()],
+                SESSION_VISIBLE_READ_ONLY,
+                false
+            );
+        }
     }
 }

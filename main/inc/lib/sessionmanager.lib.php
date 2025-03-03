@@ -491,7 +491,7 @@ class SessionManager
 
         $userId = (int) $userId;
 
-	if (!api_is_platform_admin() && !api_is_session_admin() && !api_is_teacher()) {
+        if (!api_is_platform_admin() && !api_is_session_admin() && !api_is_teacher()) {
             api_not_allowed(true);
         }
 
@@ -4905,13 +4905,9 @@ class SessionManager
     }
 
     /**
-     * @param int $courseId
-     *
-     * @return array
-     *
      * @todo Add param to get only active sessions (not expires ones)
      */
-    public static function get_session_by_course($courseId)
+    public static function get_session_by_course(int $courseId, ?string $startDate = null, ?string $endDate = null): array
     {
         $table_session_course = Database::get_main_table(TABLE_MAIN_SESSION_COURSE);
         $table_session = Database::get_main_table(TABLE_MAIN_SESSION);
@@ -4923,15 +4919,25 @@ class SessionManager
             return [];
         }
 
+        $dateCondition = '';
+        if ($startDate && $endDate) {
+            $dateCondition .= "AND (s.display_start_date BETWEEN '$startDate' AND '$endDate' OR s.display_end_date BETWEEN '$startDate' AND '$endDate') ";
+        } elseif ($startDate) {
+            $dateCondition .= "AND s.display_start_date >= '$startDate' ";
+        } elseif ($endDate) {
+            $dateCondition .= "AND s.display_end_date <= '$endDate' ";
+        }
+
         $sql = "SELECT name, s.id
-                FROM $table_session_course sc
-                INNER JOIN $table_session s
-                ON (sc.session_id = s.id)
-                INNER JOIN $url u
-                ON (u.session_id = s.id)
-                WHERE
-                    u.access_url_id = $urlId AND
-                    sc.c_id = '$courseId' ";
+            FROM $table_session_course sc
+            INNER JOIN $table_session s
+            ON (sc.session_id = s.id)
+            INNER JOIN $url u
+            ON (u.session_id = s.id)
+            WHERE
+                u.access_url_id = $urlId AND
+                sc.c_id = '$courseId'
+                $dateCondition";
         $result = Database::query($sql);
 
         return Database::store_result($result);
@@ -5078,7 +5084,7 @@ class SessionManager
                     }
                 }
 
-                $session_name = $enreg['SessionName'];
+                $session_name = trim(trim(api_utf8_decode($enreg['SessionName']), '"'));
 
                 if ($debug) {
                     $logger->addInfo('---------------------------------------');
@@ -5530,6 +5536,7 @@ class SessionManager
                     }
                 }
 
+                $position = 0;
                 foreach ($courses as $course) {
                     $courseArray = bracketsToArray($course);
                     $course_code = $courseArray[0];
@@ -5540,7 +5547,7 @@ class SessionManager
 
                         // Adding the course to a session.
                         $sql = "INSERT IGNORE INTO $tbl_session_course
-                                SET c_id = '$courseId', session_id='$session_id'";
+                                SET c_id = '$courseId', session_id='$session_id', position = '$position'";
                         Database::query($sql);
 
                         self::installCourse($session_id, $courseInfo['real_id']);
@@ -5928,6 +5935,7 @@ class SessionManager
                             }
                         }
                         $inserted_in_course[$course_code] = $courseInfo['title'];
+                        $position++;
                     }
                 }
                 $access_url_id = api_get_current_access_url_id();
@@ -8079,16 +8087,31 @@ class SessionManager
 
         $form->addElement('checkbox', 'show_description', null, get_lang('ShowDescription'));
 
+        $visibilityOptions = [
+            SESSION_VISIBLE_READ_ONLY => get_lang('SessionReadOnly'),
+            SESSION_VISIBLE => get_lang('SessionAccessible'),
+            SESSION_INVISIBLE => api_ucfirst(get_lang('SessionNotAccessible')),
+        ];
+
+        $visibilityOptionsConfiguration = api_get_configuration_value('session_visibility_after_end_date_options_configuration');
+        if (!empty($visibilityOptionsConfiguration)) {
+            foreach ($visibilityOptionsConfiguration['visibility_options_to_hide'] as $option) {
+                $option = trim($option);
+                if (defined($option)) {
+                    $constantValue = constant($option);
+                    if (isset($visibilityOptions[$constantValue])) {
+                        unset($visibilityOptions[$constantValue]);
+                    }
+                }
+            }
+        }
+
         $visibilityGroup = [];
         $visibilityGroup[] = $form->createElement(
             'select',
             'session_visibility',
             null,
-            [
-                SESSION_VISIBLE_READ_ONLY => get_lang('SessionReadOnly'),
-                SESSION_VISIBLE => get_lang('SessionAccessible'),
-                SESSION_INVISIBLE => api_ucfirst(get_lang('SessionNotAccessible')),
-            ]
+            $visibilityOptions
         );
         $form->addGroup(
             $visibilityGroup,
