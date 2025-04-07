@@ -505,7 +505,7 @@ class PortfolioController
             $form->applyFilter('title', 'trim');
         }
         $editorConfig = [
-            'ToolbarSet' => 'NotebookStudent',
+            'ToolbarSet' => 'Documents',
             'Width' => '100%',
             'Height' => '400',
             'cols-size' => [2, 10, 0],
@@ -661,7 +661,7 @@ class PortfolioController
                 });
                 $(\'#add_portfolio_template\').on(\'change\', function () {
                     $(\'#portfolio-spinner\').show();
-                
+
                     $.getJSON(_p.web_ajax + \'portfolio.ajax.php?a=find_template&item=\' + this.value)
                         .done(function(response) {
                             if (CKEDITOR.instances.title) {
@@ -757,7 +757,7 @@ class PortfolioController
             }
         }
         $editorConfig = [
-            'ToolbarSet' => 'NotebookStudent',
+            'ToolbarSet' => 'Documents',
             'Width' => '100%',
             'Height' => '400',
             'cols-size' => [2, 10, 0],
@@ -1203,12 +1203,18 @@ class PortfolioController
             ;
         }
 
-        $comments = $commentsQueryBuilder
-            ->orderBy('comment.root, comment.lft', 'ASC')
-            ->setParameter('item', $item)
-            ->getQuery()
-            ->getArrayResult()
-        ;
+        if (true === api_get_configuration_value('portfolio_show_base_course_post_in_sessions')
+            && $this->session && !$item->getSession() && !$item->isDuplicatedInSession($this->session)
+        ) {
+            $comments = [];
+        } else {
+            $comments = $commentsQueryBuilder
+                ->orderBy('comment.root, comment.lft', 'ASC')
+                ->setParameter('item', $item)
+                ->getQuery()
+                ->getArrayResult()
+            ;
+        }
 
         $clockIcon = Display::returnFontAwesomeIcon('clock-o', '', true);
 
@@ -3762,6 +3768,9 @@ class PortfolioController
         $currentUserId = api_get_user_id();
 
         if ($this->course) {
+            $showBaseContentInSession = $this->session
+                && true === api_get_configuration_value('portfolio_show_base_course_post_in_sessions');
+
             $queryBuilder = $this->em->createQueryBuilder();
             $queryBuilder
                 ->select('pi')
@@ -3771,7 +3780,9 @@ class PortfolioController
             $queryBuilder->setParameter('course', $this->course);
 
             if ($this->session) {
-                $queryBuilder->andWhere('pi.session = :session');
+                $queryBuilder->andWhere(
+                    $showBaseContentInSession ? 'pi.session = :session OR pi.session IS NULL' : 'pi.session = :session'
+                );
                 $queryBuilder->setParameter('session', $this->session);
             } else {
                 $queryBuilder->andWhere('pi.session IS NULL');
@@ -3894,6 +3905,15 @@ class PortfolioController
             $queryBuilder->orderBy('pi.creationDate', 'DESC');
 
             $items = $queryBuilder->getQuery()->getResult();
+
+            if ($showBaseContentInSession) {
+                $items = array_filter(
+                    $items,
+                    fn (Portfolio $item) => !($this->session && !$item->getSession() && $item->isDuplicatedInSession($this->session))
+                );
+            }
+
+            return $items;
         } else {
             $itemsCriteria = [];
             $itemsCriteria['category'] = null;
@@ -3954,6 +3974,20 @@ class PortfolioController
         $form->addButtonSave(get_lang('Save'));
 
         if ($form->validate()) {
+            if ($this->session
+                && true === api_get_configuration_value('portfolio_show_base_course_post_in_sessions')
+                && !$item->getSession()
+            ) {
+                $duplicate = $item->duplicateInSession($this->session);
+
+                $this->em->persist($duplicate);
+                $this->em->flush();
+
+                $item = $duplicate;
+
+                $formAction = $this->baseUrl.http_build_query(['action' => 'view', 'id' => $item->getId()]);
+            }
+
             $values = $form->exportValues();
 
             $parentComment = $this->em->find(PortfolioComment::class, $values['parent']);
@@ -3994,7 +4028,7 @@ class PortfolioController
             $(function() {
                 $(\'#frm_comment_template\').on(\'change\', function () {
                     $(\'#portfolio-spinner\').show();
-                
+
                     $.getJSON(_p.web_ajax + \'portfolio.ajax.php?a=find_template_comment&comment=\' + this.value)
                         .done(function(response) {
                             CKEDITOR.instances.content.setData(response.content);
@@ -4094,7 +4128,7 @@ class PortfolioController
             $origin = $em->find(Portfolio::class, $item->getOrigin());
 
             if ($origin) {
-                $originContent = $origin->getContent();
+                $originContent = Security::remove_XSS($origin->getContent());
                 $originContentFooter = vsprintf(
                     get_lang('OriginallyPublishedAsXTitleByYUser'),
                     [
@@ -4107,7 +4141,7 @@ class PortfolioController
             $origin = $em->find(PortfolioComment::class, $item->getOrigin());
 
             if ($origin) {
-                $originContent = $origin->getContent();
+                $originContent = Security::remove_XSS($origin->getContent());
                 $originContentFooter = vsprintf(
                     get_lang('OriginallyCommentedByXUserInYItem'),
                     [
