@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="64"
+   height="64"
+   viewBox="0 0 16.933333 16.933334"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.5 (0.92.5+68)"
+   sodipodi:docname="session.svg">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="3.9048766"
+     inkscape:cx="78.546697"
+     inkscape:cy="10.915263"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     units="px"
+     inkscape:window-width="1920"
+     inkscape:window-height="1016"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Capa 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-280.06665)">
+    <g
+       id="g833"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g835"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g837"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g839"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g841"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g843"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g845"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g847"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g849"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g851"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g853"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g855"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g857"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g859"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g861"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <rect
+       style="opacity:0;fill:#b2f0fb;fill-opacity:1;stroke:none;stroke-width:0.47929367;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:0.47929366, 0.95858734;stroke-dashoffset:0;stroke-opacity:0.98360656;paint-order:stroke fill markers"
+       id="rect954"
+       width="16.933332"
+       height="16.933332"
+       x="-0.012357161"
+       y="280.35983"
+       inkscape:export-filename="/var/www/chamilo11/app/Resources/public/css/themes/colegio/icons/48/session.png"
+       inkscape:export-xdpi="72.000008"
+       inkscape:export-ydpi="72.000008" />
+    <g
+       id="g947"
+       transform="matrix(1.2198045,0,0,1.2198045,-1.8549444,-63.405245)"
+       inkscape:export-filename="/var/www/chamilo11/app/Resources/public/css/themes/colegio/icons/48/session.png"
+       inkscape:export-xdpi="72"
+       inkscape:export-ydpi="72">
+      <path
+         inkscape:export-ydpi="72.000008"
+         inkscape:export-xdpi="72.000008"
+         inkscape:export-filename="/var/www/chamilo11/app/Resources/public/css/themes/colegio/icons/48/blackboard.png"
+         inkscape:connector-curvature="0"
+         d="M 13.681081,291.76316 H 3.1970543 v -6.21278 H 13.681081 Z m 0.3883,0.7766 H 2.8087573 v -0.3883 H 14.069381 Z m -5.6303129,0.7766 a 0.58244594,0.58244594 0 0 1 -0.5474993,-0.3883 h 1.0949983 a 0.58244594,0.58244594 0 0 1 -0.547499,0.3883 z M 2.8087573,284.77379 H 14.069381 v 0.38829 H 2.8087573 Z m 5.6303108,-0.7766 a 0.58244594,0.58244594 0 0 1 0.547499,0.3883 H 7.8915688 a 0.58244594,0.58244594 0 0 1 0.5474993,-0.3883 z m 5.8244619,1.55319 c 0.107228,0 0.194149,-0.087 0.194148,-0.19411 v -0.77659 c 1e-6,-0.10722 -0.08693,-0.19419 -0.194148,-0.19419 H 9.3903965 c -0.2105214,-1.03673 -1.6921358,-1.03673 -1.9026571,0 H 2.6146082 c -0.1072266,0 -0.194149,0.087 -0.1941487,0.19419 v 0.77659 c -3e-7,0.10724 0.086923,0.19411 0.1941487,0.19411 h 0.1941491 v 6.21278 H 2.6146082 c -0.1072266,0 -0.194149,0.087 -0.1941487,0.19415 v 0.77659 c -3e-7,0.10722 0.086923,0.19416 0.1941487,0.19416 H 7.4877394 9.3903965 14.26353 c 0.107228,0 0.194149,-0.087 0.194148,-0.19416 v -0.77659 c 1e-6,-0.10722 -0.08693,-0.19415 -0.194148,-0.19415 h -0.194149 v -6.21278 z"
+         style="fill:#3f6ad8;fill-opacity:1;stroke-width:0.19414866"
+         id="path879" />
+      <path
+         inkscape:export-ydpi="72.000008"
+         inkscape:export-xdpi="72.000008"
+         inkscape:export-filename="/var/www/chamilo11/app/Resources/public/css/themes/colegio/icons/48/blackboard.png"
+         inkscape:connector-curvature="0"
+         id="path903"
+         d="m 8.5360371,286.32894 a 2.329784,2.329784 0 0 0 -2.4269088,2.32786 2.329784,2.329784 0 0 0 2.3298004,2.3298 2.329784,2.329784 0 0 0 0.097108,-4.65766 z m -0.6709559,0.96912 a 0.19414865,0.19414865 0 0 1 0.1081936,0.0386 l 1.5529454,1.1649 a 0.19414865,0.19414865 0 0 1 0,0.31042 l -1.5529454,1.1649 a 0.19414865,0.19414865 0 0 1 -0.116605,0.0391 0.17667527,0.17667527 0 0 1 -0.087548,-0.0215 0.19414865,0.19414865 0 0 1 -0.1066652,-0.1728 v -2.3298 a 0.19414865,0.19414865 0 0 1 0.1066652,-0.17277 0.19414865,0.19414865 0 0 1 0.095959,-0.0212 z"
+         style="fill:#3f6ad8;fill-opacity:1;stroke-width:0.19414866" />
+    </g>
+  </g>
+</svg>
