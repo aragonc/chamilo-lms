@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="64"
+   height="64"
+   viewBox="0 0 16.933333 16.933334"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.5 (0.92.5+68)"
+   sodipodi:docname="course_progress.svg">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="5.5223297"
+     inkscape:cx="87.240923"
+     inkscape:cy="16.318804"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     units="px"
+     inkscape:window-width="1600"
+     inkscape:window-height="863"
+     inkscape:window-x="1920"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Capa 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-280.06665)">
+    <g
+       id="g833"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g835"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g837"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g839"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g841"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g843"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g845"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g847"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g849"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g851"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g853"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g855"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g857"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g859"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <g
+       id="g861"
+       transform="matrix(0.03065839,0,0,0.03065839,0.68315186,280.64757)" />
+    <rect
+       style="opacity:0;fill:#b2f0fb;fill-opacity:1;stroke:none;stroke-width:0.47929367;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:0.47929366, 0.95858734;stroke-dashoffset:0;stroke-opacity:0.98360656;paint-order:stroke fill markers"
+       id="rect954"
+       width="16.933332"
+       height="16.933332"
+       x="0.070357636"
+       y="280.25"
+       inkscape:export-filename="/var/www/chamilo11/app/Resources/public/css/themes/colegio/icons/64/course_progress.png"
+       inkscape:export-xdpi="96.000008"
+       inkscape:export-ydpi="96.000008" />
+    <path
+       inkscape:connector-curvature="0"
+       d="m 14.917011,287.28486 c -0.02607,-0.0592 -0.07463,-0.1056 -0.134893,-0.12901 l -0.992516,-0.38539 0.570643,-1.46956 c 0.02341,-0.0603 0.0219,-0.12743 -0.0042,-0.18662 -0.02607,-0.0592 -0.07463,-0.1056 -0.134893,-0.12901 l -1.527211,-0.59303 v -0.72161 c 0,-0.16463 -0.03219,-0.32437 -0.09587,-0.4746 -0.06146,-0.14536 -0.149502,-0.27559 -0.261445,-0.38754 -0.111943,-0.11194 -0.242178,-0.19998 -0.387534,-0.26144 -0.150209,-0.0637 -0.309954,-0.0959 -0.474577,-0.0959 H 2.6946652 c -0.064142,0 -0.1270643,0.0261 -0.172427,0.0715 -0.045387,0.0454 -0.071458,0.10828 -0.071458,0.17243 v 11.99916 c 0,0.0641 0.026071,0.12707 0.071458,0.17243 0.045387,0.0454 0.1082851,0.0715 0.172427,0.0715 h 8.7798778 c 0.164623,0 0.324368,-0.0322 0.474601,-0.0958 0.145356,-0.0615 0.275591,-0.14926 0.387534,-0.26144 0.111944,-0.11195 0.199987,-0.24218 0.261446,-0.38754 0.06365,-0.15023 0.09585,-0.30998 0.09585,-0.4746 v -0.33803 c 0,-0.13438 -0.109505,-0.24388 -0.243886,-0.24388 -0.134381,0 -0.243641,0.10926 -0.243885,0.24364 v 2.4e-4 0.33803 c -7.32e-4,0.40266 -0.329002,0.73092 -0.731657,0.73166 H 3.9140927 v -11.5114 h 7.5604503 c 0.402655,7.3e-4 0.730925,0.329 0.731657,0.73166 v 7.51509 c 0,0.13462 0.109504,0.24388 0.243885,0.24388 0.134381,0 0.243886,-0.10926 0.243886,-0.24388 v -0.31147 l 0.559839,0.2174 c 0.02902,0.0113 0.05887,0.0166 0.08824,0.0166 0.09768,0 0.189913,-0.0591 0.227398,-0.15567 l 1.351736,-3.4811 c 0.02341,-0.0603 0.02192,-0.12743 -0.0042,-0.18663 z m -11.4906893,7.16551 h -0.487771 v -11.5114 h 0.487771 z m 9.2676493,-9.53488 1.123312,0.43619 -0.482357,1.24221 -0.640955,-0.24889 z m 0.509062,5.63317 -0.509062,-0.19767 v -3.48273 l 1.684249,0.654 z"
+       id="path2907"
+       style="stroke-width:0.02438855;fill:#3f6ad8;fill-opacity:1"
+       inkscape:export-filename="/var/www/chamilo11/app/Resources/public/css/themes/colegio/icons/64/course_progress.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
+    <circle
+       cx="12.450086"
+       cy="292.2832"
+       r="0.2438855"
+       id="circle2909"
+       style="stroke-width:0.02438855;fill:#3f6ad8;fill-opacity:1"
+       inkscape:export-filename="/var/www/chamilo11/app/Resources/public/css/themes/colegio/icons/64/course_progress.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
+    <g
+       aria-label="a"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.86800241px;line-height:1.25;font-family:Laksaman;-inkscape-font-specification:'Laksaman, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#3f6ad8;fill-opacity:1;stroke:none;stroke-width:0.42149451"
+       id="text2931"
+       inkscape:export-filename="/var/www/chamilo11/app/Resources/public/css/themes/colegio/icons/64/course_progress.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
+      <path
+         d="m 7.4114277,290.54808 q -0.6058362,0 -1.0149724,-0.33046 -0.4091361,-0.33045 -0.4091361,-0.88121 0,-1.49492 2.6908568,-1.53426 -0.11802,-0.88909 -0.9756323,-0.88909 -0.6530442,0 -1.4083724,0.29112 l -0.07868,-0.66878 q 0.8025362,-0.23604 1.5263925,-0.23604 1.6758845,0 1.6758845,1.72309 v 1.33756 q 0,0.44848 0.165228,1.03858 l -0.6923842,0.14949 -0.11802,-0.52716 q -0.6137042,0.52716 -1.3611644,0.52716 z m 1.2667483,-1.38477 v -0.71599 q -1.9355285,0.0393 -1.9355285,0.81827 0,0.62945 0.7002522,0.62945 0.4091361,0 0.8182722,-0.21244 0.4170041,-0.22031 0.4170041,-0.51929 z"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.86800241px;font-family:Laksaman;-inkscape-font-specification:'Laksaman, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;stroke-width:0.42149451;fill:#3f6ad8;fill-opacity:1"
+         id="path832" />
+    </g>
+  </g>
+</svg>

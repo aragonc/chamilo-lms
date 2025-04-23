@@ -1,0 +1,215 @@
+:root {
+    --primary-color: #008AD1;
+    --success-color: #95AD0F;
+    --bgcolor : #F5EED0;
+    --colortext : #1760A7;
+    --colorblack : #323232;
+}
+
+body {
+    margin: 0;
+    line-height: 1.5;
+    color: #212529;
+    background-color: #fff;
+    font-family: 'Oxygen', sans-serif;
+}
+.custompage .limiter {
+    width: 100%;
+    margin: 0 auto;
+}
+.custompage .container-login {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    background: url(images/background.png) top center;
+    background-size: cover;
+}
+.custompage .wrap-login {
+    background: #fff;
+    border-radius: 10px;
+    padding: 0;
+    box-shadow: 0 12px 26px rgba(16, 30, 115, 0.23);
+}
+.custompage .padding-login {
+    padding: 10px 30px;
+    background: #FFFFFF;
+}
+.custompage .width-login {
+    width: 750px;
+    height: 590px;
+}
+.custompage .width-register {
+    width: 700px;
+    padding: 30px 35px;
+}
+.custompage h3.title {
+    font-weight: 900;
+    font-size: 30px;
+    color: var(--colorblack);
+    padding: 1rem 0;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+.custompage label {
+    color: #486F88;
+    font-weight: 400;
+}
+.custompage #vegas{
+    width: 100%;
+    min-height: 500px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    background: var(--bgcolor);;
+}
+.custompage #vegas .logo{
+    padding: 1rem 0;
+}
+.custompage #vegas .description{
+    padding: 1rem 2rem;
+    text-align: center;
+    color: var(--colortext);
+    font-size: 16px;
+}
+.custompage .form-control{
+    border: 2px solid #B3C8D7;
+}
+.custompage .last-password {
+    padding: 0;
+    text-align: left;
+    margin-bottom: 2rem;
+}
+.custompage .last-password a{
+   font-size: 12px;
+    color: var(--primary-color);
+}
+.custompage .form-control{
+    padding: 20px 12px;
+    border-radius: 10px;
+}
+.custompage .btn-primary {
+    color: #fff;
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);;
+    font-weight: bold;
+    padding-top: 1.3rem;
+    padding-bottom: 1.3rem;
+    border-radius: 10px;
+}
+.custompage .btn-success {
+    color: var(--success-color);;
+    background-color: var(--white);
+    border-color: var(--success-color);
+    font-weight: bold;
+    padding-top: 1.3rem;
+    padding-bottom: 1.3rem;
+    border-radius: 10px;
+}
+.custompage .btn-success:hover{
+    background-color: var(--success-color);
+    color: #FFF;
+}
+.custompage .width-lost-password {
+    width: 750px;
+    height: 440px;
+}
+.custompage .message{
+    font-size: 12px;
+    padding: 2rem 0;
+    text-align: center;
+}
+.custompage .software-name {
+    text-align: center;
+    padding: 1rem 0;
+    margin-top: 1rem;
+    display: inline-block;
+    width: 100%;
+    font-size: 12px;
+}
+.custompage .row{
+    margin-bottom: 0;
+}
+.custompage .title-lost-password{
+    font-size: 25px;
+    font-weight: bold;
+}
+.custompage .width-lost-password #vegas{
+    min-height: 440px;
+}
+.custompage .width-lost-password .padding-login {
+    padding: 3rem;
+}
+.custompage .help-block{
+    font-size: 12px;
+    padding: 1rem 0;
+    text-align: center;
+    margin: 0;
+}
+.custompage .label-text-login{
+    padding: 1rem 0;
+    font-weight: bold;
+    color: var(--colorblack);
+}
+.custompage .logo-register a{
+    text-align: center;
+    display: inherit;
+}
+.width-register .help-block{
+    text-align: left;
+}
+.width-register .panel-user{
+    background-color: #95AD0F !important;
+    color: #FFFFFF;
+}
+.width-register .panel-user .panel-title{
+    font-weight: bold;
+    text-transform: uppercase;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+.width-register .form-control.bootstrap-select{
+    padding: 0;
+}
+.custompage .form-control.bootstrap-select{
+    padding: 0;
+}
+.custompage .bootstrap-select.form-control{
+    border: 0;
+}
+.custompage .form-control.bootstrap-select .dropdown-toggle.btn-default {
+    border: 2px solid #B3C8D7;
+    padding: 10px 12px;
+}
+.width-register .form-group label{
+    display: inline-block;
+    width: 100%;
+    font-weight: bold;
+}
+.width-register .form-group .form-control{
+    display: inline-block;
+    width: 100%;
+}
+.width-register .form-inline .form-group{
+    width: 100%;
+}
+/* Landscape phones and down */
+@media (max-width: 480px) {
+    .custompage #vegas{
+        border-radius: 0;
+    }
+    .custompage .width-login{
+        width: 350px;
+        height: 100%;
+    }
+    .custompage .width-lost-password{
+        width: 350px;
+        height: 100%;
+    }
+}
