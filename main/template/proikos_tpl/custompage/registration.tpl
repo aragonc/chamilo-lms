@@ -140,8 +140,8 @@
         $('#registration-two_headquarters').prop('required', true);
     });
 
-    const rucCompany  = document.querySelector('input[name="ruc_company"]');
-    const searchCompanyByRuc = function(ruc) {
+    const rucCompany = document.querySelector('input[name="ruc_company"]');
+    const searchCompanyByRuc = function (ruc) {
         let urlCampus = '{{_p.web}}';
         let urlGetCompanyByRuc = urlCampus + 'plugin/proikos/src/ajax.php?action=get_company_by_ruc';
 
@@ -151,8 +151,9 @@
             data: { ruc },
             dataType: 'json',
             success: function(response) {
-               const { name_company } = response;
-               document.querySelector('input[name="name_company"]').value = (name_company ?? '');
+                const { name_company } = response;
+                document.querySelector('input[name="name_company"]').value = (name_company ?? '');
+                document.querySelector('input[name="name_company"]').readOnly = !!name_company;
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 console.log("Error: " + errorThrown);
@@ -165,6 +166,9 @@
         const doneTypingInterval = 500;
 
         rucCompany.addEventListener('input', function () {
+            // only numbers
+            this.value = this.value.replace(/[^0-9]/g, '');
+
             if (typingTimer) {
                 clearTimeout(typingTimer);
             }
