@@ -140,4 +140,43 @@
         $('#registration-two_headquarters').prop('required', true);
     });
 
+    const rucCompany  = document.querySelector('input[name="ruc_company"]');
+    const searchCompanyByRuc = function(ruc) {
+        let urlCampus = '{{_p.web}}';
+        let urlGetCompanyByRuc = urlCampus + 'plugin/proikos/src/ajax.php?action=get_company_by_ruc';
+
+        $.ajax({
+            type: 'POST',
+            url: urlGetCompanyByRuc,
+            data: { ruc },
+            dataType: 'json',
+            success: function(response) {
+               const { name_company } = response;
+               document.querySelector('input[name="name_company"]').value = (name_company ?? '');
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.log("Error: " + errorThrown);
+            }
+        });
+    }
+
+    if (rucCompany) {
+        let typingTimer = null;
+        const doneTypingInterval = 500;
+
+        rucCompany.addEventListener('input', function () {
+            if (typingTimer) {
+                clearTimeout(typingTimer);
+            }
+
+            const ruc = this.value?.trim();
+
+            if (ruc.length >= 11) {
+                typingTimer = setTimeout(function() {
+                    searchCompanyByRuc(ruc);
+                }, doneTypingInterval);
+            }
+        });
+    }
+
 </script>
