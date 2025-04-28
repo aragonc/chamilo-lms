@@ -9759,6 +9759,7 @@ function api_mail_html(
         $mail->DKIM_private = api_get_mail_configuration_value('DKIM_PRIVATE_KEY');
     }
 
+
     // Send the mail message.
     $sent = $mail->Send();
     if (!$sent) {
