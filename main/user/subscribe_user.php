@@ -907,41 +907,19 @@ function reg_filter($user_id)
     }
     $user_id = (int) $user_id;
 
-    $downloadCertificadoExternoButton = '';
-    $downloadDJButton = '';
+    $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+    $extraActions = '';
 
-    $isPTRACourse = isset($_GET['cidReq']) && $_GET['cidReq'] === 'PTRA';
-    if ($isPTRACourse) {
-        $baseUploadDir = api_get_path(SYS_APP_PATH) . 'upload/proikos_user_documents/';
-        $userCourseDir = $baseUploadDir . $user_id . '/' . $_GET['cidReq'];
-        $userCertificadoExterno = $userCourseDir . '/certificado_externo.*';
-        $userDeclaracionJurada = $userCourseDir . '/declaracion_jurada.*';
-
-        if (!empty(glob($userCertificadoExterno))) {
-            $downloadLink = glob($userCertificadoExterno)[0];
-            $filename = basename($downloadLink);
-            $downloadUrl = api_get_path(WEB_PATH) . 'plugin/proikos/src/ajax.php?action=download_user_uploaded_documents&user_id=' . $user_id
-                . '&course_code=' . urlencode($_GET['cidReq'])
-                . '&filename=' . urlencode($filename);
-            $downloadCertificadoExternoButton = '<a class="btn btn-small btn-default" style="margin-left: 8px;" href="' . $downloadUrl . '">'.
-                get_lang("Certificado Externo").'</a>';
-        }
-
-        if (!empty(glob($userDeclaracionJurada))) {
-            $downloadLink = glob($userDeclaracionJurada)[0];
-            $filename = basename($downloadLink);
-            $downloadUrl = api_get_path(WEB_PATH) . 'plugin/proikos/src/ajax.php?action=download_user_uploaded_documents&user_id=' . $user_id
-                . '&course_code=' . urlencode($_GET['cidReq'])
-                . '&filename=' . urlencode($filename);
-            $downloadDJButton = '<a class="btn btn-small btn-default" style="margin-left: 8px;" href="' . $downloadUrl . '">'.
-                get_lang("Declaración Jurada").'</a>';
-        }
+    if ($allowProikos) {
+        $proikosPlugin = ProikosPlugin::create();
+        $SpecificCourseFeature = $proikosPlugin->getSpecificCourseFeature();
+        $extraActions = ($SpecificCourseFeature->get_actions)($user_id);
     }
 
     $result = '<a class="btn btn-small btn-primary" href="'.api_get_self().'?'.api_get_cidreq().'&register=yes&type='.$type.'&user_id='.$user_id.'">'.
         get_lang("reg").'</a>';
 
-    return $result . $downloadCertificadoExternoButton . $downloadDJButton;
+    return $result . $extraActions;
 }
 
 /**

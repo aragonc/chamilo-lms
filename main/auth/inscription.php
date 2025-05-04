@@ -81,27 +81,24 @@ if (CustomPages::enabled() && CustomPages::exists(CustomPages::REGISTRATION)) {
 
 $action = '';
 $formAttributes = [];
-$isPTRACourse = isset($_GET['c']) && $_GET['c'] === 'PTRA';
-$requireUploadMapFiles = !empty($_POST) && (
-        empty($_FILES['user_attachment_cert_ext']['tmp_name']) ||
-        empty($_FILES['user_attachment_dj']['tmp_name'])
-    );
 
-if ($isPTRACourse) {
-    $action = api_get_self() . '?c=' . Security::remove_XSS($_GET['c']) . '&e=' . Security::remove_XSS($_GET['e']);
-    $formAttributes = [
-        'enctype' => 'multipart/form-data',
-    ];
+$allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+if ($allowProikos) {
+    $proikosPlugin = ProikosPlugin::create();
+    $SpecificCourseFeature = $proikosPlugin->getSpecificCourseFeature();
+
+    if ($SpecificCourseFeature->course_in_target) {
+        $action = api_get_self() . '?c=' . Security::remove_XSS($_GET['c']) . '&e=' . Security::remove_XSS($_GET['e']);
+        $formAttributes = [
+            'enctype' => 'multipart/form-data',
+        ];
+    }
 }
 
 $form = new FormValidator('registration', 'post', $action, '', $formAttributes, $layoutForm);
 
-if ($isPTRACourse && $requireUploadMapFiles) {
-    $form->addHtml(
-        '<div class="form-group alert alert-danger" role="alert" style="grid-column: span 2;">'.
-        'Adjutar los documentos requeridos para la inscripción'
-        .'</div>'
-    );
+if ($allowProikos) {
+    $form->addHtml(($SpecificCourseFeature->validate_upload)());
 }
 
 $user_already_registered_show_terms = false;
@@ -618,52 +615,8 @@ if (api_get_setting('allow_terms_conditions') === 'true' && $user_already_regist
     $showTerms = true;
 }
 
-if ($isPTRACourse) {
-    $form->addHtml(
-        <<<EOT
-    <br>
-    <div class="form-group">
-        <label for="user_attachment_cert_ext">Adjuntar certificado externo</label>
-        <input type="file" name="user_attachment_cert_ext" id="user_attachment_cert_ext" class="form-control input_user_attachment" style="display: none;" />
-        <button class="btn btn-default form-control user_attachment_doc" data-input="user_attachment_cert_ext" type="button">
-            <em class="fa fa-paperclip"></em> Cargar archivo
-        </button>
-    </div>
-
-    <div class="form-group">
-        <label for="user_attachment_dj">Adjuntar declaración jurada</label>
-        <input type="file" name="user_attachment_dj" id="user_attachment_dj" class="form-control input_user_attachment" style="display: none;" />
-        <button class="btn btn-default form-control user_attachment_doc" data-input="user_attachment_dj" type="button">
-            <em class="fa fa-paperclip"></em> Cargar archivo
-        </button>
-    </div>
-
-    <script>
-        $(function () {
-            const \$btnAdd = $('.user_attachment_doc');
-            const \$input = $('.input_user_attachment');
-
-            \$btnAdd.on('click', function (e) {
-                e.preventDefault();
-                const inputId = $(this).data('input');
-                const \$inputRef = $('#' + inputId);
-                \$inputRef.click();
-            });
-
-            \$input.on('change', function (e) {
-                const name = $(this).attr('name');
-                const fileName = e.target?.files[0]?.name;
-                const \$btnAddRef = $('.user_attachment_doc[data-input="' + name + '"]');
-                if (fileName) {
-                    \$btnAddRef.html('<em class="fa fa-paperclip"></em> ' + fileName);
-                } else {
-                    \$btnAddRef.html('<em class="fa fa-paperclip"></em> Cargar archivo');
-                }
-            });
-        });
-    </script>
-EOT
-    );
+if ($allowProikos) {
+    $form->addHtml(($SpecificCourseFeature->upload_buttons_ui)());
 }
 
 $allowDoubleValidation = api_get_configuration_value('allow_double_validation_in_registration');
@@ -746,8 +699,10 @@ if ($extraConditions && $extraFieldsLoaded) {
 }
 
 if ($form->validate()) {
-    if ($isPTRACourse && $requireUploadMapFiles) {
-        goto init_form;
+    if ($allowProikos) {
+        if ($SpecificCourseFeature->course_in_target && $SpecificCourseFeature->require_upload_map_files) {
+            goto init_form;
+        }
     }
 
     $values = $form->getSubmitValues(1);
@@ -823,41 +778,8 @@ if ($form->validate()) {
             $form
         );
 
-        if ($isPTRACourse && !empty($user_id)) {
-            $proikosUserUploadedDocuments = 'proikos_user_uploaded_documents';
-            if (Database::tableExists($proikosUserUploadedDocuments)) {
-                $documentMap = [
-                    'user_attachment_cert_ext' => 'certificado_externo',
-                    'user_attachment_dj'       => 'declaracion_jurada'
-                ];
-
-                $baseUploadDir = api_get_path(SYS_APP_PATH) . 'upload/proikos_user_documents/';
-                $userCourseDir = $baseUploadDir . $user_id . '/' . $_GET['c'] . '/';
-
-                if (!file_exists($userCourseDir)) {
-                    mkdir($userCourseDir, 0775, true);
-                }
-
-                foreach ($documentMap as $inputName => $documentName) {
-                    if (!empty($_FILES[$inputName]['tmp_name']) && $_FILES[$inputName]['error'] === UPLOAD_ERR_OK) {
-                        $originalName = basename($_FILES[$inputName]['name']);
-                        $extension = pathinfo($originalName, PATHINFO_EXTENSION);
-                        $fileName = $documentName . '.' . $extension;
-                        $destination = $userCourseDir . $fileName;
-
-                        if (move_uploaded_file($_FILES[$inputName]['tmp_name'], $destination)) {
-                            $relativePath = 'upload/user_documents/' . $user_id . '/' . $_GET['c'] . '/' . $fileName;
-
-                            Database::insert($proikosUserUploadedDocuments, [
-                                'user_id' => $user_id,
-                                'course_code' => $_GET['c'],
-                                'document_name' => $documentName,
-                                'document_path' => $relativePath
-                            ]);
-                        }
-                    }
-                }
-            }
+        if ($allowProikos && !empty($user_id)) {
+            ($SpecificCourseFeature->save_files)($user_id);
         }
 
         // Update the extra fields
