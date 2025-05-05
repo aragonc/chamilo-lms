@@ -79,7 +79,12 @@ if (isset($_REQUEST['register'])) {
             $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
             if ($allowProikos) {
                 $plugin = ProikosPlugin::create();
-                $userCanSubscribe = ($plugin->contratingCompanyQuotaManager()->subscribe_user)($_REQUEST['user_id']);
+                $userCanSubscribe = ($plugin->contratingCompanyQuotaManager()->subscribe_user)(
+                    $_REQUEST['user_id'],
+                    api_get_user_id(),
+                    $userInfo,
+                    $courseInfo
+                );
                 if (-1 === $userCanSubscribe) {
                     $message = $plugin->get_lang('ContratingCompanyQuotaZero');
                     Display::addFlash(Display::return_message($message));
