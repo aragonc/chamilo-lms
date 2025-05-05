@@ -288,6 +288,11 @@ if ($visibilityChangeable) {
 }
 
 $url = api_get_path(WEB_CODE_PATH)."auth/inscription.php?c=$course_code&e=1";
+$allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+if ($allowProikos) {
+    $url = api_get_path(WEB_PLUGIN_PATH)."proikos/inscription.php?action=register&c=$course_code&e=1";
+}
+
 $url = Display::url($url, $url);
 $label = $form->addLabel(get_lang('DirectLink'), sprintf(get_lang('CourseSettingsRegisterDirectLink'), $url), true);
 

@@ -79,28 +79,7 @@ if (CustomPages::enabled() && CustomPages::exists(CustomPages::REGISTRATION)) {
     $layoutForm = FormValidator::LAYOUT_HORIZONTAL;
 }
 
-$action = '';
-$formAttributes = [];
-
-$allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
-if ($allowProikos) {
-    $proikosPlugin = ProikosPlugin::create();
-    $SpecificCourseFeature = $proikosPlugin->getSpecificCourseFeature();
-
-    if ($SpecificCourseFeature->course_in_target) {
-        $action = api_get_self() . '?c=' . Security::remove_XSS($_GET['c']) . '&e=' . Security::remove_XSS($_GET['e']);
-        $formAttributes = [
-            'enctype' => 'multipart/form-data',
-        ];
-    }
-}
-
-$form = new FormValidator('registration', 'post', $action, '', $formAttributes, $layoutForm);
-
-if ($allowProikos) {
-    $form->addHtml(($SpecificCourseFeature->validate_upload)());
-}
-
+$form = new FormValidator('registration', 'post', '', '', [], $layoutForm);
 $user_already_registered_show_terms = false;
 if (api_get_setting('allow_terms_conditions') === 'true') {
     $user_already_registered_show_terms = isset($_SESSION['term_and_condition']['user_id']);
@@ -615,10 +594,6 @@ if (api_get_setting('allow_terms_conditions') === 'true' && $user_already_regist
     $showTerms = true;
 }
 
-if ($allowProikos) {
-    $form->addHtml(($SpecificCourseFeature->upload_buttons_ui)());
-}
-
 $allowDoubleValidation = api_get_configuration_value('allow_double_validation_in_registration');
 
 $formContainsSendButton = false;
@@ -699,12 +674,6 @@ if ($extraConditions && $extraFieldsLoaded) {
 }
 
 if ($form->validate()) {
-    if ($allowProikos) {
-        if ($SpecificCourseFeature->course_in_target && $SpecificCourseFeature->require_upload_map_files) {
-            goto init_form;
-        }
-    }
-
     $values = $form->getSubmitValues(1);
     // Make *sure* the login isn't too long
     if (isset($values['username'])) {
@@ -777,10 +746,6 @@ if ($form->validate()) {
             false,
             $form
         );
-
-        if ($allowProikos && !empty($user_id)) {
-            ($SpecificCourseFeature->save_files)($user_id);
-        }
 
         // Update the extra fields
         $count_extra_field = count($extras);
@@ -1094,7 +1059,6 @@ if ($form->validate()) {
         $tpl->display($inscription);
     }
 } else {
-    init_form:
     // Custom pages
     if (CustomPages::enabled() && CustomPages::exists(CustomPages::REGISTRATION)) {
         CustomPages::display(
