@@ -175,6 +175,21 @@ switch ($action) {
 
         $registrationAllowed = api_get_setting('catalog_allow_session_auto_subscription');
         if ('true' === $registrationAllowed) {
+            // Proikos Plugin: Use quota
+            $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+            if ($allowProikos) {
+                $proikosPlugin = ProikosPlugin::create();
+                $userQuotaBySessionId = $proikosPlugin->getUserQuotaBySessionId($sessionId);
+
+                if (false === $userQuotaBySessionId['success']) {
+                    Display::addFlash(
+                        Display::return_message($userQuotaBySessionId['message'], 'warning')
+                    );
+                    header('Location: '.api_get_path(WEB_CODE_PATH).'auth/courses.php');
+                    exit;
+                }
+            }
+
             $entityManager = Database::getManager();
             $repository = $entityManager->getRepository('ChamiloCoreBundle:SequenceResource');
             $sequences = $repository->getRequirements(
@@ -204,6 +219,10 @@ switch ($action) {
                 SESSION_VISIBLE_READ_ONLY,
                 false
             );
+
+            if ($allowProikos) {
+                $proikosPlugin->useQuota($userQuotaBySessionId['det_id']);
+            }
 
             $coursesList = SessionManager::get_course_list_by_session_id($sessionId);
             $count = count($coursesList);
