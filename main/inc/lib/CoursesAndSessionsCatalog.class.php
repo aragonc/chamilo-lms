@@ -1915,6 +1915,7 @@ class CoursesAndSessionsCatalog
                 'maximum_users' => $session->getMaximumUsers(),
                 'code_reference' => $session->getCodeReference(),
                 'stakeholders' => $array_stakeholders,
+                'session_mode' => $session->getSessionMode(),
                 'category' => $catName,
                 'tags' => $sessionCourseTags,
                 'edit_actions' => $actions,
