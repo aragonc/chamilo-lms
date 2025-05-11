@@ -553,7 +553,8 @@ class SessionManager
                      s.visibility,
                      s.session_category_id,
                      $injectExtraFields
-                     s.id
+                     s.id,
+                     s.session_mode
              ";
 
             if ($showCountUsers) {
