@@ -8254,8 +8254,8 @@ class SessionManager
 
             $sessionCategoryMode = [
                 0 => $plugin->get_lang('SessionMode'),
-                1 => 'Asíncrono',
-                2 => 'Síncrono',
+                1 => ProikosPlugin::CATEGORY_DESC[1],
+                2 => ProikosPlugin::CATEGORY_DESC[2]
             ];
             $form->addSelect('session_mode', $plugin->get_lang('SessionMode'), $sessionCategoryMode);
         }
