@@ -179,7 +179,7 @@ switch ($action) {
             $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
             if ($allowProikos) {
                 $proikosPlugin = ProikosPlugin::create();
-                $userQuotaBySessionId = $proikosPlugin->getUserQuotaBySessionId($sessionId);
+                $userQuotaBySessionId = $proikosPlugin->contratingCompaniesQuotaSessionDetModel()->getQuotaBySessionId($sessionId);
 
                 if (false === $userQuotaBySessionId['success']) {
                     Display::addFlash(
@@ -213,15 +213,15 @@ switch ($action) {
                 }
             }
 
-            SessionManager::subscribeUsersToSession(
+            $subscribe = SessionManager::subscribeUsersToSession(
                 $sessionId,
                 [$userId],
                 SESSION_VISIBLE_READ_ONLY,
                 false
             );
 
-            if ($allowProikos) {
-                $proikosPlugin->useQuota($userQuotaBySessionId['det_id']);
+            if ($allowProikos && true === $subscribe) {
+                $proikosPlugin->contratingCompaniesQuotaSessionDetModel()->useQuota($userQuotaBySessionId['data']['id'], $userId);
             }
 
             $coursesList = SessionManager::get_course_list_by_session_id($sessionId);
