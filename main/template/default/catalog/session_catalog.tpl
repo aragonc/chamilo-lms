@@ -1,5 +1,5 @@
 <style>
-    .course_label_number_users, .block-date {
+    .course_label_number_users, .block-date, .pagination {
         display: none !important;
     }
 </style>

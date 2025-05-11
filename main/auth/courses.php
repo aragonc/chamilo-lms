@@ -179,7 +179,7 @@ switch ($action) {
             $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
             if ($allowProikos) {
                 $proikosPlugin = ProikosPlugin::create();
-                $userQuotaBySessionId = $proikosPlugin->contratingCompaniesQuotaSessionDetModel()->getQuotaBySessionId($sessionId);
+                $userQuotaBySessionId = $proikosPlugin->contratingCompaniesQuotaSessionDetModel()->getQuotaBySessionId($sessionId, $userId);
 
                 if (false === $userQuotaBySessionId['success']) {
                     Display::addFlash(
