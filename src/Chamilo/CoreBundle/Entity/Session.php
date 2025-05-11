@@ -161,6 +161,13 @@ class Session
     protected $stakeholders;
 
     /**
+     * @var string
+     *
+     * @ORM\Column(name="session_mode", type="integer", nullable=true, unique=false)
+     */
+    protected $sessionMode;
+
+    /**
      * @var \DateTime
      *
      * @ORM\Column(name="display_start_date", type="datetime", nullable=true, unique=false)
@@ -794,6 +801,27 @@ class Session
     public function setStakeholders(string $stakeholders)
     {
         $this->stakeholders = $stakeholders;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getSessionMode(): int
+    {
+        if($this->sessionMode === null){
+            return 0;
+        }
+        return $this->sessionMode;
+    }
+
+    /**
+     * @param int $sessionMode
+     * @return Session
+     */
+    public function setSessionMode(int $sessionMode)
+    {
+        $this->sessionMode = $sessionMode;
         return $this;
     }
 

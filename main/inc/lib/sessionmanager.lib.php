@@ -78,6 +78,7 @@ class SessionManager
             'maximum_users' => $session->getMaximumUsers(),
             'code_reference' => $session->getCodeReference(),
             'stakeholders' => $session->getStakeholders(),
+            'session_mode' => $session->getSessionMode(),
             'display_start_date' => $session->getDisplayStartDate()
                 ? $session->getDisplayStartDate()->format('Y-m-d H:i:s')
                 : null,
@@ -1624,7 +1625,8 @@ class SessionManager
         $status = 0,
         $maximum_users = null,
         $code_reference = null,
-        $stakeholders = null
+        $stakeholders = null,
+        $sessionMode = null
     ) {
         $status = (int) $status;
         $coachId = (int) $coachId;
@@ -1737,6 +1739,10 @@ class SessionManager
 
                 if (!empty($stakeholders)) {
                     $values['stakeholders'] = $stakeholders;
+                }
+
+                if (!empty($sessionMode)) {
+                    $values['session_mode'] = $sessionMode;
                 }
 
                 $values['session_category_id'] = null;
@@ -8246,6 +8252,12 @@ class SessionManager
             ];
             $form->addSelect('stakeholders',  $plugin->get_lang('StakeholdersForRegistration'), $stakeholders, ['multiple' => 'multiple']);
 
+            $sessionCategoryMode = [
+                0 => $plugin->get_lang('SessionMode'),
+                1 => 'Asíncrono',
+                2 => 'Síncrono',
+            ];
+            $form->addSelect('session_mode', $plugin->get_lang('SessionMode'), $sessionCategoryMode);
         }
         // Extra fields
         $setExtraFieldsMandatory = api_get_configuration_value('session_creation_form_set_extra_fields_mandatory');

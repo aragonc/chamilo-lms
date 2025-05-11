@@ -170,6 +170,7 @@ if ($form->validate()) {
     $maximum_users = $params['maximum_users'] ?? 0;
     $code_reference = $params['code_reference'];
     $stakeholders = json_encode($params['stakeholders']);
+    $sessionMode = $params['session_mode'] ?? 0;
     $extraFields = [];
     foreach ($params as $key => $value) {
         if (strpos($key, 'extra_') === 0) {
@@ -204,7 +205,8 @@ if ($form->validate()) {
         $status,
         $maximum_users,
         $code_reference,
-        $stakeholders
+        $stakeholders,
+        $sessionMode
     );
 
     if ($return) {
