@@ -76,23 +76,6 @@ if (isset($_REQUEST['register'])) {
                 );
             }
         } else {
-            $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
-            if ($allowProikos) {
-                $plugin = ProikosPlugin::create();
-                $userCanSubscribe = ($plugin->contratingCompanyQuotaManager()->subscribe_user)(
-                    $_REQUEST['user_id'],
-                    api_get_user_id(),
-                    $userInfo,
-                    $courseInfo
-                );
-                if (-1 === $userCanSubscribe) {
-                    $message = $plugin->get_lang('ContratingCompanyQuotaZero');
-                    Display::addFlash(Display::return_message($message));
-                    header('Location:'.api_get_path(WEB_CODE_PATH).'user/user.php?'.api_get_cidreq().'&type='.$type);
-                    exit;
-                }
-            }
-
             CourseManager::subscribeUser(
                 $_REQUEST['user_id'],
                 $courseInfo['code']
@@ -924,19 +907,10 @@ function reg_filter($user_id)
     }
     $user_id = (int) $user_id;
 
-    $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
-    $extraActions = '';
-
-    if ($allowProikos) {
-        $proikosPlugin = ProikosPlugin::create();
-        $SpecificCourseFeature = $proikosPlugin->getSpecificCourseFeature();
-        $extraActions = ($SpecificCourseFeature->get_actions)($user_id);
-    }
-
     $result = '<a class="btn btn-small btn-primary" href="'.api_get_self().'?'.api_get_cidreq().'&register=yes&type='.$type.'&user_id='.$user_id.'">'.
         get_lang("reg").'</a>';
 
-    return $result . $extraActions;
+    return $result;
 }
 
 /**
