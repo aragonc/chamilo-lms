@@ -79,6 +79,7 @@ class SessionManager
             'code_reference' => $session->getCodeReference(),
             'stakeholders' => $session->getStakeholders(),
             'session_mode' => $session->getSessionMode(),
+            'request_attach_certificates' => $session->getRequestAttachCertificates(),
             'display_start_date' => $session->getDisplayStartDate()
                 ? $session->getDisplayStartDate()->format('Y-m-d H:i:s')
                 : null,
@@ -1627,7 +1628,8 @@ class SessionManager
         $maximum_users = null,
         $code_reference = null,
         $stakeholders = null,
-        $sessionMode = null
+        $sessionMode = null,
+        $requestAttachCertificates = null
     ) {
         $status = (int) $status;
         $coachId = (int) $coachId;
@@ -1744,6 +1746,10 @@ class SessionManager
 
                 if (!empty($sessionMode)) {
                     $values['session_mode'] = $sessionMode;
+                }
+
+                if (!empty($requestAttachCertificates)) {
+                    $values['request_attach_certificates'] = $requestAttachCertificates;
                 }
 
                 $values['session_category_id'] = null;
@@ -8260,8 +8266,11 @@ class SessionManager
             ];
             $form->addSelect('session_mode', $plugin->get_lang('SessionMode'), $sessionCategoryMode);
 
-            $attachCertificates = [];
-            $form->addSelect('attach_certificates',  $plugin->get_lang('AttachCertificate'), $attachCertificates, ['multiple' => 'multiple']);
+            $attachCertificates = [
+                1 => 'Certificado Inducción',
+                2 => 'Certificado IPERC'
+            ];
+            $form->addSelect('request_attach_certificates',  $plugin->get_lang('RequestAttachCertificate'), $attachCertificates, ['multiple' => 'multiple']);
         }
         // Extra fields
         $setExtraFieldsMandatory = api_get_configuration_value('session_creation_form_set_extra_fields_mandatory');
