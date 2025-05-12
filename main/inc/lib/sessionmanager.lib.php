@@ -8259,6 +8259,9 @@ class SessionManager
                 2 => ProikosPlugin::CATEGORY_DESC[2]
             ];
             $form->addSelect('session_mode', $plugin->get_lang('SessionMode'), $sessionCategoryMode);
+
+            $attachCertificates = [];
+            $form->addSelect('attach_certificates',  $plugin->get_lang('AttachCertificate'), $attachCertificates, ['multiple' => 'multiple']);
         }
         // Extra fields
         $setExtraFieldsMandatory = api_get_configuration_value('session_creation_form_set_extra_fields_mandatory');
