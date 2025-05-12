@@ -8281,10 +8281,7 @@ class SessionManager
             ];
             $form->addSelect('session_mode', $plugin->get_lang('SessionMode'), $sessionCategoryMode);
 
-            $attachCertificates = [
-                1 => 'Certificado Inducción',
-                2 => 'Certificado IPERC'
-            ];
+            $attachCertificates = ProikosPlugin::ATTACH_CERTIFICATES;
             $form->addSelect('request_attach_certificates',  $plugin->get_lang('RequestAttachCertificate'), $attachCertificates, ['multiple' => 'multiple']);
         }
         // Extra fields

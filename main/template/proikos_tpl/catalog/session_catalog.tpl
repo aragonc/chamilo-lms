@@ -1,3 +1,8 @@
+<style>
+    .course_label_number_users, .block-date {
+        display: none !important;
+    }
+</style>
 <script>
     $(function () {
         $('#date').datepicker({

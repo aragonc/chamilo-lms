@@ -172,8 +172,25 @@ switch ($action) {
         }
 
         if (!$confirmed) {
+            $sessionInfo = api_get_session_info($sessionId);
+            $requestCertificates = [];
+            if ($allowProikos && !empty($sessionInfo['request_attach_certificates']) && $sessionInfo['request_attach_certificates'] != 'null') {
+                $sessionRequestCertificates = json_decode($sessionInfo['request_attach_certificates'], true);
+                if (!empty($sessionRequestCertificates)) {
+                    foreach ($sessionRequestCertificates as $value) {
+                        if (isset($proikosPlugin::ATTACH_CERTIFICATES[$value])) {
+                            $requestCertificates[] = [
+                                'id' => $value,
+                                'name' => $proikosPlugin::ATTACH_CERTIFICATES[$value],
+                            ];
+                        }
+                    }
+                }
+            }
+
             $template = new Template(null, false, false, false, false, false);
             $template->assign('session_id', $sessionId);
+            $template->assign('request_certificates', $requestCertificates);
             $layout = $template->get_template('auth/confirm_session_subscription.tpl');
             echo $template->fetch($layout);
             exit;
