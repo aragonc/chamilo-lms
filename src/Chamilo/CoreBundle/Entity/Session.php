@@ -168,6 +168,13 @@ class Session
     protected $sessionMode;
 
     /**
+     * @var string
+     *
+     * @ORM\Column(name="request_attach_certificates", type="text", nullable=true, unique=false)
+     */
+    protected $requestAttachCertificates;
+
+    /**
      * @var \DateTime
      *
      * @ORM\Column(name="display_start_date", type="datetime", nullable=true, unique=false)
@@ -822,6 +829,27 @@ class Session
     public function setSessionMode(int $sessionMode)
     {
         $this->sessionMode = $sessionMode;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRequestAttachCertificates(): string
+    {
+        if($this->requestAttachCertificates === null){
+            return '';
+        }
+        return $this->requestAttachCertificates;
+    }
+
+    /**
+     * @param string $requestAttachCertificates
+     * @return Session
+     */
+    public function setRequestAttachCertificates(string $requestAttachCertificates)
+    {
+        $this->requestAttachCertificates = $requestAttachCertificates;
         return $this;
     }
 

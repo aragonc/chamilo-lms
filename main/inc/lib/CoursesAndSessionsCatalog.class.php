@@ -1916,6 +1916,7 @@ class CoursesAndSessionsCatalog
                 'code_reference' => $session->getCodeReference(),
                 'stakeholders' => $array_stakeholders,
                 'session_mode' => $session->getSessionMode(),
+                'request_attach_certificates' => $session->getRequestAttachCertificates(),
                 'category' => $catName,
                 'tags' => $sessionCourseTags,
                 'edit_actions' => $actions,
