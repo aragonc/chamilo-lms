@@ -24,6 +24,12 @@ $action = isset($_REQUEST['action']) ? Security::remove_XSS($_REQUEST['action'])
 $categoryCode = isset($_REQUEST['category_code']) ? Security::remove_XSS($_REQUEST['category_code']) : '';
 $searchTerm = isset($_REQUEST['search_term']) ? Security::remove_XSS($_REQUEST['search_term']) : '';
 
+$allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+if ($allowProikos) {
+    $proikosPlugin = ProikosPlugin::create();
+    $proikosPlugin->renderModal();
+}
+
 $nameTools = CourseCategory::getCourseCatalogNameTools($action);
 if (empty($nameTools)) {
     $nameTools = get_lang('CourseManagement');
@@ -176,15 +182,11 @@ switch ($action) {
         $registrationAllowed = api_get_setting('catalog_allow_session_auto_subscription');
         if ('true' === $registrationAllowed) {
             // Proikos Plugin: Use quota
-            $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
             if ($allowProikos) {
-                $proikosPlugin = ProikosPlugin::create();
                 $userQuotaBySessionId = $proikosPlugin->contratingCompaniesQuotaSessionDetModel()->getQuotaBySessionId($sessionId, $userId);
 
                 if (false === $userQuotaBySessionId['success']) {
-                    Display::addFlash(
-                        Display::return_message($userQuotaBySessionId['message'], 'warning')
-                    );
+                    $proikosPlugin->setModalMessage($userQuotaBySessionId['message']);
                     header('Location: '.api_get_path(WEB_CODE_PATH).'auth/courses.php');
                     exit;
                 }

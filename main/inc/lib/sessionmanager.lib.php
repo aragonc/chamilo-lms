@@ -184,7 +184,10 @@ class SessionManager
         $accessUrlId = 0,
         $status = 0,
         $maximum_users = null,
-        $code_reference = null
+        $code_reference = null,
+        $stakeholders = null,
+        $sessionMode = null,
+        $requestAttachCertificates = null
     ) {
         global $_configuration;
 
@@ -299,6 +302,18 @@ class SessionManager
                 }
                 if (!empty($code_reference)) {
                     $values['code_reference'] = $code_reference;
+                }
+
+                if (!empty($stakeholders)) {
+                    $values['stakeholders'] = $stakeholders;
+                }
+
+                if (!empty($sessionMode)) {
+                    $values['session_mode'] = $sessionMode;
+                }
+
+                if (!empty($requestAttachCertificates)) {
+                    $values['request_attach_certificates'] = $requestAttachCertificates;
                 }
 
                 if (api_get_configuration_value('allow_session_status')) {

@@ -431,6 +431,10 @@ if ($form->validate()) {
         }
     }
 
+    $stakeholders = !empty($params['stakeholders']) ? json_encode($params['stakeholders']) : null;
+    $sessionMode = $params['session_mode'] ?? 0;
+    $requestAttachCertificates = !empty($params['request_attach_certificates']) ? json_encode($params['request_attach_certificates']) : null;
+
     $return = SessionManager::create_session(
         $name,
         $startDate,
@@ -452,7 +456,10 @@ if ($form->validate()) {
         api_get_current_access_url_id(),
         $status,
         $maximum_users,
-        $code_reference
+        $code_reference,
+        $stakeholders,
+        $sessionMode,
+        $requestAttachCertificates
     );
 
     if ($return == strval(intval($return))) {
