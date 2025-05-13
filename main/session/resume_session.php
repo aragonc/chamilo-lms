@@ -392,8 +392,12 @@ if (!empty($userList)) {
         );
 
         $downloadCertUploadedLink = '';
-        if ($allowProikos && !empty($session->getRequestAttachCertificates()) && $session->getRequestAttachCertificates() != 'null') {
-            $downloadCertUploadedLink = $proikosPlugin->generateDownloadLinkAttachCertificates($user['user_id'], $sessionId);
+        if ($allowProikos &&
+            (!empty($session->getRequestAttachCertificates()) && $session->getRequestAttachCertificates() != 'null') ||
+            !empty($session->getOptionalRequestAttachCertificates()) && $session->getOptionalRequestAttachCertificates() != 'null'
+        ) {
+            $userFullName = $userInfo['lastname'] . ' ' . $userInfo['firstname'];
+            $downloadCertUploadedLink = $proikosPlugin->generateDownloadLinkAttachCertificates($user['user_id'], $userFullName, $sessionId);
         }
 
         $addUserToUrlLink = '';

@@ -434,6 +434,7 @@ if ($form->validate()) {
     $stakeholders = !empty($params['stakeholders']) ? json_encode($params['stakeholders']) : null;
     $sessionMode = $params['session_mode'] ?? 0;
     $requestAttachCertificates = !empty($params['request_attach_certificates']) ? json_encode($params['request_attach_certificates']) : null;
+    $optionalRequestAttachCertificates = !empty($params['optional_request_attach_certificates']) ? json_encode($params['optional_request_attach_certificates']) : null;
 
     $return = SessionManager::create_session(
         $name,
@@ -459,7 +460,8 @@ if ($form->validate()) {
         $code_reference,
         $stakeholders,
         $sessionMode,
-        $requestAttachCertificates
+        $requestAttachCertificates,
+        $optionalRequestAttachCertificates
     );
 
     if ($return == strval(intval($return))) {
