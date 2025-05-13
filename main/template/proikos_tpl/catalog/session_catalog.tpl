@@ -72,15 +72,6 @@
 <div class="row">
     <div class="grid-courses col-md-12">
         <div class="row">
-            <div class="message-extra">
-                <strong>Recuerda que:</strong>
-                <p>Los proximas fechas de inscripción a los cursos serán en las siguientes fechas:</p>
-                <ul>
-                    {% for item in nexts %}
-                        <li>{{ item }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
             {% for item in sessions %}
 
             {% if item.session_hide == true %}
