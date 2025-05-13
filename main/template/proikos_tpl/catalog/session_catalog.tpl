@@ -2,6 +2,12 @@
     .course_label_number_users, .block-date {
         display: none !important;
     }
+
+    .user_in_session {
+        padding: 4px;
+        padding-left: 9px;
+        padding-right: 9px;
+    }
 </style>
 <script>
     $(function () {
@@ -179,6 +185,10 @@
                                         {% if item.is_subscribed == false %}
                                             {{ item.subscribe_button }}
                                         {% endif %}
+
+                                        {% if item.is_subscribed == true %}
+                                            <div class="alert alert-success user_in_session">Ya está registrado en la sesión</div>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                             </div>
@@ -355,9 +365,13 @@
                                 {% if item.session_full %}
                                 <div class="item-close">Inscripciones cerradas por máximo de participantes</div>
                                 {%  else %}
-                                {% if item.is_subscribed == false %}
-                                {{ item.subscribe_button }}
-                                {% endif %}
+                                    {% if item.is_subscribed == false %}
+                                        {{ item.subscribe_button }}
+                                    {% endif %}
+
+                                    {% if item.is_subscribed == true %}
+                                        <div class="alert alert-success user_in_session">Ya está registrado en la sesión</div>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>
