@@ -1768,9 +1768,19 @@ class CoursesAndSessionsCatalog
             'variable' => 'tags',
         ]);
         $stakeholdersCurrent = 0;
-        if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
+
+        $hasAsyncSessionsQuota = false;
+        $hasSyncSessionsQuota = false;
+        $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+        if ($allowProikos) {
             $pluginProikos = ProikosPlugin::create();
             $stakeholdersCurrent = $pluginProikos->getStakeholdersUser($userId);
+            $sessionsWithQuota = $pluginProikos->contratingCompaniesQuotaSessionDetModel()->companySessionsWithQuota($userId);
+
+            if (true === $sessionsWithQuota['success']) {
+                $hasAsyncSessionsQuota = $sessionsWithQuota['data']['asincrono'] > 0;
+                $hasSyncSessionsQuota = $sessionsWithQuota['data']['sincrono'] > 0;
+            }
         }
         $array_stakeholders = [];
         $currentDate = new DateTime();
@@ -1785,7 +1795,7 @@ class CoursesAndSessionsCatalog
             }
             $count++;
         }
-        //var_dump($sessionList);
+
         /** @var Session $session */
         foreach ($sessionList as $session) {
 
@@ -1915,6 +1925,9 @@ class CoursesAndSessionsCatalog
                 'maximum_users' => $session->getMaximumUsers(),
                 'code_reference' => $session->getCodeReference(),
                 'stakeholders' => $array_stakeholders,
+                'session_mode' => $session->getSessionMode(),
+                'request_attach_certificates' => $session->getRequestAttachCertificates(),
+                'optional_request_attach_certificates' => $session->getOptionalRequestAttachCertificates(),
                 'category' => $catName,
                 'tags' => $sessionCourseTags,
                 'edit_actions' => $actions,
@@ -1926,10 +1939,24 @@ class CoursesAndSessionsCatalog
                 'has_requirements' => $hasRequirements
             ];
 
-            if($enabledRequirements == $hasRequirements){
-                $sessionsBlock['session_enabled_user'] = 'enabled_user';
-            } else {
-                $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
+//            if($enabledRequirements == $hasRequirements){
+//                $sessionsBlock['session_enabled_user'] = 'enabled_user';
+//            } else {
+//                $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
+//            }
+
+            if ($allowProikos) {
+                if ($sessionsBlock['session_mode'] === $pluginProikos::CATEGORY_ASINCRONO) {
+                    if (false === $hasAsyncSessionsQuota) {
+                        $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
+                    }
+                }
+
+                if ($sessionsBlock['session_mode'] === $pluginProikos::CATEGORY_SINCRONO) {
+                    if (false === $hasSyncSessionsQuota) {
+                        $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
+                    }
+                }
             }
 
             $sessionsBlock['session_hide'] = true;

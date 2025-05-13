@@ -78,6 +78,9 @@ class SessionManager
             'maximum_users' => $session->getMaximumUsers(),
             'code_reference' => $session->getCodeReference(),
             'stakeholders' => $session->getStakeholders(),
+            'session_mode' => $session->getSessionMode(),
+            'request_attach_certificates' => $session->getRequestAttachCertificates(),
+            'optional_request_attach_certificates' => $session->getOptionalRequestAttachCertificates(),
             'display_start_date' => $session->getDisplayStartDate()
                 ? $session->getDisplayStartDate()->format('Y-m-d H:i:s')
                 : null,
@@ -182,7 +185,11 @@ class SessionManager
         $accessUrlId = 0,
         $status = 0,
         $maximum_users = null,
-        $code_reference = null
+        $code_reference = null,
+        $stakeholders = null,
+        $sessionMode = null,
+        $requestAttachCertificates = null,
+        $optionalRequestAttachCertificates = null
     ) {
         global $_configuration;
 
@@ -297,6 +304,22 @@ class SessionManager
                 }
                 if (!empty($code_reference)) {
                     $values['code_reference'] = $code_reference;
+                }
+
+                if (!empty($stakeholders)) {
+                    $values['stakeholders'] = $stakeholders;
+                }
+
+                if (!empty($sessionMode)) {
+                    $values['session_mode'] = $sessionMode;
+                }
+
+                if (!empty($requestAttachCertificates)) {
+                    $values['request_attach_certificates'] = $requestAttachCertificates;
+                }
+
+                if (!empty($optionalRequestAttachCertificates)) {
+                    $values['optional_request_attach_certificates'] = $optionalRequestAttachCertificates;
                 }
 
                 if (api_get_configuration_value('allow_session_status')) {
@@ -552,7 +575,8 @@ class SessionManager
                      s.visibility,
                      s.session_category_id,
                      $injectExtraFields
-                     s.id
+                     s.id,
+                     s.session_mode
              ";
 
             if ($showCountUsers) {
@@ -1624,7 +1648,10 @@ class SessionManager
         $status = 0,
         $maximum_users = null,
         $code_reference = null,
-        $stakeholders = null
+        $stakeholders = null,
+        $sessionMode = null,
+        $requestAttachCertificates = null,
+        $optionalRequestAttachCertificates = null
     ) {
         $status = (int) $status;
         $coachId = (int) $coachId;
@@ -1737,6 +1764,18 @@ class SessionManager
 
                 if (!empty($stakeholders)) {
                     $values['stakeholders'] = $stakeholders;
+                }
+
+                if (!empty($sessionMode)) {
+                    $values['session_mode'] = $sessionMode;
+                }
+
+                if (!empty($requestAttachCertificates)) {
+                    $values['request_attach_certificates'] = $requestAttachCertificates;
+                }
+
+                if (!empty($optionalRequestAttachCertificates)) {
+                    $values['optional_request_attach_certificates'] = $optionalRequestAttachCertificates;
                 }
 
                 $values['session_category_id'] = null;
@@ -8246,6 +8285,18 @@ class SessionManager
             ];
             $form->addSelect('stakeholders',  $plugin->get_lang('StakeholdersForRegistration'), $stakeholders, ['multiple' => 'multiple']);
 
+            $sessionCategoryMode = [
+                0 => $plugin->get_lang('SessionMode'),
+                1 => ProikosPlugin::CATEGORY_DESC[1],
+                2 => ProikosPlugin::CATEGORY_DESC[2]
+            ];
+            $form->addSelect('session_mode', $plugin->get_lang('SessionMode'), $sessionCategoryMode);
+
+            $attachCertificates = ProikosPlugin::ATTACH_CERTIFICATES;
+            $form->addSelect('request_attach_certificates',  $plugin->get_lang('RequestAttachCertificateInduction'), $attachCertificates, ['multiple' => 'multiple']);
+
+            $attachOptionalCertificates = ProikosPlugin::ATTACH_CERTIFICATES_ALTO_RIESGO;
+            $form->addSelect('optional_request_attach_certificates',  $plugin->get_lang('RequestAttachCertificateTrabajosAltoRiesgo'), $attachOptionalCertificates, ['multiple' => 'multiple']);
         }
         // Extra fields
         $setExtraFieldsMandatory = api_get_configuration_value('session_creation_form_set_extra_fields_mandatory');

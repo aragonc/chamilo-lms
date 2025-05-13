@@ -135,6 +135,16 @@ if(!empty($sessionInfo['stakeholders'])){
 
 $formDefaults['stakeholders'] = $array_stakeholders;
 
+$formDefaults['request_attach_certificates'] = [];
+if(!empty($sessionInfo['request_attach_certificates'])){
+    $formDefaults['request_attach_certificates'] = json_decode($sessionInfo['request_attach_certificates'], true);
+}
+
+$formDefaults['optional_request_attach_certificates'] = [];
+if(!empty($sessionInfo['optional_request_attach_certificates'])){
+    $formDefaults['optional_request_attach_certificates'] = json_decode($sessionInfo['optional_request_attach_certificates'], true);
+}
+
 if ($formSent) {
     $name = null;
     $charset = null;
@@ -170,6 +180,9 @@ if ($form->validate()) {
     $maximum_users = $params['maximum_users'] ?? 0;
     $code_reference = $params['code_reference'];
     $stakeholders = json_encode($params['stakeholders']);
+    $sessionMode = $params['session_mode'] ?? 0;
+    $requestAttachCertificates = json_encode($params['request_attach_certificates']);
+    $optionalRequestAttachCertificates = json_encode($params['optional_request_attach_certificates']);
     $extraFields = [];
     foreach ($params as $key => $value) {
         if (strpos($key, 'extra_') === 0) {
@@ -204,7 +217,10 @@ if ($form->validate()) {
         $status,
         $maximum_users,
         $code_reference,
-        $stakeholders
+        $stakeholders,
+        $sessionMode,
+        $requestAttachCertificates,
+        $optionalRequestAttachCertificates
     );
 
     if ($return) {

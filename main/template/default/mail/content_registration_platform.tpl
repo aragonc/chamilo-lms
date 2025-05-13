@@ -10,3 +10,4 @@
     {{ 'Manager'|get_lang }} {{ _s.site_name }}<br>
     {{ _admin.telephone ? 'T. ' ~ _admin.telephone }}<br>
     {{ _admin.email ? 'Email'|get_lang ~ ': ' ~ _admin.email }}</p>
+

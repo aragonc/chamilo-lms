@@ -161,6 +161,27 @@ class Session
     protected $stakeholders;
 
     /**
+     * @var string
+     *
+     * @ORM\Column(name="session_mode", type="integer", nullable=true, unique=false)
+     */
+    protected $sessionMode;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="request_attach_certificates", type="text", nullable=true, unique=false)
+     */
+    protected $requestAttachCertificates;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="optional_request_attach_certificates", type="text", nullable=true, unique=false)
+     */
+    protected $optionalRequestAttachCertificates;
+
+    /**
      * @var \DateTime
      *
      * @ORM\Column(name="display_start_date", type="datetime", nullable=true, unique=false)
@@ -797,6 +818,68 @@ class Session
         return $this;
     }
 
+    /**
+     * @return int
+     */
+    public function getSessionMode(): int
+    {
+        if($this->sessionMode === null){
+            return 0;
+        }
+        return $this->sessionMode;
+    }
+
+    /**
+     * @param int $sessionMode
+     * @return Session
+     */
+    public function setSessionMode(int $sessionMode)
+    {
+        $this->sessionMode = $sessionMode;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRequestAttachCertificates(): string
+    {
+        if($this->requestAttachCertificates === null){
+            return '';
+        }
+        return $this->requestAttachCertificates;
+    }
+
+    /**
+     * @param string $requestAttachCertificates
+     * @return Session
+     */
+    public function setRequestAttachCertificates(string $requestAttachCertificates)
+    {
+        $this->requestAttachCertificates = $requestAttachCertificates;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getOptionalRequestAttachCertificates(): string
+    {
+        if($this->optionalRequestAttachCertificates === null){
+            return '';
+        }
+        return $this->optionalRequestAttachCertificates;
+    }
+
+    /**
+     * @param string $optionalRequestAttachCertificates
+     * @return Session
+     */
+    public function setOptionalRequestAttachCertificates(string $optionalRequestAttachCertificates)
+    {
+        $this->optionalRequestAttachCertificates = $optionalRequestAttachCertificates;
+        return $this;
+    }
 
     /**
      * Set displayStartDate.
