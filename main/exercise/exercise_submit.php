@@ -52,8 +52,10 @@ $allowedLanguages = [
     'spanish' => 'es'
 ];
 $selectedLanguage = $allowedLanguages[$userInfo['language']] ?? '';
-setcookie('googtrans', '/' . $selectedLanguage);
-$htmlHeadXtra[] = <<<EOT
+
+if (!empty($selectedLanguage) && $selectedLanguage != 'es') {
+    setcookie('googtrans', '/' . $selectedLanguage);
+    $htmlHeadXtra[] = <<<EOT
     <style>
         body {
           top: 0 !important;
@@ -105,6 +107,7 @@ $htmlHeadXtra[] = <<<EOT
     </script>
     <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 EOT;
+}
 
 $showPreviousButton = true;
 $showGlossary = in_array($glossaryExtraTools, ['true', 'exercise', 'exercise_and_lp']);
