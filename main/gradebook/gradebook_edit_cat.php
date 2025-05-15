@@ -83,6 +83,12 @@ if ($form->validate()) {
         $cat->setIsRequirement(false);
     }
 
+    if (isset($values['require_all_quizzes'])) {
+        $cat->set_require_all_quizzes(1);
+    } else {
+        $cat->set_require_all_quizzes(0);
+    }
+
     if ($enableGradeSubCategorySkills) {
         $allowSkillsBySubCategory = isset($values['allow_skills_by_subcategory']);
         $cat->updateAllowSkillBySubCategory($allowSkillsBySubCategory);

@@ -965,6 +965,7 @@ class GradebookTable extends SortableTable
             ) {
                 $id_cat = (int) $_GET['selectcat'];
                 $category = Category::load($id_cat);
+
                 $weight_category = (int) $this->build_weight($category[0]);
                 $course_code = $this->build_course_code($category[0]);
                 $weight_total_links = round($weight_total_links);
@@ -980,6 +981,10 @@ class GradebookTable extends SortableTable
                         Display::return_icon('edit.png', $warning_message, [], ICON_SIZE_SMALL).'</a>';
                     $warning_message .= $modify_icons;
                     echo Display::return_message($warning_message, 'warning', false);
+                }
+
+                if (!empty($category[0]->get_require_all_quizzes())) {
+                    echo Display::return_message('<b>* Todos los cuestionarios son requeridos</b>', 'warning', false);
                 }
 
                 $content_html = DocumentManager::replace_user_info_into_html(

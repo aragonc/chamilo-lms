@@ -171,6 +171,7 @@ class CatForm extends FormValidator
                 'certif_min_score' => $this->category_object->getCertificateMinScore(),
                 'generate_certificates' => $this->category_object->getGenerateCertificates(),
                 'is_requirement' => $this->category_object->getIsRequirement(),
+                'require_all_quizzes' => $this->category_object->get_require_all_quizzes()
             ]
         );
 
@@ -443,6 +444,17 @@ class CatForm extends FormValidator
 
         if ($this->category_object->getIsRequirement()) {
             $isRequirementCheckbox->setChecked(true);
+        }
+
+        $requireAllQuizzes = $this->addElement(
+            'checkbox',
+            'require_all_quizzes',
+            null,
+            get_lang('AllQuizzesAreRequired')
+        );
+
+        if ($this->category_object->get_require_all_quizzes()) {
+            $requireAllQuizzes->setChecked(true);
         }
 
         $documentId = $this->category_object->getDocumentId();

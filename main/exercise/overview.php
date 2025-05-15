@@ -149,12 +149,38 @@ $exercise_stat_info = $objExercise->get_stat_track_exercise_info(
 
 //1. Check if this is a new attempt or a previous
 $label = get_lang('StartTest');
-if ($time_control && !empty($clock_expired_time) || isset($exercise_stat_info['exe_id'])) {
+$continueTest = $time_control && !empty($clock_expired_time) || isset($exercise_stat_info['exe_id']);
+if ($continueTest) {
     $label = get_lang('ContinueTest');
 }
 
 if (isset($exercise_stat_info['exe_id'])) {
     $message = Display::return_message(get_lang('YouTriedToResolveThisExerciseEarlier'));
+}
+
+// Replace $exercise_id if enableMonitor
+$allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+if ($allowProikos) {
+    $enableMonitor = $objExercise->enableMonitor == 1 && !$continueTest;
+    if ($enableMonitor) {
+        $userInfo = api_get_user_info();
+        $availableLanguages = [
+            'spanish' => 'es',
+            'english' => 'en'
+        ];
+        $proikosPlugin = ProikosPlugin::create();
+        $smowlRegistrationLink = $proikosPlugin->smowlRegistrationEndpoint(
+            $userInfo['user_id'],
+            $userInfo['complete_name'],
+            $userInfo['email'],
+            $availableLanguages[$userInfo['language']] ?? 'es',
+            $exercise_url,
+            $sessionId,
+            $exercise_id
+        );
+
+        $exercise_url = $smowlRegistrationLink;
+    }
 }
 
 // 2. Exercise button

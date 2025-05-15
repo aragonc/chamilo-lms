@@ -37,6 +37,7 @@ class Category implements GradebookItem
     /** @var int */
     private $gradeBooksToValidateInDependence;
 
+    private $requireAllQuizzes = 0;
     /**
      * Consctructor.
      */
@@ -58,6 +59,16 @@ class Category implements GradebookItem
         $this->courseDependency = [];
         $this->documentId = 0;
         $this->minimumToValidate = null;
+    }
+
+    public function get_require_all_quizzes()
+    {
+        return $this->requireAllQuizzes;
+    }
+
+    public function set_require_all_quizzes($requireAllQuizzes)
+    {
+        $this->requireAllQuizzes = (int) $requireAllQuizzes;
     }
 
     /**
@@ -666,6 +677,7 @@ class Category implements GradebookItem
         );
         $gradebookCategory->setGradeModelId($this->grade_model_id);
         $gradebookCategory->setIsRequirement($this->isRequirement);
+        $gradebookCategory->setRequireAllQuizzes($this->requireAllQuizzes);
 
         $em->merge($gradebookCategory);
         $em->flush();
@@ -2735,6 +2747,7 @@ class Category implements GradebookItem
             $cat->setMinimumToValidate(isset($data['minimum_to_validate']) ? $data['minimum_to_validate'] : null);
             $cat->setGradeBooksToValidateInDependence(isset($data['gradebooks_to_validate_in_dependence']) ? $data['gradebooks_to_validate_in_dependence'] : null);
             $cat->setDocumentId($data['document_id']);
+            $cat->set_require_all_quizzes($data['require_all_quizzes']);
             if ($allow) {
                 $cat->entity = $repo->find($data['id']);
             }

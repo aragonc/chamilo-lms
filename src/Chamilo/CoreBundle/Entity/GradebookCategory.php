@@ -142,6 +142,36 @@ class GradebookCategory
     protected $isRequirement;
 
     /**
+     *
+     * @var int
+     *
+     * @ORM\Column(name="require_all_quizzes", type="integer", nullable=false, options={"default": 0})
+     */
+    protected $requireAllQuizzes = 0;
+
+    /**
+     * Get requireAllQuizzes
+     *
+     * @return int
+     */
+    public function getRequireAllQuizzes()
+    {
+        return $this->requireAllQuizzes;
+    }
+
+    /**
+     * Set requireAllQuizzes
+     *
+     * @param int $requireAllQuizzes
+     * @return GradebookCategory
+     */
+    public function setRequireAllQuizzes($requireAllQuizzes)
+    {
+        $this->requireAllQuizzes = $requireAllQuizzes;
+        return $this;
+    }
+
+    /**
      * Set name.
      *
      * @param string $name

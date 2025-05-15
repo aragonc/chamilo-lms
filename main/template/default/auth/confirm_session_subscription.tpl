@@ -20,39 +20,50 @@
         border: 2px solid #878787;
         color: #fff;
     }
+
+    .required-text {
+        color: red;
+    }
+
+    .input-cert-title {
+        text-transform: uppercase;
+    }
 </style>
 
-<div style="margin-bottom: 40px;">
     {% if request_certificates %}
-        <span class="title">{{ 'Para poder inscribirte adjunta tu certificado de Inducción e IPERC vigentes:' }}</span>
+    <div style="margin-bottom: 40px;">
+        <span class="title">
+            <small class="required-text">*</small>
+            {{ 'Adjuntar los siguientes certificados vigentes:' }}
+        </span>
 
         {% for cert in request_certificates %}
         <div style="margin-bottom: 14px;">
-            <label class="form-label">{{ cert.name }}</label>
+            <label class="form-label input-cert-title">{{ cert.name }}</label>
             <div class="input-group col-sm-12">
-                <input type="file" class="form-control d-none" id="file_{{ cert.id }}"
+                <input type="file" accept="application/pdf" class="form-control d-none cert-required" id="file_{{ cert.id }}"
                        name="certificate_{{ cert.id }}" style="border-radius: 4px;" value="{{ cert.id }}">
             </div>
         </div>
         {% endfor %}
+    </div>
     {% endif %}
-</div>
 
-<div>
     {% if optional_request_certificates %}
-        <span class="title">{{ 'Para poder inscribirte adjunta tus certificados de Alto Riesgo:' }}</span>
+    <div>
+        <span class="title">{{ '(Opcional) Adjuntar los siguientes certificados vigentes:' }}</span>
 
         {% for cert in optional_request_certificates %}
         <div style="margin-bottom: 14px;">
             <input type="checkbox" class="form-check-input" id="cert_{{ cert.id }}" name="cert_{{ cert.id }}" value="{{ cert.id }}">
-            <label class="form-label" for="cert_{{ cert.id }}">{{ cert.name }}</label>
+            <label class="form-label input-cert-title" for="cert_{{ cert.id }}">{{ cert.name }}</label>
             <div class="input-group col-sm-12">
-                <input type="file" disabled class="form-control d-none" id="optional_cert_{{ cert.id }}" name="optional_certificate_{{ cert.id }}" style="border-radius: 4px;">
+                <input type="file" accept="application/pdf" disabled class="form-control d-none" id="optional_cert_{{ cert.id }}" name="optional_certificate_{{ cert.id }}" style="border-radius: 4px;">
             </div>
         </div>
         {% endfor %}
+    </div>
     {% endif %}
-</div>
 
 <div class="row">
     <div class="col-sm-3 col-sm-offset-3">
@@ -68,8 +79,9 @@
 
 <script>
     const inputs = document.querySelectorAll('input[type="file"]');
+    const inputsRequired = document.querySelectorAll('input[type="file"].cert-required');
     const yesBtn = document.getElementById('yesBtn');
-    const total = yesBtn ? inputs.length : 0;
+    const total = yesBtn ? inputsRequired.length : 0;
     const formUploadAction = '{{ _p.web_plugin }}proikos/src/ajax.php?action=upload_user_certificates&session_id={{ session_id }}';
 
     function updateStatus() {
@@ -78,25 +90,43 @@
         }
 
         let filled = 0;
-        inputs.forEach(input => {
+        inputsRequired.forEach(input => {
             if (input.files.length > 0) {
                 filled++;
             }
         });
         if (filled === total) {
-            //yesBtn.classList.remove('disabled');
-            //yesBtn.removeAttribute('disabled');
+            yesBtn.classList.remove('disabled');
+            yesBtn.removeAttribute('disabled');
         } else {
-            //yesBtn.classList.add('disabled');
-            //yesBtn.setAttribute('disabled', 'disabled');
+            yesBtn.classList.add('disabled');
+            yesBtn.setAttribute('disabled', 'disabled');
         }
     }
 
-    inputs.forEach(input => {
-        input.addEventListener('change', function () {
-            updateStatus();
+    if (inputs) {
+        inputs.forEach(input => {
+            input.addEventListener('change', function () {
+                const file = this.files[0];
+                if (!file) return;
+
+                if (file.type !== 'application/pdf') {
+                    alert('Solo se permiten archivos PDF.');
+                    this.value = '';
+                    return;
+                }
+
+                const maxSizeInBytes = 10 * 1024 * 1024; // 10 MB
+                if (file.size > maxSizeInBytes) {
+                    alert('El archivo excede el tamaño máximo de 10 MB.');
+                    this.value = '';
+                    return;
+                }
+
+                updateStatus();
+            });
         });
-    });
+    }
 
     updateStatus();
 
@@ -112,7 +142,7 @@
                 }
             });
 
-
+            yesBtn.setAttribute('disabled', 'disabled');
             fetch(formUploadAction, {
                 method: 'POST',
                 body: formData
@@ -122,6 +152,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
+                yesBtn.removeAttribute('disabled');
             })
             .finally(() => {
                 window.location = href;

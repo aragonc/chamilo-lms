@@ -251,6 +251,10 @@ class FlatViewDataGenerator
             $headers[] = get_lang('GradebookScoreDisplayCustomValues');
         }
 
+       if ($mainCourseCategory->get_require_all_quizzes()) {
+           $headers[] = '<span class="text-center">Evaluaciones Req.</span>';
+       }
+
         return $headers;
     }
 
@@ -463,6 +467,7 @@ class FlatViewDataGenerator
             );
 
             $evaluationsAdded = [];
+            $gradeResults = [];
             $detailAdminView = 'true' === api_get_setting('gradebook_detailed_admin_view');
             $style = api_get_configuration_value('gradebook_report_score_style');
             $defaultStyle = SCORE_DIV_SIMPLE_WITH_CUSTOM;
@@ -593,6 +598,7 @@ class FlatViewDataGenerator
                     $ignoreScoreColor,
                     $onlyScore
                 );
+                $gradeResults = $result['item_grades'];
                 $item_value_total += $result['item_value_total'];
                 $evaluationsAdded = $result['evaluations_added'];
                 $item_total = $main_weight;
@@ -626,6 +632,9 @@ class FlatViewDataGenerator
                 if (!empty($model)) {
                     $displayScore = ExerciseLib::show_score($total_score[0], $total_score[1]);
                 }
+                if ($this->allRequiredQuizzesCompleted($gradeResults, $evaluationsAdded) == false) {
+                    $displayScore = '-';
+                }
                 if ($export_to_pdf) {
                     $row['total'] = $displayScore;
                 } else {
@@ -640,6 +649,11 @@ class FlatViewDataGenerator
                 if (!empty($model)) {
                     $displayScore = ExerciseLib::show_score($total_score[0], $total_score[1]);
                 }
+
+                if ($this->allRequiredQuizzesCompleted($gradeResults, $evaluationsAdded) == false) {
+                    $displayScore = '-';
+                }
+
                 if ($export_to_pdf) {
                     $row['total'] = $displayScore;
                 } else {
@@ -657,10 +671,41 @@ class FlatViewDataGenerator
 
             unset($score);
 
+            if (!empty($this->category->get_require_all_quizzes()) ) {
+                $nGradeResults = 0;
+                foreach ($gradeResults as $grade) {
+                    if (!empty($grade) && trim(strip_tags($grade), '-') != '') {
+                        ++$nGradeResults;
+                    }
+                }
+                $row[] =  $nGradeResults . '/' .
+                    count((empty($evaluationsAdded) ? [] : $evaluationsAdded));
+
+            }
+
             $data[] = $row;
         }
 
         return $data;
+    }
+
+    public function allRequiredQuizzesCompleted($gradeResults, $evaluationsAdded)
+    {
+        if (!empty($this->category->get_require_all_quizzes()) ) {
+            $nGradeResults = 0;
+            foreach ($gradeResults as $grade) {
+                if (!empty($grade) && trim(strip_tags($grade), '-') != '') {
+                    ++$nGradeResults;
+                }
+            }
+
+            $totalEvaluations = count((empty($evaluationsAdded) ? [] : $evaluationsAdded));
+            if ($nGradeResults != $totalEvaluations) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -691,6 +736,7 @@ class FlatViewDataGenerator
         $scoreDisplay = ScoreDisplay::instance();
         $item_total = 0;
         $item_value_total = 0;
+        $items_grades = [];
         $evaluationsAdded = [];
         $model = ExerciseLib::getCourseScoreModel();
         $style = api_get_configuration_value('gradebook_report_score_style');
@@ -831,6 +877,7 @@ class FlatViewDataGenerator
                     $row[] = $temp_score;
                 }
             }
+            $items_grades[] = $temp_score;
             $item_value_total += $item_value;
         }
 
@@ -838,6 +885,7 @@ class FlatViewDataGenerator
             'item_total' => $item_total,
             'item_value_total' => $item_value_total,
             'evaluations_added' => $evaluationsAdded,
+            'item_grades' => $items_grades,
         ];
     }
 
