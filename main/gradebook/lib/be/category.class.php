@@ -2260,6 +2260,17 @@ class Category implements GradebookItem
                 $category_id,
                 $user_id
             );
+            if (api_get_plugin_setting('easycertificate', 'enable_plugin_congratulations') === 'true') {
+                $pluginCertificate = EasyCertificatePlugin::create();
+                $values = [
+                    'user_id' => $user_id,
+                    'course_id' => $courseId,
+                    'session_id' => $sessionId,
+                    'certificate_id' => $my_certificate['id'],
+                    'send' => 1
+                ];
+                $pluginCertificate->registerCertificateUserSend($values);
+            }
         }
 
         $html = [];
