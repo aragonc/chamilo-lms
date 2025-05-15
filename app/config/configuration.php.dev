@@ -252,8 +252,8 @@ $_configuration['session_lifetime'] = 360000;
 // something like $_configuration['session_lifetime'][2] = false; to affect only URL
 // with ID 2. The ID can be found in the access_url table.
 $_configuration['multiple_access_urls'] = true;
-$_configuration['software_name'] = 'e-Sky LMS';
-$_configuration['software_url'] = 'https://e-sky.ca/';
+$_configuration['software_name'] = 'LMS';
+$_configuration['software_url'] = 'https://fragote.com/';
 // Deny the elimination of users
 $_configuration['deny_delete_users'] = false;
 // Version settings
@@ -2567,13 +2567,10 @@ INSERT INTO extra_field_options (field_id, option_value, display_text, priority,
 
 //hide copy icon in LP's authoring options
 //$_configuration['lp_hide_copy_option'] = false;
-// SSO PRISMHR
-//$_configuration['sso_prismhr_url'] = 'https://ep.engagepeo.com';
-//$_configuration['sso_prismhr'] = ['*'];
-//$_configuration['sso_prismhr_user'] = 'eskyuser';
-//$_configuration['sso_prismhr_pw'] = '3j4PlaGrLsBJq!^KWt0T';
-//$_configuration['sso_prismhr_peo_id'] = '420*TEST';
 
-// Hide esky footer by domain
-$_configuration['hide_esky_footer_typography_by_domain'] = [6];
-$_configuration['hide_esky_footer_followus_by_domain'] = [6];
+$_configuration['smowltech'] = [
+    'jwtSecret' => '',
+    'entityName' => '',
+    'entityKey' => '',
+    'activityType' => ''
+];
