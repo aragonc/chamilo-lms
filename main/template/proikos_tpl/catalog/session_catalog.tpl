@@ -8,6 +8,11 @@
         padding-left: 9px;
         padding-right: 9px;
     }
+
+    .not_enabled_user .btn-primary {
+        filter: grayscale(1);
+    }
+
 </style>
 <script>
     $(function () {

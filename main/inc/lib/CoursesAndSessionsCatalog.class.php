@@ -1769,18 +1769,10 @@ class CoursesAndSessionsCatalog
         ]);
         $stakeholdersCurrent = 0;
 
-        $hasAsyncSessionsQuota = false;
-        $hasSyncSessionsQuota = false;
         $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
         if ($allowProikos) {
             $pluginProikos = ProikosPlugin::create();
             $stakeholdersCurrent = $pluginProikos->getStakeholdersUser($userId);
-            $sessionsWithQuota = $pluginProikos->contratingCompaniesQuotaSessionDetModel()->companySessionsWithQuota($userId);
-
-            if (true === $sessionsWithQuota['success']) {
-                $hasAsyncSessionsQuota = $sessionsWithQuota['data']['asincrono'] > 0;
-                $hasSyncSessionsQuota = $sessionsWithQuota['data']['sincrono'] > 0;
-            }
         }
         $array_stakeholders = [];
         $currentDate = new DateTime();
@@ -1946,17 +1938,18 @@ class CoursesAndSessionsCatalog
 //            }
 
             if ($allowProikos) {
-                if ($sessionsBlock['session_mode'] === $pluginProikos::CATEGORY_ASINCRONO) {
-                    if (false === $hasAsyncSessionsQuota) {
-                        $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
-                    }
-                }
+                $quotaBySessionId = $pluginProikos->contratingCompaniesQuotaSessionDetModel()->getQuotaBySessionId(
+                    $session->getId(),
+                    $userId
+                );
 
-                if ($sessionsBlock['session_mode'] === $pluginProikos::CATEGORY_SINCRONO) {
-                    if (false === $hasSyncSessionsQuota) {
-                        $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
-                    }
+                if (false === $quotaBySessionId['success']) {
+                    $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
                 }
+            }
+
+            if ($sessionFull) {
+                $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
             }
 
             $sessionsBlock['session_hide'] = true;
