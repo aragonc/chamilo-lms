@@ -2180,6 +2180,12 @@ class Category implements GradebookItem
             return false;
         }
 
+        // Block certificate generation if user has not passed all required quizzes
+        $quizCheck = ProikosPlugin::checkUserQuizCompletion($user_id, $category_id);
+        if (!$quizCheck['passed']) {
+            return false;
+        }
+
         $skillToolEnabled = Skill::hasAccessToUserSkill(
             api_get_user_id(),
             $user_id
