@@ -98,6 +98,7 @@ class Exercise
     public $forceShowExpectedChoiceColumn;
     public $disableHideCorrectAnsweredQuestions;
     public $hideAttemptsTableOnStartPage;
+    public $enableMonitor;
 
     /**
      * Constructor of the class.
@@ -214,6 +215,7 @@ class Exercise
             $this->autolaunch = isset($object->autolaunch) ? (int) $object->autolaunch : 0;
             $this->exerciseCategoryId = isset($object->exercise_category_id) ? (int) $object->exercise_category_id : null;
             $this->preventBackwards = isset($object->prevent_backwards) ? (int) $object->prevent_backwards : 0;
+            $this->enableMonitor = $object->enable_monitor;
             $this->exercise_was_added_in_lp = false;
             $this->lpList = [];
             $this->notifications = [];
@@ -635,6 +637,22 @@ class Exercise
             $value = $value[0];
         }
         $this->globalCategoryId = (int) $value;
+    }
+
+    /**
+     * @return int
+     */
+    public function getEnableMonitor()
+    {
+        return $this->enableMonitor;
+    }
+
+    /**
+     * @param $value
+     */
+    public function setEnableMonitor($value)
+    {
+        $this->enableMonitor = (int) $value;
     }
 
     /**
@@ -1627,6 +1645,7 @@ class Exercise
             $params = [
                 'title' => $exercise,
                 'description' => $description,
+                'enable_monitor' => $this->enableMonitor,
             ];
 
             $paramsExtra = [];
@@ -1751,6 +1770,7 @@ class Exercise
                 'save_correct_answers' => $saveCorrectAnswers,
                 'propagate_neg' => $propagate_neg,
                 'hide_question_title' => $this->getHideQuestionTitle(),
+                'enable_monitor' => $this->enableMonitor
             ];
 
             $allow = api_get_configuration_value('allow_exercise_categories');
@@ -2630,6 +2650,9 @@ class Exercise
                     ['placeholder' => get_lang('SelectAnOption')]
                 );
             }
+
+            $form->addCheckBox('enable_monitor', get_lang('EnableMonitor'), get_lang('YesEnableMonitorStudent'), 1);
+
             $form->addElement('html', '</div>'); //End advanced setting
             $form->addElement('html', '</div>');
         }
@@ -2671,6 +2694,7 @@ class Exercise
                 $defaults['show_previous_button'] = $this->showPreviousButton();
                 $defaults['exercise_category_id'] = $this->getExerciseCategoryId();
                 $defaults['prevent_backwards'] = $this->getPreventBackwards();
+                $defaults['enable_monitor'] = $this->getEnableMonitor();
 
                 if (!empty($this->start_time)) {
                     $defaults['activate_start_date_check'] = 1;
@@ -2891,6 +2915,7 @@ class Exercise
         $this->setShowPreviousButton($form->getSubmitValue('show_previous_button'));
         $this->setNotifications($form->getSubmitValue('notifications'));
         $this->setExerciseCategoryId($form->getSubmitValue('exercise_category_id'));
+        $this->setEnableMonitor($form->getSubmitValue('enable_monitor'));
         $this->setPageResultConfiguration($form->getSubmitValues());
         $showHideConfiguration = api_get_configuration_value('quiz_hide_question_number');
         if ($showHideConfiguration) {

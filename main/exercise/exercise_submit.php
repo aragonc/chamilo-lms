@@ -1926,3 +1926,92 @@ if (!in_array($origin, ['learnpath', 'embeddable', 'iframe'])) {
     echo '</div>'; //End glossary div
 }
 Display::display_footer();
+
+$allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+if ($allowProikos) {
+    $enableMonitor = $exerciseInSession->enableMonitor == 1;
+    if ($enableMonitor) {
+        $proikosPlugin = ProikosPlugin::create();
+
+        $smowlMonitoringLink = $proikosPlugin->smowlMonitoringEndpoint(
+            $userInfo['user_id'],
+            $userInfo['complete_name'],
+            $userInfo['email'],
+            $availableLanguages[$userInfo['language']] ?? 'es',
+            $sessionId,
+            $exerciseId
+        );
+        $url = api_get_path(WEB_CODE_PATH).
+            'exercise/overview.php?exerciseId='.$exerciseId.'&'.api_get_cidreq().'&id_session='.$sessionId;
+
+        echo '
+        <style>
+        .camera-container {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          height: 400px;
+          background-color: transparent;
+          border-radius: 12px;
+          overflow: hidden;
+          transition: height 0.3s ease, width 0.3s ease;
+          display: flex;
+          flex-direction: column;
+          z-index: 1000;
+        }
+
+        .camera-container.minimized {
+          height: 40px;
+          width: 40px;
+        }
+
+        .camera-header {
+          height: 40px;
+          display: flex;
+          justify-content: flex-end;
+          background-color: #c6c0c0;
+          padding: 5px;
+        }
+
+        .minimize-btn {
+          background: transparent;
+          color: #fff;
+          border: none;
+          cursor: pointer;
+          font-size: 16px;
+        }
+
+        iframe {
+          flex: 1;
+          width: 100%;
+          border: none;
+        }
+
+        </style>
+        <div class="camera-container" id="cameraContainer">
+          <iframe allow="microphone; camera"
+          sandbox="allow-top-navigation allow-scripts allow-modals allow-same-origin allow-popups allow-downloads allow-popups-to-escape-sandbox"
+          width="500" height="300" src="' . $smowlMonitoringLink . '" frameborder="0" allowfullscreen scrolling="no"></iframe>
+        </div>
+        <script>
+        function toggleCamera() {
+          const container = document.getElementById("cameraContainer");
+          container.classList.toggle("minimized");
+        }
+
+        var eventMethod = window.addEventListener ? "addEventListener" : "attachEvent";
+        var eventer = window[eventMethod];
+        var messageEvent = eventMethod === "attachEvent" ? "onmessage" : "message";
+        eventer(messageEvent, function (e) {
+         if (e.data === "monitoringstatusNOTOK" || e.message === "monitoringstatusNOTOK") {
+             //Custom code to handle checks or monitoring not ok.
+             //Commonly alert and if in activity page, then expelled
+             alert("Se detectó un error en la monitorización, por favor verifica tu cámara, micrófono o la herramienta SMOWL CM");
+             console.log("Monitoring not ok");
+             window.location.href = "'.$url.'";
+           }
+        });
+        </script>
+        ';
+    }
+}
