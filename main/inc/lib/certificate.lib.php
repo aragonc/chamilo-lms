@@ -219,7 +219,7 @@ class Certificate extends Model
             $my_category = Category::load($categoryId);
         }
 
-        if (!empty($my_category->get_require_all_quizzes())) {
+        if (isset($my_category[0]) && !empty($my_category[0]->get_require_all_quizzes())) {
             $quizCheck = ProikosPlugin::checkUserQuizCompletion($this->user_id, $categoryId);
             if (!$quizCheck['passed']) {
                 return false; // Block certificate
