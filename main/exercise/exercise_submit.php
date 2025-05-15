@@ -46,6 +46,69 @@ if ($allowTimePerQuestion) {
     $htmlHeadXtra[] = api_get_asset('easytimer/easytimer.min.js');
 }
 
+$userInfo = api_get_user_info();
+$allowedLanguages = [
+    'english' => 'en',
+    'spanish' => 'es'
+];
+$selectedLanguage = $allowedLanguages[$userInfo['language']] ?? '';
+
+if (!empty($selectedLanguage) && $selectedLanguage != 'es') {
+    setcookie('googtrans', '/' . $selectedLanguage);
+    $htmlHeadXtra[] = <<<EOT
+    <style>
+        body {
+          top: 0 !important;
+        }
+
+        body>.skiptranslate, .goog-logo-link, .gskiptranslate, .goog-te-gadget span, .goog-te-banner-frame, #goog-gt-tt, .goog-te-balloon-frame, div#goog-gt-tt {
+          display: none !important;
+        }
+
+        .goog-te-gadget {
+          color: transparent !important;
+          font-size: 0px;
+        }
+
+        .goog-text-highlight {
+          background: transparent !important;
+          box-shadow: transparent !important;
+        }
+
+        #google_translate_element select {
+          background: #60C7E6;
+          color: #fff4e4;
+          border: none;
+          font-weight: bold;
+          border-radius: 3px;
+          padding: 8px 12px
+        }
+    </style>
+
+    <script>
+         function googleTranslateElementInit() {
+            const options = {
+                autoDisplay: true,
+                includedLanguages: 'en,es',
+                layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL
+            };
+
+            new google.translate.TranslateElement(options, 'google_translate_element');
+         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('notranslate');
+
+            const targetDiv = document.getElementById('highlight-plugin');
+            if (targetDiv) {
+                targetDiv.classList.add('translate');
+            }
+        });
+    </script>
+    <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+EOT;
+}
+
 $showPreviousButton = true;
 $showGlossary = in_array($glossaryExtraTools, ['true', 'exercise', 'exercise_and_lp']);
 if ('learnpath' === $origin) {
@@ -1863,3 +1926,92 @@ if (!in_array($origin, ['learnpath', 'embeddable', 'iframe'])) {
     echo '</div>'; //End glossary div
 }
 Display::display_footer();
+
+$allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+if ($allowProikos) {
+    $enableMonitor = $exerciseInSession->enableMonitor == 1;
+    if ($enableMonitor) {
+        $proikosPlugin = ProikosPlugin::create();
+
+        $smowlMonitoringLink = $proikosPlugin->smowlMonitoringEndpoint(
+            $userInfo['user_id'],
+            $userInfo['complete_name'],
+            $userInfo['email'],
+            $availableLanguages[$userInfo['language']] ?? 'es',
+            $sessionId,
+            $exerciseId
+        );
+        $url = api_get_path(WEB_CODE_PATH).
+            'exercise/overview.php?exerciseId='.$exerciseId.'&'.api_get_cidreq().'&id_session='.$sessionId;
+
+        echo '
+        <style>
+        .camera-container {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          height: 400px;
+          background-color: transparent;
+          border-radius: 12px;
+          overflow: hidden;
+          transition: height 0.3s ease, width 0.3s ease;
+          display: flex;
+          flex-direction: column;
+          z-index: 1000;
+        }
+
+        .camera-container.minimized {
+          height: 40px;
+          width: 40px;
+        }
+
+        .camera-header {
+          height: 40px;
+          display: flex;
+          justify-content: flex-end;
+          background-color: #c6c0c0;
+          padding: 5px;
+        }
+
+        .minimize-btn {
+          background: transparent;
+          color: #fff;
+          border: none;
+          cursor: pointer;
+          font-size: 16px;
+        }
+
+        iframe {
+          flex: 1;
+          width: 100%;
+          border: none;
+        }
+
+        </style>
+        <div class="camera-container" id="cameraContainer">
+          <iframe allow="microphone; camera"
+          sandbox="allow-top-navigation allow-scripts allow-modals allow-same-origin allow-popups allow-downloads allow-popups-to-escape-sandbox"
+          width="500" height="300" src="' . $smowlMonitoringLink . '" frameborder="0" allowfullscreen scrolling="no"></iframe>
+        </div>
+        <script>
+        function toggleCamera() {
+          const container = document.getElementById("cameraContainer");
+          container.classList.toggle("minimized");
+        }
+
+        var eventMethod = window.addEventListener ? "addEventListener" : "attachEvent";
+        var eventer = window[eventMethod];
+        var messageEvent = eventMethod === "attachEvent" ? "onmessage" : "message";
+        eventer(messageEvent, function (e) {
+         if (e.data === "monitoringstatusNOTOK" || e.message === "monitoringstatusNOTOK") {
+             //Custom code to handle checks or monitoring not ok.
+             //Commonly alert and if in activity page, then expelled
+             alert("Se detectó un error en la monitorización, por favor verifica tu cámara, micrófono o la herramienta SMOWL CM");
+             console.log("Monitoring not ok");
+             window.location.href = "'.$url.'";
+           }
+        });
+        </script>
+        ';
+    }
+}

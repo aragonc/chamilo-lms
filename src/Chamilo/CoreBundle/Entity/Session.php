@@ -175,6 +175,13 @@ class Session
     protected $requestAttachCertificates;
 
     /**
+     * @var string
+     *
+     * @ORM\Column(name="optional_request_attach_certificates", type="text", nullable=true, unique=false)
+     */
+    protected $optionalRequestAttachCertificates;
+
+    /**
      * @var \DateTime
      *
      * @ORM\Column(name="display_start_date", type="datetime", nullable=true, unique=false)
@@ -853,6 +860,26 @@ class Session
         return $this;
     }
 
+    /**
+     * @return string
+     */
+    public function getOptionalRequestAttachCertificates(): string
+    {
+        if($this->optionalRequestAttachCertificates === null){
+            return '';
+        }
+        return $this->optionalRequestAttachCertificates;
+    }
+
+    /**
+     * @param string $optionalRequestAttachCertificates
+     * @return Session
+     */
+    public function setOptionalRequestAttachCertificates(string $optionalRequestAttachCertificates)
+    {
+        $this->optionalRequestAttachCertificates = $optionalRequestAttachCertificates;
+        return $this;
+    }
 
     /**
      * Set displayStartDate.

@@ -1768,7 +1768,9 @@ class CoursesAndSessionsCatalog
             'variable' => 'tags',
         ]);
         $stakeholdersCurrent = 0;
-        if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
+
+        $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+        if ($allowProikos) {
             $pluginProikos = ProikosPlugin::create();
             $stakeholdersCurrent = $pluginProikos->getStakeholdersUser($userId);
         }
@@ -1785,7 +1787,7 @@ class CoursesAndSessionsCatalog
             }
             $count++;
         }
-        //var_dump($sessionList);
+
         /** @var Session $session */
         foreach ($sessionList as $session) {
 
@@ -1917,6 +1919,7 @@ class CoursesAndSessionsCatalog
                 'stakeholders' => $array_stakeholders,
                 'session_mode' => $session->getSessionMode(),
                 'request_attach_certificates' => $session->getRequestAttachCertificates(),
+                'optional_request_attach_certificates' => $session->getOptionalRequestAttachCertificates(),
                 'category' => $catName,
                 'tags' => $sessionCourseTags,
                 'edit_actions' => $actions,
@@ -1928,9 +1931,24 @@ class CoursesAndSessionsCatalog
                 'has_requirements' => $hasRequirements
             ];
 
-            if($enabledRequirements == $hasRequirements){
-                $sessionsBlock['session_enabled_user'] = 'enabled_user';
-            } else {
+//            if($enabledRequirements == $hasRequirements){
+//                $sessionsBlock['session_enabled_user'] = 'enabled_user';
+//            } else {
+//                $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
+//            }
+
+            if ($allowProikos) {
+                $quotaBySessionId = $pluginProikos->contratingCompaniesQuotaSessionDetModel()->getQuotaBySessionId(
+                    $session->getId(),
+                    $userId
+                );
+
+                if (false === $quotaBySessionId['success']) {
+                    $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
+                }
+            }
+
+            if ($sessionFull) {
                 $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
             }
 

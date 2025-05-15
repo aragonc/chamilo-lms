@@ -351,6 +351,10 @@ $url .= Display::url(
 
 $userListToShow = Display::page_subheader(get_lang('UserList').$url);
 $userList = SessionManager::get_users_by_session($sessionId);
+$allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+if ($allowProikos) {
+    $proikosPlugin = ProikosPlugin::create();
+}
 
 if (!empty($userList)) {
     $table = new HTML_Table(
@@ -387,6 +391,15 @@ if (!empty($userList)) {
             ['onclick' => "javascript:if(!confirm('".get_lang('ConfirmYourChoice')."')) return false;"]
         );
 
+        $downloadCertUploadedLink = '';
+        if ($allowProikos &&
+            (!empty($session->getRequestAttachCertificates()) && $session->getRequestAttachCertificates() != 'null') ||
+            !empty($session->getOptionalRequestAttachCertificates()) && $session->getOptionalRequestAttachCertificates() != 'null'
+        ) {
+            $userFullName = $userInfo['lastname'] . ' ' . $userInfo['firstname'];
+            $downloadCertUploadedLink = $proikosPlugin->generateDownloadLinkAttachCertificates($user['user_id'], $userFullName, $sessionId);
+        }
+
         $addUserToUrlLink = '';
         if ($multiple_url_is_on) {
             if ($user['access_url_id'] != $url_id) {
@@ -408,7 +421,7 @@ if (!empty($userList)) {
         }*/
 
         $table->setCellContents($row, 0, $userLink);
-        $link = $reportingLink.$courseUserLink.$removeLink.$addUserToUrlLink.$editUrl;
+        $link = $reportingLink.$courseUserLink.$downloadCertUploadedLink.$removeLink.$addUserToUrlLink.$editUrl;
         switch ($user['relation_type']) {
             case 1:
                 $status = get_lang('Drh');

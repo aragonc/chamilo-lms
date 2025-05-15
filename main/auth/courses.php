@@ -24,6 +24,12 @@ $action = isset($_REQUEST['action']) ? Security::remove_XSS($_REQUEST['action'])
 $categoryCode = isset($_REQUEST['category_code']) ? Security::remove_XSS($_REQUEST['category_code']) : '';
 $searchTerm = isset($_REQUEST['search_term']) ? Security::remove_XSS($_REQUEST['search_term']) : '';
 
+$allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+if ($allowProikos) {
+    $proikosPlugin = ProikosPlugin::create();
+    $proikosPlugin->renderModal();
+}
+
 $nameTools = CourseCategory::getCourseCatalogNameTools($action);
 if (empty($nameTools)) {
     $nameTools = get_lang('CourseManagement');
@@ -166,8 +172,41 @@ switch ($action) {
         }
 
         if (!$confirmed) {
+            $sessionInfo = api_get_session_info($sessionId);
+            $requestCertificates = [];
+            $optionalRequestCertificates = [];
+            if ($allowProikos && !empty($sessionInfo['request_attach_certificates']) && $sessionInfo['request_attach_certificates'] != 'null') {
+                $sessionRequestCertificates = json_decode($sessionInfo['request_attach_certificates'], true);
+                if (!empty($sessionRequestCertificates)) {
+                    foreach ($sessionRequestCertificates as $value) {
+                        if (isset($proikosPlugin::ATTACH_CERTIFICATES[$value])) {
+                            $requestCertificates[] = [
+                                'id' => $value,
+                                'name' => $proikosPlugin::ATTACH_CERTIFICATES[$value],
+                            ];
+                        }
+                    }
+                }
+            }
+
+            if ($allowProikos && !empty($sessionInfo['optional_request_attach_certificates']) && $sessionInfo['optional_request_attach_certificates'] != 'null') {
+                $sessionOptionalRequestCertificates = json_decode($sessionInfo['optional_request_attach_certificates'], true);
+                if (!empty($sessionOptionalRequestCertificates)) {
+                    foreach ($sessionOptionalRequestCertificates as $value) {
+                        if (isset($proikosPlugin::ATTACH_CERTIFICATES_ALTO_RIESGO[$value])) {
+                            $optionalRequestCertificates[] = [
+                                'id' => $value,
+                                'name' => $proikosPlugin::ATTACH_CERTIFICATES_ALTO_RIESGO[$value],
+                            ];
+                        }
+                    }
+                }
+            }
+
             $template = new Template(null, false, false, false, false, false);
             $template->assign('session_id', $sessionId);
+            $template->assign('request_certificates', $requestCertificates);
+            $template->assign('optional_request_certificates', $optionalRequestCertificates);
             $layout = $template->get_template('auth/confirm_session_subscription.tpl');
             echo $template->fetch($layout);
             exit;
@@ -176,15 +215,11 @@ switch ($action) {
         $registrationAllowed = api_get_setting('catalog_allow_session_auto_subscription');
         if ('true' === $registrationAllowed) {
             // Proikos Plugin: Use quota
-            $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
             if ($allowProikos) {
-                $proikosPlugin = ProikosPlugin::create();
                 $userQuotaBySessionId = $proikosPlugin->contratingCompaniesQuotaSessionDetModel()->getQuotaBySessionId($sessionId, $userId);
 
                 if (false === $userQuotaBySessionId['success']) {
-                    Display::addFlash(
-                        Display::return_message($userQuotaBySessionId['message'], 'warning')
-                    );
+                    $proikosPlugin->setModalMessage($userQuotaBySessionId['message']);
                     header('Location: '.api_get_path(WEB_CODE_PATH).'auth/courses.php');
                     exit;
                 }

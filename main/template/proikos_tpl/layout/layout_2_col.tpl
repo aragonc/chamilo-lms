@@ -33,9 +33,6 @@
                 </article>
                 {% endif %}
 
-                <div class="message-extra">
-                    {{ 'ExtraWelcomeMessage' | get_lang }}
-                </div>
 
                 {% if welcome_to_course_block %}
                     <article id="homepage-course">
