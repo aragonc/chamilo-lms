@@ -348,13 +348,17 @@ $url .= Display::url(
         ]
     )
 );
-
-$userListToShow = Display::page_subheader(get_lang('UserList').$url);
-$userList = SessionManager::get_users_by_session($sessionId);
 $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
 if ($allowProikos) {
     $proikosPlugin = ProikosPlugin::create();
+    $url .= Display::url(
+        Display::return_icon('file_zip.png', $proikosPlugin->get_lang('DownloadAllAttachedCertificates')),
+        api_get_path(WEB_PATH) . 'plugin/proikos/src/ajax.php?action=download_session_uploaded_documents&session_id=' . $sessionId
+    );
 }
+
+$userListToShow = Display::page_subheader(get_lang('UserList').$url);
+$userList = SessionManager::get_users_by_session($sessionId);
 
 if (!empty($userList)) {
     $table = new HTML_Table(
