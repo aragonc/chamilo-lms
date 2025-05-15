@@ -372,6 +372,11 @@ class DisplayGradebook
                     $additionalButtons .= '</div>';
                 }
                 $scoreinfo .= '<strong>'.sprintf(get_lang('TotalX'), $scorecourse_display.$additionalButtons).'</strong>';
+                if (!empty($category->get_require_all_quizzes())) {
+                    $quizCheck = ProikosPlugin::checkUserQuizCompletion($userId, $catobj->get_id());
+                    $scoreinfo .= '</br> * Todos los cuestionarios son requeridos : ' . $quizCheck['completed_count'] . ' / ' . $quizCheck['total_quizzes'];
+                }
+
             }
             echo Display::return_message($scoreinfo, 'normal', false);
         }
@@ -561,6 +566,7 @@ class DisplayGradebook
         } elseif (isset($_GET['search'])) {
             echo $header = '<b>'.get_lang('SearchResults').' :</b>';
         }
+
 
         $isDrhOfCourse = CourseManager::isUserSubscribedInCourseAsDrh(
             api_get_user_id(),

@@ -9065,3 +9065,4 @@ $CodeReference = 'Entidad de referencia';
 $Stakeholders = 'Stakeholders';
 $Company = 'Empresa';
 $AreaDependency = 'Aŕea-Dependencia';
+$AllQuizzesAreRequired = 'Todos los cuestionarios son requeridos';
