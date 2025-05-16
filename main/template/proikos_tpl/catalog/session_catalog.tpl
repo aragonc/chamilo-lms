@@ -85,7 +85,6 @@
         <h3 class="title">Cursos Asincrónicos</h3>
         <div class="row">
             {% for item in sessions|filter(i => i.session_mode == 1) %}
-
             {% if item.session_hide == true %}
             <div class="col-md-4 col-sm-6 col-xs-12">
                 <div id="session-{{ item.id }}" class="items items-courses items-sessions {{ item.session_enabled_user }}">
@@ -94,10 +93,15 @@
                             <img class="img-responsive" src="{{ item.image ? _p.web_upload ~ item.image : 'session_default.png'|icon() }}"
                                  alt="{{ item.name }}">
                         {% else %}
-                            <a href="{{ _p.web ~ 'session/' ~ item.id ~ '/about/' }}" title="{{ item.name }}">
-                                <img class="img-responsive" src="{{ item.image ? _p.web_upload ~ item.image : 'session_default.png'|icon() }}"
-                                     alt="{{ item.name }}">
-                            </a>
+                            {% if item.is_subscribed %}
+                                <a href="{{ item.url_unique_course }}" title="{{ item.name }}">
+                                    <img class="img-responsive" src="{{ item.image ? _p.web_upload ~ item.image : 'session_default.png'|icon() }}"
+                                         alt="{{ item.name }}">
+                                </a>
+                            {% else %}
+                                    <img class="img-responsive" src="{{ item.image ? _p.web_upload ~ item.image : 'session_default.png'|icon() }}"
+                                         alt="{{ item.name }}">
+                            {% endif %}
                         {% endif %}
                         {% if item.category != '' %}
                             <span class="category">{{ item.category }}</span>
@@ -115,7 +119,6 @@
                         </div>
                     </div>
                     <div class="description">
-
                         <div class="block-title">
                             {% if item.session_full %}
                             <h4 class="title">
@@ -123,9 +126,13 @@
                             </h4>
                             {% else %}
                                 <h4 class="title {{ item.session_enabled_user }}">
-                                    <a href="{{ _p.web ~ 'session/' ~ item.id ~ '/about/' }}" title="{{ item.name }}">
+                                    {% if item.is_subscribed %}
+                                        <a href="{{ item.url_unique_course }}" title="{{ item.name }}">
+                                            {{ item.name }}
+                                        </a>
+                                    {% else %}
                                         {{ item.name }}
-                                    </a>
+                                    {% endif %}
                                 </h4>
                             {% endif %}
                         </div>
@@ -277,10 +284,15 @@
                         <img class="img-responsive" src="{{ item.image ? _p.web_upload ~ item.image : 'session_default.png'|icon() }}"
                              alt="{{ item.name }}">
                         {% else %}
-                        <a href="{{ _p.web ~ 'session/' ~ item.id ~ '/about/' }}" title="{{ item.name }}">
+                            {% if item.is_subscribed %}
+                            <a href="{{ item.url_unique_course }}" title="{{ item.name }}">
+                                <img class="img-responsive" src="{{ item.image ? _p.web_upload ~ item.image : 'session_default.png'|icon() }}"
+                                     alt="{{ item.name }}">
+                            </a>
+                            {% else %}
                             <img class="img-responsive" src="{{ item.image ? _p.web_upload ~ item.image : 'session_default.png'|icon() }}"
                                  alt="{{ item.name }}">
-                        </a>
+                            {% endif %}
                         {% endif %}
                         {% if item.category != '' %}
                         <span class="category">{{ item.category }}</span>
@@ -306,9 +318,13 @@
                             </h4>
                             {% else %}
                             <h4 class="title {{ item.session_enabled_user }}">
-                                <a href="{{ _p.web ~ 'session/' ~ item.id ~ '/about/' }}" title="{{ item.name }}">
+                                {% if item.is_subscribed %}
+                                    <a href="{{ item.url_unique_course }}" title="{{ item.name }}">
+                                        {{ item.name }}
+                                    </a>
+                                {% else %}
                                     {{ item.name }}
-                                </a>
+                                {% endif %}
                             </h4>
                             {% endif %}
                         </div>

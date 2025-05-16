@@ -1883,11 +1883,22 @@ class CoursesAndSessionsCatalog
                 $array_stakeholders = json_decode($session->getStakeholders(), true);
             }
 
+            $numbersCourses = $session->getNbrCourses();
+            $urlUnique = '';
+            if($numbersCourses == 1){
+                /** @var SessionRelCourse $sessionCourse */
+                foreach ($session->getCourses() as $sessionCourse) {
+                    /** @var Course $course */
+                    $course = $sessionCourse->getCourse();
+                    $urlUnique = api_get_path(WEB_PATH).'courses/'.$course->getCode().'/index.php?id_session='.$session->getId();
+                }
+            }
+
             $sessionsBlock = [
                 'id' => $session->getId(),
                 'name' => $session->getName(),
                 'image' => isset($imageField['value']) ? $imageField['value'] : null,
-                'nbr_courses' => $session->getNbrCourses(),
+                'nbr_courses' => $numbersCourses,
                 'nbr_users' => $session->getNbrUsers(),
                 'coach_id' => $coachId,
                 'coach_url' => $generalCoach
@@ -1928,7 +1939,8 @@ class CoursesAndSessionsCatalog
                     $userId
                 ),
                 'session_full' => $sessionFull,
-                'has_requirements' => $hasRequirements
+                'has_requirements' => $hasRequirements,
+                'url_unique_course' => $urlUnique
             ];
 
 //            if($enabledRequirements == $hasRequirements){
