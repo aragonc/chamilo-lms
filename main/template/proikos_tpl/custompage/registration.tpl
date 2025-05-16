@@ -1,3 +1,4 @@
+<script src="https://www.google.com/recaptcha/enterprise.js?render=6LdtBDcrAAAAAAhENW2wEv233wvPb6TOcrZ4p4ya"></script>
 <div class="custompage">
     <div class="limiter">
         <div class="container-login">
@@ -183,4 +184,12 @@
         });
     }
 
+</script>
+<script>
+    function onClick(e) {
+        e.preventDefault();
+        grecaptcha.enterprise.ready(async () => {
+            const token = await grecaptcha.enterprise.execute('6LdtBDcrAAAAAAhENW2wEv233wvPb6TOcrZ4p4ya', {action: 'LOGIN'});
+        });
+    }
 </script>
