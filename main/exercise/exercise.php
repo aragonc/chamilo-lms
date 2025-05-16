@@ -14,6 +14,11 @@
 require_once __DIR__.'/../inc/global.inc.php';
 $current_course_tool = TOOL_QUIZ;
 
+$allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+if ($allowProikos) {
+    ProikosPlugin::enableTranslate(['cm-content']);
+}
+
 // Setting the tabs
 $this_section = SECTION_COURSES;
 
