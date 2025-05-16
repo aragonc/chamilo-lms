@@ -62,27 +62,27 @@
     <table>
         <thead>
         <tr>
-            <th>Nombre del Curso</th>
-            <th>Mensaje Informativo</th>
+            <th style="border-right: 1px solid #969a9d; border-bottom: 1px solid #969a9d;">Nombre del Curso</th>
+            <th style="border-bottom: 1px solid #969a9d;">Mensaje Informativo</th>
         </tr>
         </thead>
         <tbody>
         <tr>
-            <td>Inducción CASS</td>
-            <td class="info">
+            <td style="border-right: 1px solid #969a9d; border-bottom: 1px solid #969a9d;">Inducción CASS</td>
+            <td style="border-bottom: 1px solid #969a9d;" class="info">
                 Todo personal nuevo (propio y contratista) antes de la ejecución de sus actividades, debe recibir la Inducción CASS (8 horas).
                 La validez de la inducción es de dos (2) años, con la debida anticipación deberá llevarlo nuevamente para su renovación.
             </td>
         </tr>
         <tr>
-            <td>Matriz IPERC / ATS</td>
-            <td class="info">
+            <td style="border-right: 1px solid #969a9d; border-bottom: 1px solid #969a9d;">Matriz IPERC / ATS</td>
+            <td style="border-bottom: 1px solid #969a9d;" class="info">
                 El usuario debe tener Inducción CASS aprobada y vigente (nota aprobatoria de 14) el cual será validado posteriormente.
                 Caso contrario el usuario saldrá desaprobado del curso.
             </td>
         </tr>
         <tr>
-            <td>Permisos de Trabajo</td>
+            <td style="border-right: 1px solid #969a9d;">Permisos de Trabajo</td>
             <td class="info">
                 El personal debe tener previamente:<br>
                 • Los cursos de Inducción CASS e IPERC / ATS aprobados y vigentes (nota aprobatoria de 14).<br>
@@ -92,10 +92,6 @@
         </tr>
         </tbody>
     </table>
-</div>
-
-<div style="background: #fff1cd; border-radius: 10px; margin-bottom: 2rem; margin-top: 2rem; border: 2px solid #ffe9b1; padding: 2rem; ">
-    {{ 'ExtraWelcomeMessage' | get_lang }}
 </div>
 
 <p style="color: #EF7C00; font-weight: bold; font-size: 18px; text-align: center;">Saludos. Equipo online</p>
