@@ -182,6 +182,13 @@ class Session
     protected $optionalRequestAttachCertificates;
 
     /**
+     * @var int
+     *
+     * @ORM\Column(name="time_in_session", type="integer", nullable=true, unique=false)
+     */
+    protected $timeInSession;
+
+    /**
      * @var \DateTime
      *
      * @ORM\Column(name="display_start_date", type="datetime", nullable=true, unique=false)
@@ -878,6 +885,28 @@ class Session
     public function setOptionalRequestAttachCertificates(string $optionalRequestAttachCertificates)
     {
         $this->optionalRequestAttachCertificates = $optionalRequestAttachCertificates;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTimeInSession(): int
+    {
+        if($this->timeInSession === null){
+            return 0;
+        }
+
+        return $this->timeInSession;
+    }
+
+    /**
+     * @param int $timeInSession
+     * @return Session
+     */
+    public function setTimeInSession(int $timeInSession)
+    {
+        $this->timeInSession = $timeInSession;
         return $this;
     }
 
