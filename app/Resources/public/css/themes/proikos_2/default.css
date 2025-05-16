@@ -256,7 +256,7 @@ a:focus {
   background: url(images/bg-course.png) no-repeat top right #fffde4;
   border: 1px solid #008ad1;
 }
-.grid-courses .items.items-sessions.not_enabled_user .image a img{
+.grid-courses .items.items-sessions.not_enabled_user .image img{
   filter: grayscale(1);
   transition-property: filter;
   transition-duration: 1s;
