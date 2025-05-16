@@ -94,15 +94,6 @@
                         {{ display.collapseMenu('courses', 'Courses'|get_lang, course_block) }}
                     {% endif %}
 
-                    <!-- BLOCK SKILLS -->
-                    {% if skills_block %}
-                        {{ display.collapseMenu('skills', 'Skills'|get_lang, skills_block) }}
-                    {% endif %}
-
-                    <!-- BLOCK WORK -->
-                    {% if student_publication_block %}
-                        {{ display.collapseMenu('student_publications', 'StudentPublications'|get_lang, student_publication_block) }}
-                    {% endif %}
 
                     {% if grade_book_sidebar %}
                         <div class="panel-group" id="skill" role="tablist" aria-multiselectable="true">
@@ -146,21 +137,12 @@
                         </div>
                     </div>
                     {% endif %}
+
                     {{ certificates_search_block }}
                     <!-- BLOCK NOTICE -->
                     {% if notice_block %}
                         {{ display.collapse('notice', 'Notice'|get_lang, notice_block) }}
                     {% endif %}
-                    <!-- BLOCK HELP -->
-                    {% if help_block %}
-                        {{ display.collapse('help', 'MenuGeneral'|get_lang, help_block, true) }}
-                    {% endif %}
-                    <!-- BLOCK LINKS NAVIGATION -->
-                    {% if navigation_links %}
-                        {{ display.collapseFor('navigation_sidebar', 'MainNavigation'|get_lang, navigation_links) }}
-                    {% endif %}
-                    {{ search_block }}
-                    {{ classes_block }}
 
                     {% if plugin_menu_bottom %}
                         {{ display.pluginSidebar('sidebar-bottom', plugin_menu_bottom) }}
