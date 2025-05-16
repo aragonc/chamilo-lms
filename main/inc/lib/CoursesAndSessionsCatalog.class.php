@@ -1885,7 +1885,7 @@ class CoursesAndSessionsCatalog
 
             $sessionsBlock = [
                 'id' => $session->getId(),
-                'name' => $session->getName(),
+                'name' => $session->getName() . ($session->getTimeInSession() > 0 ? (' - ' . $session->getTimeInSession() . ' Horas') : ''),
                 'image' => isset($imageField['value']) ? $imageField['value'] : null,
                 'nbr_courses' => $session->getNbrCourses(),
                 'nbr_users' => $session->getNbrUsers(),
