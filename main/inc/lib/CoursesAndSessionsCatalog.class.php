@@ -1896,7 +1896,7 @@ class CoursesAndSessionsCatalog
 
             $sessionsBlock = [
                 'id' => $session->getId(),
-                'name' => $session->getName(),
+                'name' => $session->getName() . ($session->getTimeInSession() > 0 ? (' - ' . $session->getTimeInSession() . ' Horas') : ''),
                 'image' => isset($imageField['value']) ? $imageField['value'] : null,
                 'nbr_courses' => $numbersCourses,
                 'nbr_users' => $session->getNbrUsers(),
@@ -1957,6 +1957,16 @@ class CoursesAndSessionsCatalog
 
                 if (false === $quotaBySessionId['success']) {
                     $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
+                }
+
+                $hasTimeInSessionRestriction = $pluginProikos->hasTimeInSessionRestriction($userId, $session->getId());
+                if (false !== $hasTimeInSessionRestriction) {
+                    $sessionsBlock['subscribe_button'] = Display::div(
+                        'Solo puede inscribirse a sesiones de hasta ' . $hasTimeInSessionRestriction['time_in_session'] . ' horas',
+                        [
+                            'class' => 'alert alert-warning',
+                        ]
+                    );
                 }
             }
 

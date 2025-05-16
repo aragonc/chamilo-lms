@@ -981,12 +981,17 @@ if (isset($first_time) && $first_time == 1 && api_is_allowed_to_edit(null, true)
                 if(api_is_student()){
                     if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
                         $plugin = ProikosPlugin::create();
+                        $quizCheck = ProikosPlugin::checkUserQuizCompletion($stud_id, $selectCat);
                         $score = $plugin->getScoreCertificate($stud_id,$course_code,$session_id );
                         $style = "text-align: center; font-weight: bold;";
                         if($score['has_certificate']){
                             echo '<div class="alert alert-success" style="'.$style.'">
                                 <div class="icon"><img src="'.$score['icon'].'" alt="'.$plugin->get_lang('CongratulationsYouPassedTheCourse').'" ></div>
                                 '.$plugin->get_lang('CongratulationsYouPassedTheCourse').'</div>';
+                        } else if ((!$quizCheck['passed'])) {
+                            echo '<div class="alert alert-danger" style="'.$style.'">
+                                <div class="icon"><img src="'.$score['icon'].'" alt="'.$plugin->get_lang('SorryQuizIncomplete').'" ></div>
+                                '.$plugin->get_lang('SorryQuizIncomplete').'</div>';
                         } else {
                             echo '<div class="alert alert-danger" style="'.$style.'">
                                 <div class="icon"><img src="'.$score['icon'].'" alt="'.$plugin->get_lang('SorryYouReachTheProperScore').'" ></div>

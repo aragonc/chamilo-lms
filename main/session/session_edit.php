@@ -220,7 +220,8 @@ if ($form->validate()) {
         $stakeholders,
         $sessionMode,
         $requestAttachCertificates,
-        $optionalRequestAttachCertificates
+        $optionalRequestAttachCertificates,
+        $params['time_in_session'] ?? 0
     );
 
     if ($return) {

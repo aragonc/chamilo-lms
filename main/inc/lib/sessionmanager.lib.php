@@ -81,6 +81,7 @@ class SessionManager
             'session_mode' => $session->getSessionMode(),
             'request_attach_certificates' => $session->getRequestAttachCertificates(),
             'optional_request_attach_certificates' => $session->getOptionalRequestAttachCertificates(),
+            'time_in_session' => $session->getTimeInSession(),
             'display_start_date' => $session->getDisplayStartDate()
                 ? $session->getDisplayStartDate()->format('Y-m-d H:i:s')
                 : null,
@@ -189,7 +190,8 @@ class SessionManager
         $stakeholders = null,
         $sessionMode = null,
         $requestAttachCertificates = null,
-        $optionalRequestAttachCertificates = null
+        $optionalRequestAttachCertificates = null,
+        $timeInSession = 0
     ) {
         global $_configuration;
 
@@ -320,6 +322,10 @@ class SessionManager
 
                 if (!empty($optionalRequestAttachCertificates)) {
                     $values['optional_request_attach_certificates'] = $optionalRequestAttachCertificates;
+                }
+
+                if (!empty($timeInSession)) {
+                    $values['time_in_session'] = $timeInSession;
                 }
 
                 if (api_get_configuration_value('allow_session_status')) {
@@ -576,7 +582,8 @@ class SessionManager
                      s.session_category_id,
                      $injectExtraFields
                      s.id,
-                     s.session_mode
+                     s.session_mode,
+                     s.time_in_session
              ";
 
             if ($showCountUsers) {
@@ -1651,7 +1658,8 @@ class SessionManager
         $stakeholders = null,
         $sessionMode = null,
         $requestAttachCertificates = null,
-        $optionalRequestAttachCertificates = null
+        $optionalRequestAttachCertificates = null,
+        $timeInSession = 0
     ) {
         $status = (int) $status;
         $coachId = (int) $coachId;
@@ -1776,6 +1784,10 @@ class SessionManager
 
                 if (!empty($optionalRequestAttachCertificates)) {
                     $values['optional_request_attach_certificates'] = $optionalRequestAttachCertificates;
+                }
+
+                if (!empty($timeInSession)) {
+                    $values['time_in_session'] = $timeInSession;
                 }
 
                 $values['session_category_id'] = null;
@@ -8297,6 +8309,13 @@ class SessionManager
 
             $attachOptionalCertificates = ProikosPlugin::ATTACH_CERTIFICATES_ALTO_RIESGO;
             $form->addSelect('optional_request_attach_certificates',  $plugin->get_lang('RequestAttachCertificateTrabajosAltoRiesgo'), $attachOptionalCertificates, ['multiple' => 'multiple']);
+
+            $allowedHours = [
+                0 => $plugin->get_lang('None'),
+                4 => $plugin->get_lang('Hours4'),
+                8 => $plugin->get_lang('Hours8')
+            ];
+            $form->addSelect('time_in_session',  $plugin->get_lang('TimeInSession'), $allowedHours);
         }
         // Extra fields
         $setExtraFieldsMandatory = api_get_configuration_value('session_creation_form_set_extra_fields_mandatory');
