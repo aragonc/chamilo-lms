@@ -1780,7 +1780,8 @@ class CoursesAndSessionsCatalog
         $count = 0;
         $sessionList = [];
         foreach ($sessions as $session) {
-            if(!(($session->getDisplayStartDate() <= $currentDate) && ($session->getDisplayEndDate() >= $currentDate))){
+            if (!(($session->getDisplayStartDate() <= $currentDate) && ($session->getDisplayEndDate() >= $currentDate))
+                && !empty($session->getDisplayEndDate())) {
                 unset($sessions[$count]);
             } else {
                 $sessionList[]=$session;
