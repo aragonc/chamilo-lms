@@ -150,7 +150,9 @@ function get_tabs($courseId = null)
         $navigation['platform_admin']['title'] = get_lang('PlatformAdmin');
         $navigation['platform_admin']['key'] = 'admin';
         $navigation['platform_admin']['icon'] = 'admin.png';
+    }
 
+    if (api_is_platform_admin(true) || api_is_drh()) {
         $navigation['data_report']['url'] = api_get_path(WEB_PATH).'plugin/proikos/src/data_report.php';
         $navigation['data_report']['title'] = get_lang('Data');
         $navigation['data_report']['key'] = 'data';
@@ -478,7 +480,9 @@ function return_navigation_array()
             } else {
                 $menu_navigation['platform_admin'] = $possible_tabs['platform_admin'];
             }
+        }
 
+        if (api_is_platform_admin(true) || api_is_drh()) {
             $navigation['data_report'] = $possible_tabs['data_report'];
             $menu_navigation['data_report'] = $possible_tabs['data_report'];
         }
