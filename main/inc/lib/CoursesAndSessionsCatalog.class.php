@@ -1779,12 +1779,17 @@ class CoursesAndSessionsCatalog
 
         $count = 0;
         $sessionList = [];
+        $userInSessions = [];
         foreach ($sessions as $session) {
             if (!(($session->getDisplayStartDate() <= $currentDate) && ($session->getDisplayEndDate() >= $currentDate))
                 && !empty($session->getDisplayEndDate())) {
                 unset($sessions[$count]);
             } else {
                 $sessionList[]=$session;
+
+                if (true === SessionManager::isUserSubscribedAsStudent($session->getId(), $userId)) {
+                    $userInSessions[] = $session->getId();
+                }
             }
             $count++;
         }
@@ -1967,6 +1972,14 @@ class CoursesAndSessionsCatalog
             if (!in_array($stakeholdersCurrent, $array_stakeholders)) {
                 $sessionsBlock['subscribe_button'] = false;
                 $sessionsBlock['session_full'] = true;
+            }
+
+            if (api_get_plugin_setting('proikos', 'enable_limit_user_quotas') === 'true') {
+                if (!empty($userInSessions) && !in_array($session->getId(), $userInSessions)) {
+                    $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
+                    $sessionsBlock['subscribe_button'] = false;
+                    $sessionsBlock['session_full'] = true;
+                }
             }
 
             $sessionsBlocks[] = array_merge($sessionsBlock, $sequences);
