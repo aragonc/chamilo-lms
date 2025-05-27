@@ -831,6 +831,11 @@ if (!empty($action)) {
                 break;
             case 'delete_user':
                 $message = UserManager::deleteUserWithVerification($_GET['user_id']);
+                $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
+                if ($allowProikos) {
+                    ProikosPlugin::deleteUser($_GET['user_id']);
+                }
+
                 Display::addFlash($message);
                 header('Location: '.api_get_self());
                 exit;
