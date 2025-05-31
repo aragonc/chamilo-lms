@@ -50,6 +50,7 @@ define('STUDENT_BOSS', 17); // student is boss
 define('INVITEE', 20);
 define('HRM_REQUEST', 21); //HRM has request for vinculation with user
 define('COURSE_EXLEARNER', 22);
+define('CONTRACTOR_ADMIN', 30);
 
 // Table of status
 $_status_list[COURSEMANAGER] = 'teacher'; // 1
@@ -3450,6 +3451,18 @@ function api_is_drh()
 }
 
 /**
+ * Checks whether the current user is a contractor administrator.
+ *
+ * @return bool True if current user is a contractor administrator
+ */
+function api_is_contractor_admin()
+{
+    $user = api_get_user_info();
+
+    return isset($user['status']) && $user['status'] == CONTRACTOR_ADMIN;
+}
+
+/**
  * Checks whether the current user is a student.
  *
  * @return bool True if current user is a human resources manager
@@ -6168,6 +6181,7 @@ function api_get_status_langvars()
         ANONYMOUS => get_lang('Anonymous', ''),
         STUDENT_BOSS => get_lang('RoleStudentBoss', ''),
         INVITEE => get_lang('Invited'),
+        CONTRACTOR_ADMIN => get_lang('ContractorAdmin', ''),
     ];
 }
 
