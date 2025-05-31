@@ -21,6 +21,7 @@ $SkillsReport = "Reporte de competencias";
 $AssignedUsersListToStudentBoss = "Lista de usuarios asignados al superior";
 $AssignUsersToBoss = "Asignar usuarios a superior";
 $RoleStudentBoss = "Superior de estudiante(s)";
+$ContractorAdmin = "Administrador de contrato";
 $CosecantCsc = "Cosecante:\t\t\t\tcsc(x)";
 $HyperbolicCosecantCsch = "Cosecante hiperbólico:\t\tcsch(x)";
 $ArccosecantArccsc = "Arccosecante:\t\t\tarccsc(x)";

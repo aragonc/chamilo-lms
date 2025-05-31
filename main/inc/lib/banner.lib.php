@@ -159,6 +159,13 @@ function get_tabs($courseId = null)
         $navigation['data_report']['icon'] = 'data.png';
     }
 
+    if (api_is_contractor_admin()) {
+        $navigation['contractor_admin']['url'] = api_get_path(WEB_PLUGIN_PATH).'proikos/start.php';
+        $navigation['contractor_admin']['title'] = get_lang('Panel');
+        $navigation['contractor_admin']['key'] = 'contractor-admin';
+        $navigation['contractor_admin']['icon'] = 'admin.png';
+    }
+
     return $navigation;
 }
 
@@ -485,6 +492,11 @@ function return_navigation_array()
         if (api_is_platform_admin(true) || api_is_drh()) {
             $navigation['data_report'] = $possible_tabs['data_report'];
             $menu_navigation['data_report'] = $possible_tabs['data_report'];
+        }
+
+        if (api_is_contractor_admin()) {
+            $navigation['contractor_admin'] = $possible_tabs['contractor_admin'];
+            $menu_navigation['contractor_admin'] = $possible_tabs['contractor_admin'];
         }
 
         // Custom tabs

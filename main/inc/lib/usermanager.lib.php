@@ -7688,6 +7688,7 @@ SQL;
             $status[SESSIONADMIN] = get_lang('SessionsAdmin');
             $status[STUDENT_BOSS] = get_lang('RoleStudentBoss');
             $status[INVITEE] = get_lang('Invitee');
+            $status[CONTRACTOR_ADMIN] = get_lang('ContractorAdmin');
         }
 
         return $status;
