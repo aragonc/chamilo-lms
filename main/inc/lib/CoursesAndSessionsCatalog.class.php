@@ -1497,11 +1497,7 @@ class CoursesAndSessionsCatalog
 
         $table = Database::get_main_table(TABLE_MAIN_SESSION_CATEGORY);
         // Get the current month and year
-        $currentMonth = date('m');
-        $currentYear = date('Y');
-        $sql = "SELECT * FROM $table sc
-        WHERE MONTH(date_start) = $currentMonth
-        AND YEAR(date_start) = $currentYear";
+        $sql = "SELECT * FROM $table sc order by id DESC";
         $result = Database::query($sql);
 
         $list = [];
