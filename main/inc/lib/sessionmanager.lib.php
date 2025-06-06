@@ -8312,6 +8312,7 @@ class SessionManager
 
             $allowedHours = [
                 0 => $plugin->get_lang('None'),
+                2 => $plugin->get_lang('Hours2'),
                 4 => $plugin->get_lang('Hours4'),
                 8 => $plugin->get_lang('Hours8')
             ];
