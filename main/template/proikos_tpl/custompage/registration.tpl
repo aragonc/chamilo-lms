@@ -39,6 +39,52 @@
 
 <script>
     let urlAjax = '{{ url_plugin }}/src/ajax.php';
+
+    $(document).ready(function() {
+        $('#validate_code').click(function() {
+            // Obtener los valores del campo de texto y el select
+            var companyCode = $('#registration-two_company_code').val(); // Valor del código de empresa
+            var idCompany = $('#registration-two_contrating_companies').val(); // Valor de la empresa seleccionada
+
+            // Verificar si ambos campos no están vacíos
+            if (companyCode.trim() === "" || idCompany.trim() === "") {
+                $('#validation_message').removeClass('alert-success').addClass('alert-danger');
+                $('#validation_message').text('Please fill in both fields.');
+                $('#validation_message').show();
+                return; // Detener la ejecución si falta información
+            }
+
+            // Realizar la solicitud AJAX
+            $.ajax({
+                url: urlAjax + '?action=validate_company_code',
+                type: 'POST',
+                data: {
+                    company_code: companyCode,
+                    id_company: idCompany
+                },
+                dataType: 'json', // Esperamos un JSON como respuesta
+                success: function(response) {
+                    if (response.success) {
+                        // Si la validación es exitosa
+                        $('#validation_message').removeClass('alert-danger').addClass('alert-success');
+                        $('#validation_message').text(response.message); // Mostrar el mensaje de éxito
+                    } else {
+                        // Si la validación falla
+                        $('#validation_message').removeClass('alert-success').addClass('alert-danger');
+                        $('#validation_message').text(response.message); // Mostrar el mensaje de error
+                    }
+                    $('#validation_message').show(); // Mostrar el mensaje
+                },
+                error: function() {
+                    $('#validation_message').removeClass('alert-success').addClass('alert-danger');
+                    $('#validation_message').text('There was an error with the request.');
+                    $('#validation_message').show(); // Mostrar mensaje de error si hay un problema con la solicitud
+                }
+            });
+        });
+    });
+
+
     $("#registration-two_stakeholders").change(function (){
         let idSelector = $("#registration-two_stakeholders").val();
         console.log(idSelector);
