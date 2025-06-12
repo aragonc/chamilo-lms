@@ -68,6 +68,7 @@
                         // Si la validación es exitosa
                         $('#validation_message').removeClass('alert-danger').addClass('alert-success');
                         $('#validation_message').text(response.message); // Mostrar el mensaje de éxito
+                        $('.terms_conditions_container').show();
                     } else {
                         // Si la validación falla
                         $('#validation_message').removeClass('alert-success').addClass('alert-danger');
@@ -91,9 +92,11 @@
         if(idSelector == 1 ){
             $('#option-builder').hide();
             $('#option-number').show();
+            $('.terms_conditions_container').show();
         } else {
             $('#option-builder').show();
             $('#option-number').hide();
+            $('.terms_conditions_container').hide();
         }
         $.ajax({
             url: urlAjax + "?action=get_position&id_stakeholders=" + idSelector,
