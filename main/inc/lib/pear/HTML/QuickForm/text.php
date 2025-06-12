@@ -118,7 +118,15 @@ class HTML_QuickForm_text extends HTML_QuickForm_input
                         <!-- BEGIN required --><span class="form_required">*</span><!-- END required -->
                         {label}
                     </label>
+                    <div class="input-group-text">
                     {element}
+                    <!-- BEGIN label_3 -->
+                    <div class="label_3">
+                        {label_3}
+                    </div>
+                    <!-- END label_3 -->
+                    </div>
+
                      <!-- BEGIN label_2 -->
                         <p class="help-block">{label_2}</p>
                      <!-- END label_2 -->
