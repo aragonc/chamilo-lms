@@ -91,11 +91,11 @@
         console.log(idSelector);
         if(idSelector == 1 ){
             $('#option-builder').hide();
-            $('#option-number').show();
+            $('#registration-two_company_code').removeAttr('required');
             $('.terms_conditions_container').show();
         } else {
             $('#option-builder').show();
-            $('#option-number').hide();
+            $('#registration-two_company_code').attr("required", true);
             $('.terms_conditions_container').hide();
         }
         $.ajax({
@@ -118,23 +118,6 @@
         });
     });
 
-    /*$("#registration-two_name_company").change(function (){
-        let idSelector = $("#registration-two_name_company").val();
-        //console.log(idSelector);
-        $.ajax({
-            url: urlAjax + "?action=get_administrator&id_company=" + idSelector,
-            type: 'post',
-            dataType: 'json',
-            success: function (response){
-                let item = response;
-                //console.log(response);
-                $('#registration-two_contact_manager').val(item);
-            },
-            error: function (){
-                alert("error")
-            }
-        });
-    });*/
 
     $("#registration-two_area").change(function (){
         let idSelector = $("#registration-two_area").val();
