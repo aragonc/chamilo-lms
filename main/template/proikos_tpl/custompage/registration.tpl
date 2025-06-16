@@ -41,6 +41,29 @@
     let urlAjax = '{{ url_plugin }}/src/ajax.php';
 
     $(document).ready(function() {
+        $('#petro_code_div').hide();
+        $('.terms_conditions_container').hide();
+        $('#validate_petro').click(function () {
+            const valor = $('#registration-two_company_petro').val().trim();
+            const mensajeDiv = $('#validation_message');
+
+            if (valor === 'PRP2') {
+                mensajeDiv
+                    .removeClass('alert-danger')
+                    .addClass('alert-success')
+                    .text('Código validado correctamente')
+                    .show();
+                $('.terms_conditions_container').show();
+            } else {
+                mensajeDiv
+                    .removeClass('alert-success')
+                    .addClass('alert-danger')
+                    .text('Código incorrecto. Intenta nuevamente.')
+                    .show();
+                $('.terms_conditions_container').hide();
+            }
+        });
+
         $('#validate_code').click(function() {
             // Obtener los valores del campo de texto y el select
             var companyCode = $('#registration-two_company_code').val(); // Valor del código de empresa
@@ -92,11 +115,13 @@
         if(idSelector == 1 ){
             $('#option-builder').hide();
             $('#registration-two_company_code').removeAttr('required');
-            $('.terms_conditions_container').show();
+            $('#company_code_div').hide();
+            $('#petro_code_div').show();
         } else {
             $('#option-builder').show();
             $('#registration-two_company_code').attr("required", true);
-            $('.terms_conditions_container').hide();
+            $('#petro_code_div').hide();
+            $('#company_code_div').show();
         }
         $.ajax({
             url: urlAjax + "?action=get_position&id_stakeholders=" + idSelector,
