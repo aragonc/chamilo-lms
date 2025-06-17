@@ -115,11 +115,13 @@
         if(idSelector == 1 ){
             $('#option-builder').hide();
             $('#registration-two_company_code').removeAttr('required');
+            $('#registration-two_company_petro').attr("required", true);
             $('#company_code_div').hide();
             $('#petro_code_div').show();
         } else {
             $('#option-builder').show();
             $('#registration-two_company_code').attr("required", true);
+            $('#registration-two_company_petro').removeAttr('required');
             $('#petro_code_div').hide();
             $('#company_code_div').show();
         }
