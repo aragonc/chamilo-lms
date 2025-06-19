@@ -78,7 +78,6 @@ switch ($action) {
             if (api_get_configuration_value('add_certificate_pdf_footer')) {
                 $pdf->setCertificateFooter();
             }
-
             $pdf->html_to_pdf(
                 $certificatePathList,
                 $pdfName,
