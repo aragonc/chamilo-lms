@@ -704,8 +704,11 @@ class GradebookUtils
                 'user_id' => $user_id,
                 'score_certificate' => $score_certificate,
                 'created_at' => $date_certificate,
-                'expiration_date' => $date_expiration
+                'expiration_date' => '0000-00-00 00:00:00'
             ];
+            if(!empty($date_expiration)){
+                $params['expiration_date'] = $date_expiration;
+            }
             Database::insert($table, $params);
         }
     }

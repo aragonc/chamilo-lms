@@ -29,21 +29,18 @@ if (!empty($category) && !empty($category->get_course_code())) {
     $language_interface_initial_value = $language_interface;
 }
 
-/*if (empty($certificateData) && $action != 'view') {
-    api_not_allowed(false, Display::return_message(get_lang('NoCertificateAvailable'), 'warning'));
-}*/
-
-$certificate = new Certificate($certificateId, $userId);
-$certificateData = $certificate->get($certificateId);
-
-if (api_get_plugin_setting('easycertificate', 'enable_plugin_easycertificate') === 'true') {
-    EasyCertificatePlugin::redirectCheck($certificate, $certificateId, $userId);
-} else {
-    CustomCertificatePlugin::redirectCheck($certificate, $certificateId, $userId);
-}
 
 switch ($action) {
     case 'export':
+        $certificate = new Certificate($certificateId, $userId);
+        $certificateData = $certificate->get($certificateId);
+
+        if (api_get_plugin_setting('easycertificate', 'enable_plugin_easycertificate') === 'true') {
+            EasyCertificatePlugin::redirectCheck($certificate, $certificateId, $userId);
+        } else {
+            CustomCertificatePlugin::redirectCheck($certificate, $certificateId, $userId);
+        }
+
         $hideExportLink = api_get_setting('hide_certificate_export_link');
         $hideExportLinkStudent = api_get_setting('hide_certificate_export_link_students');
         if ($hideExportLink === 'true' ||
@@ -97,6 +94,14 @@ switch ($action) {
         }
         break;
     default:
+        $certificate = new Certificate($certificateId, $userId);
+        $certificateData = $certificate->get($certificateId);
+
+        if (api_get_plugin_setting('easycertificate', 'enable_plugin_easycertificate') === 'true') {
+            EasyCertificatePlugin::redirectCheck($certificate, $certificateId, $userId);
+        } else {
+            CustomCertificatePlugin::redirectCheck($certificate, $certificateId, $userId);
+        }
         // Special rules for anonymous users
         if (!$certificate->isVisible()) {
             api_not_allowed(false, Display::return_message(get_lang('CertificateExistsButNotPublic'), 'warning'));

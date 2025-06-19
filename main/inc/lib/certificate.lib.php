@@ -709,6 +709,7 @@ class Certificate extends Model
             0,
             $this->user_id
         );
+
         if (empty($myCertificate)) {
             GradebookUtils::registerUserInfoAboutCertificate(
                 0,
