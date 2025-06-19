@@ -686,7 +686,8 @@ class GradebookUtils
         $cat_id,
         $user_id,
         $score_certificate,
-        $date_certificate
+        $date_certificate,
+        $date_expiration
     ) {
         $table = Database::get_main_table(TABLE_MAIN_GRADEBOOK_CERTIFICATE);
         $cat_id = (int) $cat_id;
@@ -703,6 +704,7 @@ class GradebookUtils
                 'user_id' => $user_id,
                 'score_certificate' => $score_certificate,
                 'created_at' => $date_certificate,
+                'expiration_date' => $date_expiration
             ];
             Database::insert($table, $params);
         }

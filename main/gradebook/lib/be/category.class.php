@@ -2249,17 +2249,25 @@ class Category implements GradebookItem
             return false;
         }
 
+        $numberDaysExpiration = EasyCertificatePlugin::getNumberOfDaysToExpiration($courseId, $sessionId,1, $user_id);
+
+        $currentDate = new DateTime();
+        $currentDate->modify("+$numberDaysExpiration days");
+        $expirationDate = $currentDate->format('Y-m-d H:i:s');
+
         if (empty($my_certificate)) {
             GradebookUtils::registerUserInfoAboutCertificate(
                 $category_id,
                 $user_id,
                 $my_score_in_gradebook,
-                api_get_utc_datetime()
+                api_get_utc_datetime(),
+                $expirationDate
             );
             $my_certificate = GradebookUtils::get_certificate_by_user_id(
                 $category_id,
                 $user_id
             );
+
             if (api_get_plugin_setting('easycertificate', 'enable_plugin_congratulations') === 'true') {
                 $pluginCertificate = EasyCertificatePlugin::create();
                 $values = [
