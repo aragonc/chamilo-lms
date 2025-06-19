@@ -2249,9 +2249,22 @@ class Category implements GradebookItem
             return false;
         }
 
-        $numberDaysExpiration = EasyCertificatePlugin::getNumberOfDaysToExpiration($courseId, $sessionId,1, $user_id);
+        $sessionInfo = [];
+        if ($sessionId > 0) {
+            $sessionInfo = SessionManager::fetch($sessionId);
+        }
 
+        $typeExpiration = EasyCertificatePlugin::getNumberOfDaysToExpiration($courseId, $sessionId,1, $user_id);
+        $numberDaysExpiration = $typeExpiration['expected_days'];
         $currentDate = new DateTime();
+
+        $expeditionDay = api_get_utc_datetime();
+        if ($typeExpiration['date_issue_mode'] == '1') {
+            $expeditionDay = $sessionInfo['display_start_date'];
+            $currentDate = new DateTime($expeditionDay);
+            $currentDate->format('Y-m-d H:i:s');
+        }
+
         $currentDate->modify("+$numberDaysExpiration days");
         $expirationDate = $currentDate->format('Y-m-d H:i:s');
 
@@ -2260,7 +2273,7 @@ class Category implements GradebookItem
                 $category_id,
                 $user_id,
                 $my_score_in_gradebook,
-                api_get_utc_datetime(),
+                $expeditionDay,
                 $expirationDate
             );
             $my_certificate = GradebookUtils::get_certificate_by_user_id(
