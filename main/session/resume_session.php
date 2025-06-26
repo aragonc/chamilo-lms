@@ -126,7 +126,9 @@ switch ($action) {
             }
             Security::clear_token();
         }
-
+        //remove cupo
+        $plugin = ProikosPlugin::create();
+        $plugin->updateDeleteRemoveUserQuota($_GET['user'], $sessionId);
         Display::addFlash(Display::return_message($message));
         break;
 }
