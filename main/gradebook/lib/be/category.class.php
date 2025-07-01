@@ -2256,15 +2256,16 @@ class Category implements GradebookItem
 
         $typeExpiration = EasyCertificatePlugin::getNumberOfDaysToExpiration($courseId, $sessionId,1, $user_id);
         $numberDaysExpiration = $typeExpiration['expected_days'];
+        date_default_timezone_set('America/Lima');
         $currentDate = new DateTime();
-
         $expeditionDay = api_get_utc_datetime();
-        if ($typeExpiration['date_issue_mode'] == '1') {
-            $expeditionDay = $sessionInfo['display_start_date'];
+
+        if ($typeExpiration['date_issue_mode'] == '1' || $typeExpiration['date_issue_mode'] == '2') {
+            $expeditionDay = $sessionInfo['access_start_date_to_local_time'];
+            //$expeditionDay = api_format_date($expeditionDay, DATE_FORMAT_LONG_NO_DAY);
             $currentDate = new DateTime($expeditionDay);
             $currentDate->format('Y-m-d H:i:s');
         }
-
         $currentDate->modify("+$numberDaysExpiration days");
         $expirationDate = $currentDate->format('Y-m-d H:i:s');
 
