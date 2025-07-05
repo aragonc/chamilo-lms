@@ -583,7 +583,9 @@ class SessionManager
                      $injectExtraFields
                      s.id,
                      s.session_mode,
-                     s.time_in_session
+                     s.time_in_session,
+                     s.nbr_users,
+                     s.maximum_users
              ";
 
             if ($showCountUsers) {
