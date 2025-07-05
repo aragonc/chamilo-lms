@@ -1,18 +1,16 @@
 <style>
-    .course_label_number_users, .block-date {
-        display: none !important;
-    }
-
     .user_in_session {
         padding: 4px;
         padding-left: 9px;
         padding-right: 9px;
     }
-
+    .course_label_number_users{
+        color: #5562c9;
+        font-weight: 600;
+    }
     .not_enabled_user .btn-primary {
         filter: grayscale(1);
     }
-
 </style>
 <script>
     $(function () {
@@ -82,7 +80,7 @@
 <!-- new view session grib -->
 <div class="row">
     <div class="grid-courses col-md-12">
-        <h3 class="title">Cursos Asincrónicos</h3>
+        <h3 class="title">{{ 'AsynchronousCourses'|get_plugin_lang('ProikosPlugin') }}</h3>
         <div class="row">
             {% for item in sessions|filter(i => i.session_mode == 1) %}
             {% if item.session_hide == true %}
@@ -163,7 +161,7 @@
                                 </li>
                                 <li class="course_label_number_users">
                                     <i class="fa fa-user" aria-hidden="true"></i>
-                                    {{ item.nbr_users ~ '/' ~ item.maximum_users ~ ' ' ~ 'NbUsers'|get_lang }}
+                                    {{ item.nbr_users ~ '/' ~ item.maximum_users ~ ' ' ~ 'Students'|get_lang }}
                                 </li>
                             </ul>
                         </div>
@@ -272,7 +270,7 @@
     </div>
 
     <div class="grid-courses col-md-12">
-        <h3 class="title">Cursos Sincrónicos</h3>
+        <h3 class="title">{{ 'SynchronousCourses'|get_plugin_lang('ProikosPlugin') }}</h3>
         <div class="row">
             {% for item in sessions|filter(i => i.session_mode == 2) %}
 
@@ -355,7 +353,7 @@
                                 </li>
                                 <li class="course_label_number_users">
                                     <i class="fa fa-user" aria-hidden="true"></i>
-                                    {{ item.nbr_users ~ '/' ~ item.maximum_users ~ ' ' ~ 'NbUsers'|get_lang }}
+                                    {{ item.nbr_users ~ '/' ~ item.maximum_users ~ ' ' ~ 'Students'|get_lang }}
                                 </li>
                             </ul>
                         </div>
