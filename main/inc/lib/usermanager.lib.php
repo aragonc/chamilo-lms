@@ -457,15 +457,11 @@ class UserManager
         if (empty($expirationDate) || $expirationDate == '0000-00-00 00:00:00') {
             // Default expiration date
             // if there is a default duration of a valid account then
-            // we have to change the expiration_date accordingly
+            // the expiration_date has to be set taking it into account before calling create_user()
             // Accept 0000-00-00 00:00:00 as a null value to avoid issues with
             // third party code using this method with the previous (pre-1.10)
             // value of 0000...
-            if (api_get_setting('account_valid_duration') != '') {
-                $expirationDate = new DateTime($currentDate);
-                $days = (int) api_get_setting('account_valid_duration');
-                $expirationDate->modify('+'.$days.' day');
-            }
+            $expirationDate = null;
         } else {
             $expirationDate = api_get_utc_datetime($expirationDate);
             $expirationDate = new \DateTime($expirationDate, new DateTimeZone('UTC'));
@@ -577,9 +573,9 @@ class UserManager
                     false,
                     false,
                     false
-		);
-		// the complete_name is not used in the default Chamilo template but used in a specific template -refs BT#21334
-		$tplSubject->assign('complete_name', stripslashes(api_get_person_name($firstName, $lastName)));
+        );
+                // the complete_name is not used in the default Chamilo template but used in a specific template -refs BT#21334
+                $tplSubject->assign('complete_name', stripslashes(api_get_person_name($firstName, $lastName)));
                 $layoutSubject = $tplSubject->get_template('mail/subject_registration_platform.tpl');
                 $emailSubject = $tplSubject->fetch($layoutSubject);
                 $sender_name = api_get_person_name(
@@ -1571,7 +1567,7 @@ class UserManager
         $creator_id = null,
         $hr_dept_id = 0,
         $extra = null,
-        $language = 'english',
+        $language = null,
         $encrypt_method = '',
         $send_email = false,
         $reset_password = 0,
@@ -1614,7 +1610,7 @@ class UserManager
 
         // Checking the user language
         $languages = api_get_languages();
-        if (!in_array($language, $languages['folder'])) {
+        if (empty($language) || !in_array($language, $languages['folder'])) {
             $language = api_get_setting('platformLanguage');
         }
 
@@ -2407,10 +2403,9 @@ class UserManager
 
         $sql_query .= ' WHERE 1 = 1 ';
         if (count($conditions) > 0) {
-
             $andActive = "";
             if (isset($conditions['active'])) {
-                $andActive = " AND active = " . (int) $conditions['active'];
+                $andActive = " AND active = ".(int) $conditions['active'];
                 unset($conditions['active']);
             }
 
@@ -2436,6 +2431,10 @@ class UserManager
             if (api_is_multiple_url_enabled()) {
                 $sql_query .= ' AND auru.access_url_id = '.api_get_current_access_url_id();
             }
+        }
+
+        if (api_is_session_admin() && (api_get_setting('prevent_session_admins_to_manage_all_users') === 'true')) {
+            $sql_query .= ' AND user.creator_id = '.api_get_user_id();
         }
 
         if (!empty($onlyThisUserList)) {
@@ -6245,7 +6244,7 @@ class UserManager
         return $icon_link;
     }
 
-    public static function addUserAsAdmin(User $user)
+    public static function addUserAsAdmin(User $user, bool $andFlush = true)
     {
         if ($user) {
             $userId = $user->getId();
@@ -6256,11 +6255,11 @@ class UserManager
             }
 
             $user->addRole('ROLE_SUPER_ADMIN');
-            self::getManager()->updateUser($user, true);
+            self::getManager()->updateUser($user, $andFlush);
         }
     }
 
-    public static function removeUserAdmin(User $user)
+    public static function removeUserAdmin(User $user, bool $andFlush = true)
     {
         $userId = (int) $user->getId();
         if (self::is_admin($userId)) {
@@ -6268,7 +6267,7 @@ class UserManager
             $sql = "DELETE FROM $table WHERE user_id = $userId";
             Database::query($sql);
             $user->removeRole('ROLE_SUPER_ADMIN');
-            self::getManager()->updateUser($user, true);
+            self::getManager()->updateUser($user, $andFlush);
         }
     }
 
@@ -7765,6 +7764,9 @@ SQL;
             } else {
                 $now = new \DateTime(null, new DateTimeZone('UTC'));
                 // In some cases, old records might contain an incomplete Y-m-d H:i:s format
+                if (strlen($lastUpdate['password_updated_at']) == 10) {
+                    $lastUpdate['password_updated_at'] .= ' 00:00:00';
+                }
                 if (strlen($lastUpdate['password_updated_at']) == 16) {
                     $lastUpdate['password_updated_at'] .= ':00';
                 }
@@ -8105,7 +8107,7 @@ SQL;
      *
      * @return bool Whether we can send an e-mail or not
      */
-    public function isEmailingAllowed(string $mail): bool
+    public static function isEmailingAllowed(string $mail): bool
     {
         $list = self::getUsersByMail($mail);
         if (empty($list)) {
@@ -8121,6 +8123,192 @@ SQL;
         }
 
         return false;
+    }
+
+    /**
+     * return user hash based on user_id and loggedin user's salt.
+     *
+     * @param int user_id id of the user for whom we need the hash
+     *
+     * @return string containing the hash
+     */
+    public static function generateUserHash(int $user_id): string
+    {
+        $currentUserId = api_get_user_id();
+        $userManager = self::getManager();
+        /** @var User $user */
+        $user = self::getRepository()->find($currentUserId);
+        if (empty($user)) {
+            return false;
+        }
+
+        return rawurlencode(api_encrypt_hash($user_id, $user->getSalt()));
+    }
+
+    /**
+     * return decrypted hash or false.
+     *
+     * @param string hash    hash that is to be decrypted
+     */
+    public static function decryptUserHash(string $hash): string
+    {
+        $currentUserId = api_get_user_id();
+        $userManager = self::getManager();
+        /** @var User $user */
+        $user = self::getRepository()->find($currentUserId);
+        if (empty($user)) {
+            return false;
+        }
+
+        return api_decrypt_hash(rawurldecode($hash), $user->getSalt());
+    }
+
+    /**
+     * Search for users based on given filters.
+     */
+    public static function searchUsers(array $filters = [], array $editableFields = []): array
+    {
+        $where = [];
+
+        $accessUrlRelUserTable = Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_USER);
+        $userGroupTable = Database::get_main_table(TABLE_USERGROUP_REL_USER);
+
+        $isMultipleUrl = (api_is_platform_admin() || api_is_session_admin()) && api_get_multiple_access_url();
+        $urlId = api_get_current_access_url_id();
+
+        if (!empty($filters['keywordFirstname'])) {
+            $where[] = "u.firstname LIKE '%".Database::escape_string($filters['keywordFirstname'])."%'";
+        }
+        if (!empty($filters['keywordLastname'])) {
+            $where[] = "u.lastname LIKE '%".Database::escape_string($filters['keywordLastname'])."%'";
+        }
+        if (!empty($filters['keywordUsername'])) {
+            $where[] = "u.username LIKE '%".Database::escape_string($filters['keywordUsername'])."%'";
+        }
+        if (!empty($filters['keywordEmail'])) {
+            $where[] = "u.email LIKE '%".Database::escape_string($filters['keywordEmail'])."%'";
+        }
+        if (!empty($filters['keywordOfficialCode'])) {
+            $where[] = "u.official_code LIKE '%".Database::escape_string($filters['keywordOfficialCode'])."%'";
+        }
+        if (!empty($filters['keywordStatus']) && $filters['keywordStatus'] !== '%') {
+            $where[] = "u.status = '".Database::escape_string($filters['keywordStatus'])."'";
+        }
+        if (!empty($filters['keywordActive']) && empty($filters['keywordInactive'])) {
+            $where[] = "u.active = 1";
+        } elseif (empty($filters['keywordActive']) && !empty($filters['keywordInactive'])) {
+            $where[] = "u.active = 0";
+        }
+
+        if ($isMultipleUrl) {
+            $where[] = "u.id IN (SELECT user_id FROM $accessUrlRelUserTable WHERE access_url_id = $urlId)";
+        }
+
+        if (!empty($filters['class_id'])) {
+            $where[] = "u.id IN (SELECT user_id FROM $userGroupTable WHERE usergroup_id = ".(int) $filters['class_id'].")";
+        }
+
+        $extraField = new ExtraField('user');
+        $extraFieldResults = null;
+        $extraFieldHasData = false;
+
+        foreach ($filters as $key => $value) {
+            if (str_starts_with($key, 'extra_')) {
+                if (is_array($value)) {
+                    $value = array_filter($value, function ($v) {
+                        return $v !== null && $v !== '';
+                    });
+                }
+
+                if (empty($value)) {
+                    continue;
+                }
+
+                $variable = substr($key, 6);
+                $fieldInfo = $extraField->get_handler_field_info_by_field_variable($variable);
+                if ($fieldInfo) {
+                    $extraFieldHasData = true;
+                    $values = is_array($value) ? $value : [$value];
+
+                    $fieldResults = [];
+                    foreach ($values as $singleValue) {
+                        if (empty($singleValue)) {
+                            continue;
+                        }
+
+                        if ($fieldInfo['field_type'] == ExtraField::FIELD_TYPE_TAG) {
+                            $result = $extraField->getAllUserPerTag($fieldInfo['id'], $singleValue);
+                            $result = empty($result) ? [] : array_column($result, 'user_id');
+                        } else {
+                            $result = UserManager::get_extra_user_data_by_value($variable, $singleValue, true);
+                        }
+
+                        if (!empty($result)) {
+                            $fieldResults[] = $result;
+                        }
+                    }
+
+                    if (!empty($values) && empty($fieldResults)) {
+                        $extraFieldResults = [];
+                        break;
+                    }
+
+                    $mergedFieldResults = call_user_func_array('array_merge', $fieldResults);
+
+                    if ($extraFieldResults === null) {
+                        $extraFieldResults = $mergedFieldResults;
+                    } else {
+                        $extraFieldResults = array_intersect($extraFieldResults, $mergedFieldResults);
+                    }
+
+                    if (empty($extraFieldResults)) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($extraFieldHasData && $extraFieldResults === null) {
+            $extraFieldResults = [];
+        }
+
+        if ($extraFieldHasData) {
+            if (empty($extraFieldResults)) {
+                $where[] = "u.id IN ('-1')";
+            } else {
+                $where[] = "u.id IN ('".implode("','", array_unique($extraFieldResults))."')";
+            }
+        }
+
+        $fields = ['u.id', 'u.username'];
+
+        if (!empty($editableFields)) {
+            foreach ($editableFields as $field) {
+                $fields[] = "u.".Database::escapeField($field);
+            }
+        }
+
+        $sortableFields = [
+            0 => 'u.id',
+            1 => 'u.username',
+        ];
+
+        $columnIndex = $_GET['users_column'] ?? 0;
+        $direction = strtoupper($_GET['users_direction'] ?? 'ASC');
+
+        if (!in_array($direction, ['ASC', 'DESC'])) {
+            $direction = 'ASC';
+        }
+
+        $orderBy = $sortableFields[$columnIndex] ?? 'u.id';
+
+        $sql = "SELECT ".implode(", ", $fields)." FROM ".Database::get_main_table(TABLE_MAIN_USER)." u";
+        if (!empty($where)) {
+            $sql .= " WHERE ".implode(" AND ", $where);
+        }
+        $sql .= " ORDER BY $orderBy $direction";
+
+        return Database::store_result(Database::query($sql), 'ASSOC');
     }
 
     /**
@@ -8215,43 +8403,5 @@ SQL;
         }
 
         return $url;
-    }
-
-   /**
-    * return user hash based on user_id and loggedin user's salt
-    *
-    * @param int user_id id of the user for whom we need the hash
-    *
-    * @return string containing the hash
-    */
-    public static function generateUserHash(int $user_id): string
-    {
-        $currentUserId = api_get_user_id();
-        $userManager = self::getManager();
-        /** @var User $user */
-        $user = self::getRepository()->find($currentUserId);
-        if (empty($user)) {
-            return false;
-        }
-        return rawurlencode(api_encrypt_hash($user_id, $user->getSalt()));
-    }
-
-   /**
-    * return decrypted hash or false
-    *
-    * @param string hash    hash that is to be decrypted
-    *
-    * @return string
-    */
-    public static function decryptUserHash(string $hash): string
-    {
-        $currentUserId = api_get_user_id();
-        $userManager = self::getManager();
-        /** @var User $user */
-        $user = self::getRepository()->find($currentUserId);
-        if (empty($user)) {
-            return false;
-        }
-        return api_decrypt_hash(rawurldecode($hash), $user->getSalt());
     }
 }

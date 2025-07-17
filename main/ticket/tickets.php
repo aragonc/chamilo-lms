@@ -72,6 +72,20 @@ if ($table->per_page == 0) {
 }
 
 switch ($action) {
+    case 'delete':
+        if (isset($_GET['ticket_id'])) {
+            TicketManager::deleteTicket((int)$_GET['ticket_id']);
+            Display::addFlash(Display::return_message(
+                sprintf(
+                    get_lang('TicketDeleted'),
+                ),
+                null,
+                false
+            ));
+            header('Location: '.api_get_self().'?project_id='.$projectId);
+            exit;
+        }
+        break;
     case 'alert':
         if (!$isAdmin && isset($_GET['ticket_id'])) {
             TicketManager::send_alert($_GET['ticket_id'], $user_id);
@@ -81,13 +95,13 @@ switch ($action) {
         $data = [
             [
                 '#',
+                get_lang('Status'),
                 get_lang('Date'),
                 get_lang('LastUpdate'),
                 get_lang('Category'),
-                get_lang('User'),
-                get_lang('Program'),
+                get_lang('CreatedBy'),
                 get_lang('AssignedTo'),
-                get_lang('Status'),
+                get_lang('Message'),
                 get_lang('Description'),
             ],
         ];
@@ -128,7 +142,8 @@ if (empty($projectId)) {
 $currentUrl = api_get_self().'?project_id='.$projectId;
 $user_id = api_get_user_id();
 $isAllow = TicketManager::userIsAllowInProject(api_get_user_info(), $projectId);
-$isAdmin = api_is_platform_admin();
+$allowSessionAdmin = api_get_configuration_value('allow_session_admin_manage_tickets_and_export_ticket_report') && api_is_session_admin();
+$isAdmin = api_is_platform_admin() || $allowSessionAdmin;
 $actionRight = '';
 
 Display::display_header(get_lang('MyTickets'));
@@ -141,10 +156,12 @@ if (!empty($projectId)) {
             'keyword_status',
             'keyword_category',
             'keyword_assigned_to',
-            'keyword_start_date',
+            'keyword_start_date_start',
+            'keyword_start_date_end',
             'keyword_unread',
             'Tickets_per_page',
             'Tickets_column',
+            'keyword_created_by',
         ];
     }
     $get_parameter = '';
@@ -180,7 +197,7 @@ if (!empty($projectId)) {
     }
 
     $admins = UserManager::getUserListLike(
-        ['status' => '1'],
+        [],
         ['username'],
         true
     );
@@ -189,6 +206,18 @@ if (!empty($projectId)) {
     ];
     foreach ($admins as $admin) {
         $selectAdmins[$admin['user_id']] = $admin['complete_name_with_username'];
+    }
+
+    $Createdby = UserManager::getUserListLike(
+        [],
+        ['username'],
+        true
+    );
+    $selectcreated = [
+        0 => get_lang('Unassigned'),
+    ];
+    foreach ($Createdby as $creator) {
+        $selectcreated[$creator['user_id']] = $creator['complete_name_with_username'];
     }
     $status = TicketManager::get_all_tickets_status();
     $selectStatus = [];
@@ -227,7 +256,7 @@ if (!empty($projectId)) {
     );
 
     // Add link
-    if (api_get_setting('ticket_allow_student_add') == 'true' || api_is_platform_admin()) {
+    if (api_get_setting('ticket_allow_student_add') == 'true' || api_is_platform_admin() || $allowSessionAdmin) {
         $extraParams = '';
 
         if (isset($_GET['exerciseId']) && !empty($_GET['exerciseId'])) {
@@ -250,7 +279,7 @@ if (!empty($projectId)) {
         );
     }
 
-    if (api_is_platform_admin()) {
+    if (api_is_platform_admin() || $allowSessionAdmin) {
         $actionRight .= Display::url(
             Display::return_icon(
                 'export_excel.png',
@@ -261,7 +290,9 @@ if (!empty($projectId)) {
             api_get_self().'?action=export'.$get_parameter.$get_parameter2.'&project_id='.$projectId,
             ['title' => get_lang('Export')]
         );
+    }
 
+    if (api_is_platform_admin()) {
         $actionRight .= Display::url(
             Display::return_icon(
                 'settings.png',
@@ -286,9 +317,14 @@ if (!empty($projectId)) {
     $ticketLabel = get_lang('AllTickets');
     $url = api_get_path(WEB_CODE_PATH).'ticket/tickets.php?project_id='.$projectId;
 
-    if (!isset($_GET['keyword_assigned_to'])) {
+    if (!isset($_GET['keyword_assigned_to']) && !api_get_configuration_value('ticket_show_ticket_created_by_user_on_my_ticket_page')) {
         $ticketLabel = get_lang('MyTickets');
         $url = api_get_path(WEB_CODE_PATH).'ticket/tickets.php?project_id='.$projectId.'&keyword_assigned_to='.api_get_user_id();
+    }
+
+    if (api_get_configuration_value('ticket_show_ticket_created_by_user_on_my_ticket_page') && !isset($_GET['keyword_created_by'])) {
+        $ticketLabel = get_lang('MyTickets');
+        $url = api_get_path(WEB_CODE_PATH).'ticket/tickets.php?project_id='.$projectId.'&keyword_created_by='.api_get_user_id();
     }
 
     $options = '';
@@ -343,6 +379,12 @@ if (!empty($projectId)) {
     $advancedSearchForm->addDateTimePicker('keyword_start_date_start', get_lang('Created'));
     $advancedSearchForm->addDateTimePicker('keyword_start_date_end', get_lang('Until'));
     $advancedSearchForm->addSelect(
+        'keyword_created_by',
+        get_lang('CreatedBy'),
+        $selectcreated,
+        ['placeholder' => get_lang('All')]
+    );
+    $advancedSearchForm->addSelect(
         'keyword_assigned_to',
         get_lang('AssignedTo'),
         $selectAdmins,
@@ -382,6 +424,7 @@ if ($isAdmin) {
     $table->set_header(5, get_lang('CreatedBy'), true);
     $table->set_header(6, get_lang('AssignedTo'), true);
     $table->set_header(7, get_lang('Message'), true);
+    $table->set_header(8, get_lang('Delete'), true);
 } else {
     if ($isAllow == false) {
         echo Display::page_subheader(get_lang('MyTickets'));
@@ -391,7 +434,8 @@ if ($isAdmin) {
     $table->set_header(1, get_lang('Status'), false);
     $table->set_header(2, get_lang('Date'), true);
     $table->set_header(3, get_lang('LastUpdate'), true);
-    $table->set_header(4, get_lang('Category'));
+    $table->set_header(4, get_lang('Category'), true);
+    $table->set_header(5, get_lang('CreatedBy'), true);
 }
 
 $table->display();
