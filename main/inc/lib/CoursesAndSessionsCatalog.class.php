@@ -16,7 +16,7 @@ use ExtraField as ExtraFieldModel;
  */
 class CoursesAndSessionsCatalog
 {
-    public const PAGE_LENGTH = 12;
+    public const PAGE_LENGTH = 150;
 
     /**
      * Check the configuration for the courses and sessions catalog.
@@ -1538,8 +1538,8 @@ class CoursesAndSessionsCatalog
     public static function sessionList(bool $returnHtml = false, $categoryID): ?string
     {
         $date = $_POST['date'] ?? '';
-        $limit = self::getLimitArray();
 
+        $limit = self::getLimitArray();
         $countSessions = self::browseSessions($date, [], false, true);
         $nextSessions = null;
 
