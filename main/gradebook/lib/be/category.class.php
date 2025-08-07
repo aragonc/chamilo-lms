@@ -2144,6 +2144,7 @@ class Category implements GradebookItem
     ) {
         $user_id = (int) $user_id;
         $category_id = (int) $category_id;
+        $url = null;
 
         // Generating the total score for a course
         $category = self::load(
@@ -2361,8 +2362,46 @@ class Category implements GradebookItem
                 );
             }
 
+            // Send Message Certificate
+            $userInfo = api_get_user_info($user_id);
+            $view = new Template('', false, false, false, false, false, false);
+            $view->assign('course_name', Security::remove_XSS($sessionInfo['name']));
+            $view->assign('complete_name', Security::remove_XSS( $userInfo['complete_name']));
+            $view->assign('url_certificate', $url);
+            $template = $view->get_template('mail/send_certificate.tpl');
+            $emailBody = $view->fetch($template);
+            $emailSubject = "¡Certificado disponible! Has finalizado con éxito el curso " . Security::remove_XSS($sessionInfo['name']);
+
+            $sender_name = api_get_person_name(
+                api_get_setting('administratorName'),
+                api_get_setting('administratorSurname'),
+                null,
+                PERSON_NAME_EMAIL_ADDRESS
+            );
+            $email_admin = api_get_setting('emailAdministrator');
+            $recipient_name = api_get_person_name(
+                $userInfo['firstname'],
+                $userInfo['lastname'],
+                null,
+                PERSON_NAME_EMAIL_ADDRESS
+            );
+
+            api_mail_html(
+                $recipient_name,
+                $userInfo['email'],
+                $emailSubject,
+                $emailBody,
+                $sender_name,
+                $email_admin,
+                null,
+                null,
+                null
+            );
+
             return $html;
         }
+
+
     }
 
     /**
