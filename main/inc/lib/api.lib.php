@@ -4021,6 +4021,7 @@ function api_not_allowed(
     $message = null,
     $responseCode = 0
 ) {
+
     if (api_get_setting('sso_authentication') === 'true') {
         global $osso;
         if ($osso) {
@@ -4043,7 +4044,6 @@ function api_not_allowed(
 
     $origin = api_get_origin();
 
-    $msg = null;
     if (isset($message)) {
         $msg = $message;
     } else {
@@ -4051,12 +4051,16 @@ function api_not_allowed(
         if(api_is_student() && api_get_session_id()){
             $msg = '<div class="msg-content-available">'.get_lang('ContentNotAvailable').'</div>';
         } else {
-            $msg = Display::return_message(
-                get_lang('NotAllowedClickBack').'
-            <script>function goBack(){window.history.back();}</script>',
-                'error',
-                false
-            );
+            if(api_is_contractor_admin()){
+                $msg = '<div class="msg-content-available">'.get_lang('ContentNotAvailable').'</div>';
+            } else {
+                $msg = Display::return_message(
+                    get_lang('NotAllowedClickBack').'
+                    <script>function goBack(){window.history.back();}</script>',
+                    'error',
+                    false
+                );
+            }
         }
 
         $msg .= '<p class="text-center">
