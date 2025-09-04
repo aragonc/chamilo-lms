@@ -162,9 +162,12 @@ if ($continueTest) {
 if (isset($exercise_stat_info['exe_id'])) {
     $message = Display::return_message(get_lang('YouTriedToResolveThisExerciseEarlier'));
 }
-
+$smowlPanel = null;
+$enableMonitor = false;
+$enableLinkSmowlInBtn = 'false';
 // Replace $exercise_id if enableMonitor
 if ($allowProikos) {
+
     $enableMonitor = $objExercise->enableMonitor == 1 && !$continueTest;
     if ($enableMonitor) {
         $userInfo = api_get_user_info();
@@ -173,9 +176,21 @@ if ($allowProikos) {
             'english' => 'en'
         ];
         $proikosPlugin = ProikosPlugin::create();
+        $enableLinkSmowlInBtn = $proikosPlugin->get('enable_link_smowl_exercise');
+
+        $smowlPanel = $proikosPlugin->smowlRegistrationPanel(
+            $userInfo['user_id'],
+            $userInfo['username'],
+            $userInfo['email'],
+            $availableLanguages[$userInfo['language']] ?? 'es',
+            $exercise_url,
+            $sessionId,
+            $exercise_id
+        );
+
         $smowlRegistrationLink = $proikosPlugin->smowlRegistrationEndpoint(
             $userInfo['user_id'],
-            $userInfo['complete_name'],
+            $userInfo['username'],
             $userInfo['email'],
             $availableLanguages[$userInfo['language']] ?? 'es',
             $exercise_url,
@@ -488,7 +503,7 @@ if (!empty($attempts)) {
     }
     $table_content = $table->toHtml();
 }
-
+$html .= $smowlPanel;
 $selectAttempts = $objExercise->selectAttempts();
 if ($selectAttempts) {
     $attempt_message = get_lang('Attempts').' '.$counter.' / '.$selectAttempts;
@@ -528,14 +543,15 @@ if (!empty($exercise_url_button) && !$isLimitReached) {
         );
         $html .= '<br>';
     }
-
-    $html .= Display::div(
-        Display::div(
-            $exercise_url_button,
-            ['class' => 'exercise_overview_options']
-        ),
-        ['class' => 'options']
-    );
+    if ($enableLinkSmowlInBtn == 'false') {
+        $html .= Display::div(
+            Display::div(
+                $exercise_url_button,
+                ['class' => 'exercise_overview_options']
+            ),
+            ['class' => 'options']
+        );
+    }
 }
 
 if ($isLimitReached) {
