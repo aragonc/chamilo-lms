@@ -98,9 +98,9 @@ class GradebookTable extends SortableTable
             }
         }
 
-        $styleTextRight = ['style' => 'text-align: right;'];
-        $styleTextRight100 = ['style' => 'text-align: right; width: 100px;'];
-        $styleTextRight120 = ['style' => 'text-align: right; width: 120px;'];
+        $styleTextRight = ['style' => 'text-align: right; width: 120px;'];
+        $styleTextRight100 = ['style' => 'text-align: right; width: 120px;'];
+        $styleTextRight120 = ['style' => 'text-align: right; width: 100px;'];
         $styleCenterRight = ['style' => 'text-align: center;'];
 
         $this->set_header($column++, get_lang('Type'), '', 'width="20px"');
@@ -116,7 +116,7 @@ class GradebookTable extends SortableTable
             $showWeight = false;
         }
         if ($showWeight) {
-            $this->set_header($column++, get_lang('Weight'), false, $styleTextRight100, $styleTextRight100);
+            $this->set_header($column++, get_lang('Weight').' %', false, $styleTextRight100, $styleTextRight100);
         }
 
         if (!$this->teacherView) {
