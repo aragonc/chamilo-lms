@@ -1063,7 +1063,10 @@ if (isset($first_time) && $first_time == 1 && api_is_allowed_to_edit(null, true)
                             //'certificate_expiration_date' => $values['certificate_expiration_date'],
                         ];
 
-                        $plugin->registerData($params, true);
+                        $checkRegister = $plugin->checkRegisterLogData($stud_id, $course_id, $session_id);
+                        if($checkRegister == 0){
+                            $plugin->registerData($params, true);
+                        }
 
                         //var_dump($params);
 
