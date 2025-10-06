@@ -145,15 +145,26 @@ switch ($action) {
 
         exit;
     case 'generate_all_certificates':
+
+        $plugin = ProikosPlugin::create();
+        $session_id = api_get_session_id();
+
         $userList = CourseManager::get_user_list_from_course_code(
             api_get_course_id(),
-            api_get_session_id()
+            $session_id
         );
+        $course_id = api_get_course_int_id(api_get_course_id());
 
         if (!empty($userList)) {
             foreach ($userList as $userInfo) {
                 if ($userInfo['status'] == INVITEE) {
                     continue;
+                }
+                $params = $plugin->getValuesRegisterData($userInfo['user_id'], $course_id, $session_id);
+                $checkRegister = $plugin->checkRegisterLogData($userInfo['user_id'], $course_id, $session_id);
+
+                if($checkRegister == 0){
+                    $plugin->registerData($params, true);
                 }
                 Category::generateUserCertificate($categoryId, $userInfo['user_id']);
             }
