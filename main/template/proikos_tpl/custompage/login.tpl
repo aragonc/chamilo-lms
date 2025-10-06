@@ -23,11 +23,9 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="col-md-6">
                             <div class="padding-login">
-
-                                <h3 class="title">Bienvenidos a Proikos Academy</h3>
+                                <h3 class="title">Bienvenidos a {{ _s.site_name }}</h3>
                                 {{ mgs_flash }}
                                 {% if error %}
                                 <div class="alert alert-warning" role="alert">
