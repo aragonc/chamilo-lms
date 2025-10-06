@@ -127,9 +127,37 @@ switch ($action) {
             Security::clear_token();
         }
         //remove cupo
+        //$plugin = ProikosPlugin::create();
+        //$plugin->updateDeleteRemoveUserQuota($_GET['user'], $sessionId);
+        Display::addFlash(Display::return_message($message));
+        break;
+
+    case 'delete_user_coupon':
+
         $plugin = ProikosPlugin::create();
+        $exercises = $plugin->getExercisesSessionAndCourse($sessionId);
+
+        foreach ($exercises as $exercise) {
+            $plugin->deleteTrackExercise($exercise,$_GET['user'], $sessionId);
+        }
+
+        // Delete course from session.
+        if (!empty($_GET['user'])) {
+            $check = Security::check_token('get');
+            if ($check) {
+                SessionManager::unsubscribe_user_from_session(
+                    $sessionId,
+                    $_GET['user']
+                );
+                $message = get_lang('Updated');
+            }
+            Security::clear_token();
+        }
+
+        //remove el cupon usado del usuario.
         $plugin->updateDeleteRemoveUserQuota($_GET['user'], $sessionId);
         Display::addFlash(Display::return_message($message));
+
         break;
 }
 
@@ -382,19 +410,27 @@ if (!empty($userList)) {
         $reportingLink = Display::url(
             Display::return_icon('statistics.gif', get_lang('Reporting')),
             $codePath.'mySpace/myStudents.php?student='.$user['user_id'].''.$orig_param.'&id_session='
-            .$sessionId
+            .$sessionId,
+            ['class' => 'btn btn-default']
         );
 
         $courseUserLink = Display::url(
             Display::return_icon('course.png', get_lang('BlockCoursesForThisUser')),
             $codePath.'session/session_course_user.php?id_user='.$user['user_id'].'&id_session='
-            .$sessionId
+            .$sessionId,
+            ['class' => 'btn btn-default']
         );
 
         $removeLink = Display::url(
-            Display::return_icon('delete.png', get_lang('Delete')),
+            Display::return_icon('delete.png', get_lang('DeleteUserSessionUnchanged')),
             api_get_self().'?id_session='.$sessionId.'&action=delete&user='.$user['user_id'].'&sec_token='.Security::getTokenFromSession(),
-            ['onclick' => "javascript:if(!confirm('".get_lang('ConfirmYourChoice')."')) return false;"]
+            ['onclick' => "javascript:if(!confirm('".get_lang('ConfirmYourChoice')."')) return false;", 'class' => 'btn btn-default'],
+        );
+
+        $removeUserCoupon = Display::url(
+            Display::return_icon('delete_coupon.png', get_lang('DeleteUserSession')),
+            api_get_self().'?id_session='.$sessionId.'&action=delete_user_coupon&user='.$user['user_id'].'&sec_token='.Security::getTokenFromSession(),
+            ['onclick' => "javascript:if(!confirm('".get_lang('ConfirmYourChoice')."')) return false;", 'class' => 'btn btn-default']
         );
 
         $downloadCertUploadedLink = '';
@@ -427,7 +463,8 @@ if (!empty($userList)) {
         }*/
 
         $table->setCellContents($row, 0, $userLink);
-        $link = $reportingLink.$courseUserLink.$downloadCertUploadedLink.$removeLink.$addUserToUrlLink.$editUrl;
+        $link = '<div class="btn-group" role="group" aria-label="...">'.$reportingLink.$courseUserLink.
+            $downloadCertUploadedLink.$removeLink.$addUserToUrlLink.$editUrl.$removeUserCoupon.'</div>';
         switch ($user['relation_type']) {
             case 1:
                 $status = get_lang('Drh');
