@@ -983,93 +983,14 @@ if (isset($first_time) && $first_time == 1 && api_is_allowed_to_edit(null, true)
                         $plugin = ProikosPlugin::create();
                         $course_id = api_get_course_int_id($course_code);
 
+                        //verificamos si existe registo en data log, si no se registra
 
-                        $session = api_get_session_info($session_id);
-                        $em = Database::getManager();
-                        /** @var \Chamilo\CoreBundle\Entity\Repository\SessionRepository $sessionRepository */
-                        $sessionRepository = $em->getRepository('ChamiloCoreBundle:Session');
-                        /** @var \Chamilo\CoreBundle\Entity\Session $session */
-                        $sessionEM = $sessionRepository->find($session_id);
-                        $sessionCategory = $sessionEM->getCategory();
-
-                        if(is_null($sessionCategory)){
-                            $categoryName = 'Ninguno';
-                        } else {
-                            $categoryName = $sessionCategory->getName();
-                        }
-
-                        $userScoreExams = $plugin->getResultExerciseStudent($stud_id, $course_id, $session_id);
-                        $ponderacion_entrada = 0.10;  // 10%
-                        $ponderacion_salida = 0.30;   // 30%
-                        $ponderacion_taller = 0.60;   // 60%
-
-                        // Calcular el puntaje total ponderado
-                        $puntaje_total = (($userScoreExams['examen_de_entrada'] * $ponderacion_entrada) +
-                                ($userScoreExams['examen_de_salida'] * $ponderacion_salida) +
-                                ($userScoreExams['taller'] * $ponderacion_taller)) / 20 * 100;
-
-                        if ($puntaje_total == 0) {
-                            $status = $plugin->get_lang('Registered');
-                            $status_id = 1;
-                        } else if ($userScoreExams['examen_de_entrada'] == 0 || $userScoreExams['examen_de_salida'] == 0 || $userScoreExams['taller'] == 0) {
-                            $status = $plugin->get_lang('Failed');
-                            $status_id = 0;
-                        } else if ($puntaje_total >= 70.5) {
-                            $status = $plugin->get_lang('Approved');
-                            $status_id = 2;
-                        } else {
-                            $status = $plugin->get_lang('Failed');
-                            $status_id = 0;
-                        }
-
-                        $userInfoProikos = $plugin->getInfoUserProikos($stud_id);
-
-                        $timeSpent = api_time_to_hms(
-                            Tracking::get_time_spent_on_the_course(
-                                $stud_id,
-                                $course_id,
-                                $session_id
-                            )
-                        );
-
-                        $params = [
-                            'username' => $userInfoProikos['username'],
-                            'registration_code' => $userInfoProikos['user_id'],
-                            'course_id' => $course_id,
-                            'session_id' => $session_id,
-                            'course_code' => $course_code,
-                            'session_name' => $session['name'],
-                            'session_category_id' => $session['session_category_id'],
-                            'session_category_name' => $categoryName,
-                            'email' => $userInfoProikos['email'],
-                            'last_name' => $userInfoProikos['lastname'],
-                            'first_name' => $userInfoProikos['firstname'],
-                            'dni' => $userInfoProikos['number_document'],
-                            'company_ruc' => $userInfoProikos['ruc_company'] ?? '-',
-                            'company_name' => $userInfoProikos['name_company'],
-                            'stakeholders' => $userInfoProikos['stakeholders'],
-                            'area' => $userInfoProikos['area'],
-                            'metadata_exists' => (bool)$userInfoProikos['metadata'],
-                            'entrance_exam' => $userScoreExams['examen_de_entrada'] ?? 0,
-                            'workshop' => $userScoreExams['taller'] ?? 0,
-                            'exit_exam' => $userScoreExams['examen_de_salida'] ?? 0,
-                            'score' => $puntaje_total,
-                            'certificate_status' => $status == 'Aprobado' ? 1 : 0,
-                            'status' => $status,
-                            'status_id' => $status_id,
-                            'time_course' => $timeSpent,
-                            'observations' => $values['observations'] ?? '-',
-                            //'certificate_issue_date' => $values['certificate_issue_date'],
-                            //'certificate_expiration_date' => $values['certificate_expiration_date'],
-                        ];
-
+                        $params = $plugin->getValuesRegisterData($stud_id, $course_id, $session_id);
                         $checkRegister = $plugin->checkRegisterLogData($stud_id, $course_id, $session_id);
+
                         if($checkRegister == 0){
                             $plugin->registerData($params, true);
                         }
-
-                        //var_dump($params);
-
 
                         $quizCheck = ProikosPlugin::checkUserQuizCompletion($stud_id, $selectCat);
                         $score = $plugin->getScoreCertificate($stud_id,$course_code,$session_id );
