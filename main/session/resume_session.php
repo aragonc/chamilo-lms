@@ -127,8 +127,8 @@ switch ($action) {
             Security::clear_token();
         }
         //remove cupo
-        //$plugin = ProikosPlugin::create();
-        //$plugin->updateDeleteRemoveUserQuota($_GET['user'], $sessionId);
+        $plugin = ProikosPlugin::create();
+        $plugin->updateDeleteRemoveUserQuota($_GET['user'], $sessionId);
         Display::addFlash(Display::return_message($message));
         break;
 
@@ -136,11 +136,21 @@ switch ($action) {
 
         $plugin = ProikosPlugin::create();
         $exercises = $plugin->getExercisesSessionAndCourse($sessionId);
+        $lps = $plugin->getLPSession($sessionId);
+
+        foreach ($lps as $lp) {
+            $course['real_id'] = $lp['course_id'];
+            Event::delete_student_lp_events(
+                $_GET['user'],
+                $lp['lp_id'],
+                $course,
+                $lp['session_id']
+            );
+        }
 
         foreach ($exercises as $exercise) {
             $plugin->deleteTrackExercise($exercise,$_GET['user'], $sessionId);
         }
-
         // Delete course from session.
         if (!empty($_GET['user'])) {
             $check = Security::check_token('get');
@@ -155,8 +165,8 @@ switch ($action) {
         }
 
         //remove el cupon usado del usuario.
-        $plugin->updateDeleteRemoveUserQuota($_GET['user'], $sessionId);
-        Display::addFlash(Display::return_message($message));
+        //$plugin->updateDeleteRemoveUserQuota($_GET['user'], $sessionId);
+        //Display::addFlash(Display::return_message($message));
 
         break;
 }
