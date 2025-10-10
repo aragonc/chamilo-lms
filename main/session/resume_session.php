@@ -372,6 +372,8 @@ if (!empty($userList)) {
     $table->setHeaderContents(0, 3, get_lang('Actions'));
 
     $row = 1;
+    $urlAjaxPlugin = $codePath = api_get_path(WEB_PLUGIN_PATH)."src/proikos/ajax.php";
+
     foreach ($userList as $user) {
         $userId = $user['user_id'];
         $userInfo = api_get_user_info($userId);
@@ -382,19 +384,21 @@ if (!empty($userList)) {
         $reportingLink = Display::url(
             Display::return_icon('statistics.gif', get_lang('Reporting')),
             $codePath.'mySpace/myStudents.php?student='.$user['user_id'].''.$orig_param.'&id_session='
-            .$sessionId
+            .$sessionId,
+            ['class' => 'btn btn-default']
         );
 
         $courseUserLink = Display::url(
             Display::return_icon('course.png', get_lang('BlockCoursesForThisUser')),
             $codePath.'session/session_course_user.php?id_user='.$user['user_id'].'&id_session='
-            .$sessionId
+            .$sessionId,
+            ['class' => 'btn btn-default']
         );
 
         $removeLink = Display::url(
             Display::return_icon('delete.png', get_lang('Delete')),
             api_get_self().'?id_session='.$sessionId.'&action=delete&user='.$user['user_id'].'&sec_token='.Security::getTokenFromSession(),
-            ['onclick' => "javascript:if(!confirm('".get_lang('ConfirmYourChoice')."')) return false;"]
+            ['onclick' => "javascript:if(!confirm('".get_lang('ConfirmYourChoice')."')) return false;", 'class' => 'btn btn-default']
         );
 
         $downloadCertUploadedLink = '';
@@ -426,8 +430,15 @@ if (!empty($userList)) {
             );
         }*/
 
+
+        $check_doc = '<div class="check-container">
+            <button class="btn btn-default checkbtn" id="checkbtn_'.$user['user_id'].'" data-user-id="'.$user['user_id'].'" data-session-id="'.$sessionId.'">'.
+            Display::return_icon('check_na.png', get_lang('VerifiedAttachedDocuments'),['class' => 'check-image'])
+            .'</button>
+        </div>';
+
         $table->setCellContents($row, 0, $userLink);
-        $link = $reportingLink.$courseUserLink.$downloadCertUploadedLink.$removeLink.$addUserToUrlLink.$editUrl;
+        $link = $reportingLink.$courseUserLink.$downloadCertUploadedLink.$removeLink.$addUserToUrlLink.$editUrl.$check_doc;
         switch ($user['relation_type']) {
             case 1:
                 $status = get_lang('Drh');
@@ -514,6 +525,7 @@ $tpl->assign('url_list', $urlList);
 $tpl->assign('extra_fields', $extraFieldData);
 $tpl->assign('course_list', $courseListToShow);
 $tpl->assign('user_list', $userListToShow);
+$tpl->assign('url_ajax', $urlAjaxPlugin);
 $tpl->assign('dependencies', $dependencies);
 $tpl->assign('requirements', $requirements);
 
