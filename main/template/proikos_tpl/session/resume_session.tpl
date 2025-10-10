@@ -290,17 +290,15 @@
         // Event delegation para múltiples botones
         $(document).on('click', '.checkbtn', function(e) {
             e.preventDefault();
-
             var $btn = $(this);
             var $img = $btn.find('.check-image');
             var userId = $btn.data('user-id');
             var sessionId = $btn.data('session-id');
-            console.log(userId);
-            console.log(sessionId);
+
             // Determinar si está activo basándose en la imagen actual
             var isActive = $img.attr('src') === '{{ check_img }}';
             var newValue = isActive ? 0 : 1;
-            console.log(isActive);
+
             // Agregar clase de carga
             $btn.addClass('loading');
 

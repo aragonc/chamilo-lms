@@ -361,9 +361,9 @@ if ($allowProikos) {
 
 $userListToShow = Display::page_subheader(get_lang('UserList').$url);
 $userList = SessionManager::get_users_by_session($sessionId);
-$urlAjaxPlugin = $codePath = api_get_path(WEB_PLUGIN_PATH)."proikos/src/ajax.php";
-$checkImg = $codePath = api_get_path(WEB_IMG_PATH)."icons/22/check.png";
-$checkImgNa = $codePath = api_get_path(WEB_IMG_PATH)."icons/22/check_na.png";
+$urlAjaxPlugin = api_get_path(WEB_PLUGIN_PATH)."proikos/src/ajax.php";
+$checkImg = api_get_path(WEB_IMG_PATH)."icons/22/check.png";
+$checkImgNa = api_get_path(WEB_IMG_PATH)."icons/22/check_na.png";
 
 if (!empty($userList)) {
     $table = new HTML_Table(
