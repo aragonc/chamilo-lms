@@ -5,20 +5,15 @@
 
 {% block content %}
 <style>
-    .check-container {
-        display: inline-block;
-        padding: 10px;
-    }
 
-    .btn-check {
+    .checkbtn {
         background: none;
-        border: none;
         cursor: pointer;
-        padding: 5px;
+        padding: 6px;
         transition: transform 0.3s ease;
     }
 
-    .btn-check:hover {
+    .checkbtn:hover {
         transform: scale(1.1);
     }
 
@@ -28,7 +23,7 @@
         transition: all 0.3s ease;
     }
 
-    .btn-check.loading .check-image {
+    .checkbtn.loading .check-image {
         opacity: 0.5;
     }
 </style>
@@ -282,27 +277,36 @@
         });
     });
 </script>
+
+<!-- script check -->
+
+
 <script>
     $(document).ready(function() {
-        var isCheckActive = false; // Estado inicial
         var urlAjax = '{{ url_ajax }}'
-        // Verificar estado inicial al cargar la página
-        verificarEstadoInicial();
+        // Verificar estado inicial de todos los botones
+        verificarEstadosIniciales();
 
-        $('.checkbtn').on('click', function(e) {
+        // Event delegation para múltiples botones
+        $(document).on('click', '.checkbtn', function(e) {
             e.preventDefault();
 
-            // Obtener los datos
-            var userId = $(this).data('user-id');
-            var sessionId = $(this).data('session-id');
-            var newValue = isCheckActive ? 0 : 1; // Toggle entre 0 y 1
-
+            var $btn = $(this);
+            var $img = $btn.find('.check-image');
+            var userId = $btn.data('user-id');
+            var sessionId = $btn.data('session-id');
+            console.log(userId);
+            console.log(sessionId);
+            // Determinar si está activo basándose en la imagen actual
+            var isActive = $img.attr('src') === '{{ check_img }}';
+            var newValue = isActive ? 0 : 1;
+            console.log(isActive);
             // Agregar clase de carga
-            $(this).addClass('loading');
+            $btn.addClass('loading');
 
             // Realizar la petición AJAX
             $.ajax({
-                url: urlAjax + '?action=check_docs',
+                url: urlAjax + '?action=update_check',
                 type: 'POST',
                 dataType: 'json',
                 data: {
@@ -312,18 +316,13 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        // Actualizar estado
-                        isCheckActive = !isCheckActive;
-
                         // Cambiar la imagen
-                        var img = $('.checkbtn');
-                        if (isCheckActive) {
-                            img.attr('src', 'check.png');
+                        if (newValue === 1) {
+                            $img.attr('src', '{{ check_img }}');
                         } else {
-                            img.attr('src', 'check_na.png');
+                            $img.attr('src', '{{ check_na_img }}');
                         }
-
-                        console.log('Check actualizado correctamente');
+                        console.log('Check actualizado para usuario: ' + userId);
                     } else {
                         alert('Error: ' + response.message);
                     }
@@ -334,40 +333,45 @@
                 },
                 complete: function() {
                     // Remover clase de carga
-                    $('.checkbtn').removeClass('loading');
+                    $btn.removeClass('loading');
                 }
             });
         });
 
-        // Función para verificar el estado inicial
-        function verificarEstadoInicial() {
-            var userId = $('.checkbtn').data('user-id');
-            var sessionId = $('.checkbtn').data('session-id');
+        // Función para verificar el estado inicial de todos los botones
+        function verificarEstadosIniciales() {
+            var urlAjax = '{{ url_ajax }}'
+            $('.checkbtn').each(function() {
+                var $btn = $(this);
+                var $img = $btn.find('.check-image');
+                var userId = $btn.data('user-id');
+                var sessionId = $btn.data('session-id');
 
-            $.ajax({
-                url: 'obtener_estado_check.php',
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    user_id: userId,
-                    session_id: sessionId
-                },
-                success: function(response) {
-                    if (response.success) {
-                        isCheckActive = response.check_document === 1;
-                        var img = $('.check-image');
-                        if (isCheckActive) {
-                            img.attr('src', 'check.png');
-                        } else {
-                            img.attr('src', 'check_na.png');
+                $.ajax({
+                    url: urlAjax + '?action=verify_check',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        user_id: userId,
+                        session_id: sessionId
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            if (response.check_document === 1) {
+                                $img.attr('src', '{{ check_img }}');
+                            } else {
+                                $img.attr('src', '{{ check_na_img }}');
+                            }
                         }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Error al obtener estado:', error);
                     }
-                },
-                error: function(xhr, status, error) {
-                    console.log('Error al obtener estado:', error);
-                }
+                });
             });
         }
     });
 </script>
+
+
 {% endblock %}
