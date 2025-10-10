@@ -1,6 +1,6 @@
 <p>{{ 'Dear'|get_lang }} {{ complete_name }},</p>
 {{ username ? '<p>' ~ username ~ '</p>' }}
-<p>{{ 'YouAreRegisterToSessionX'|get_lang|format(session_name) }}</p>
+<p>{{ 'YouAreRegisterToSessionX'|get_lang|format(session_name) }} - de 7:30am a 5:00pm</p>
 <p>{{ 'Address'|get_lang }}  {{ _s.site_name }} {{ 'Is'|get_lang }} : {{ _p.web }}</p>
 <p>{{ 'Problem'|get_lang }}</p>
 <p>{{ 'SignatureFormula'|get_lang }}</p>
