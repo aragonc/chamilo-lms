@@ -381,7 +381,7 @@ if (!empty($userList)) {
         $userId = $user['user_id'];
         $userInfo = api_get_user_info($userId);
 
-        $userLink = '<a href="'.$codePath.'admin/user_information.php?user_id='.$userId.'">'.
+        $userLink = '<input type="checkbox" name="id[]" value="'.$userId.'"> &nbsp; <a href="'.$codePath.'admin/user_information.php?user_id='.$userId.'">'.
             api_htmlentities($userInfo['complete_name_with_username']).'</a>';
 
         $reportingLink = Display::url(
@@ -512,6 +512,7 @@ $programmedAnnouncement = new ScheduledAnnouncement();
 $programmedAnnouncement = $programmedAnnouncement->allowed();
 
 $htmlHeadXtra[] = api_get_jquery_libraries_js(['jquery-ui', 'jquery-upload']);
+
 
 $tpl = new Template($tool_name);
 $tpl->assign('session_header', $sessionHeader);

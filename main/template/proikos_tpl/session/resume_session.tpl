@@ -169,7 +169,37 @@
 </table>
 
 {{ course_list }}
+
+<form id="user_list_form" action="{{ _p.web }}main/session/resume_session.php?id_session={{ session.id }}">
 {{ user_list }}
+
+    <div class="btn-toolbar">
+        <div class="btn-group">
+            <a class="btn btn-default" href="#" onclick="javascript: setCheckbox(true, 'user_list_form'); return false;">
+                Seleccionar todo
+            </a>
+            <a class="btn btn-default" href="#" onclick="javascript: setCheckbox(false, 'user_list_form'); return false;">
+                Anular seleccionar todos
+            </a>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-default" type="button">Acciones</button>
+            <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a data-action="update_check" href="#" onclick="javascript:action_click(this, 'user_list_form');">
+                        Verificar documentos
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+
+
+</form>
 
 {{ requirements }}
 {{ dependencies }}
