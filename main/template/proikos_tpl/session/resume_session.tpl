@@ -1,7 +1,37 @@
+
 {% extends 'layout/layout_1_col.tpl'|get_template %}
 
-{% block content %}
 
+
+{% block content %}
+<style>
+    .check-container {
+        display: inline-block;
+        padding: 10px;
+    }
+
+    .btn-check {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+        transition: transform 0.3s ease;
+    }
+
+    .btn-check:hover {
+        transform: scale(1.1);
+    }
+
+    .check-image {
+        width: 22px;
+        height: 22px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-check.loading .check-image {
+        opacity: 0.5;
+    }
+</style>
 {{ session_header }}
 {{ title | remove_xss }}
 
@@ -250,6 +280,94 @@
                         })
                 });
         });
+    });
+</script>
+<script>
+    $(document).ready(function() {
+        var isCheckActive = false; // Estado inicial
+        var urlAjax = '{{ url_ajax }}'
+        // Verificar estado inicial al cargar la página
+        verificarEstadoInicial();
+
+        $('.checkbtn').on('click', function(e) {
+            e.preventDefault();
+
+            // Obtener los datos
+            var userId = $(this).data('user-id');
+            var sessionId = $(this).data('session-id');
+            var newValue = isCheckActive ? 0 : 1; // Toggle entre 0 y 1
+
+            // Agregar clase de carga
+            $(this).addClass('loading');
+
+            // Realizar la petición AJAX
+            $.ajax({
+                url: urlAjax + '?action=check_docs',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    user_id: userId,
+                    session_id: sessionId,
+                    check_document: newValue
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Actualizar estado
+                        isCheckActive = !isCheckActive;
+
+                        // Cambiar la imagen
+                        var img = $('.checkbtn');
+                        if (isCheckActive) {
+                            img.attr('src', 'check.png');
+                        } else {
+                            img.attr('src', 'check_na.png');
+                        }
+
+                        console.log('Check actualizado correctamente');
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Error en la petición: ' + error);
+                    console.log('Error AJAX:', error);
+                },
+                complete: function() {
+                    // Remover clase de carga
+                    $('.checkbtn').removeClass('loading');
+                }
+            });
+        });
+
+        // Función para verificar el estado inicial
+        function verificarEstadoInicial() {
+            var userId = $('.checkbtn').data('user-id');
+            var sessionId = $('.checkbtn').data('session-id');
+
+            $.ajax({
+                url: 'obtener_estado_check.php',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    user_id: userId,
+                    session_id: sessionId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        isCheckActive = response.check_document === 1;
+                        var img = $('.check-image');
+                        if (isCheckActive) {
+                            img.attr('src', 'check.png');
+                        } else {
+                            img.attr('src', 'check_na.png');
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('Error al obtener estado:', error);
+                }
+            });
+        }
     });
 </script>
 {% endblock %}
