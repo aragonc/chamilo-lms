@@ -170,7 +170,7 @@
 
 {{ course_list }}
 
-<form id="user_list_form" action="{{ _p.web }}main/session/resume_session.php?id_session={{ session.id }}">
+<form id="user_list_form" action="{{ _p.web }}main/session/resume_session.php?id_session={{ session.id }}" method="post">
 {{ user_list }}
 
     <div class="btn-toolbar">
@@ -189,16 +189,17 @@
             </button>
             <ul class="dropdown-menu">
                 <li>
-                    <a data-action="update_check" href="#" onclick="javascript:action_click(this, 'user_list_form');">
+                    <a data-action="update_check_true" href="#" onclick="javascript:action_click(this, 'user_list_form');">
                         Verificar documentos
+                    </a>
+                    <a data-action="update_check_false" href="#" onclick="javascript:action_click(this, 'user_list_form');">
+                        Desactivar verificar documentos
                     </a>
                 </li>
             </ul>
         </div>
     </div>
-
-
-
+    <input type="hidden" name="action" value="check_documents">
 </form>
 
 {{ requirements }}

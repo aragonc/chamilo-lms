@@ -33,7 +33,7 @@ $interbreadcrumb[] = [
     'url' => 'session_list.php',
     'name' => get_lang('SessionList'),
 ];
-
+$plugin = ProikosPlugin::create();
 $orig_param = '&origin=resume_session';
 
 $allowSkills = api_get_configuration_value('allow_skill_rel_items');
@@ -53,10 +53,69 @@ $sessionRepository = $em->getRepository('ChamiloCoreBundle:Session');
 $session = $sessionRepository->find($sessionId);
 $sessionCategory = $session->getCategory();
 
-$action = isset($_GET['action']) ? $_GET['action'] : null;
+$action = $_REQUEST['action'] ?? null;
+
 $url_id = api_get_current_access_url_id();
 
 switch ($action) {
+    case 'update_check_false':
+        $ids = $_REQUEST['id'] ?? null;
+
+        $tableCheck = Database::get_main_table($plugin::TABLE_PROIKOS_CHECK_DOCS);
+
+        foreach ($ids as $id) {
+
+            $sql = "SELECT id FROM $tableCheck WHERE user_id = $id AND session_id = $sessionId";
+            $result = Database::query($sql);
+
+            $params = [
+                'user_id' => $id,
+                'session_id' => $sessionId,
+                'check_document' => 0,
+                'user_id_check' => api_get_user_id(),
+            ];
+            if (Database::num_rows($result) > 0) {
+                Database::update(
+                    $tableCheck,
+                    $params,
+                    [
+                        'user_id = ? AND session_id = ?' => [$id, $sessionId],
+                    ]
+                );
+            } else {
+                $id = Database::insert($tableCheck, $params);
+            }
+        }
+        break;
+    case 'update_check_true':
+        $ids = $_REQUEST['id'] ?? null;
+        $tableCheck = Database::get_main_table($plugin::TABLE_PROIKOS_CHECK_DOCS);
+
+        foreach ($ids as $id) {
+
+            $sql = "SELECT id FROM $tableCheck WHERE user_id = $id AND session_id = $sessionId";
+            $result = Database::query($sql);
+
+            $params = [
+                'user_id' => $id,
+                'session_id' => $sessionId,
+                'check_document' => 1,
+                'user_id_check' => api_get_user_id(),
+            ];
+            if (Database::num_rows($result) > 0) {
+                Database::update(
+                    $tableCheck,
+                    $params,
+                    [
+                        'user_id = ? AND session_id = ?' => [$id, $sessionId],
+                    ]
+                );
+            } else {
+                $id = Database::insert($tableCheck, $params);
+            }
+        }
+
+        break;
     case 'move_up':
         SessionManager::moveUp($sessionId, $_GET['course_id']);
         header('Location: resume_session.php?id_session='.$sessionId);
@@ -127,7 +186,7 @@ switch ($action) {
             Security::clear_token();
         }
         //remove cupo
-        $plugin = ProikosPlugin::create();
+
         $plugin->updateDeleteRemoveUserQuota($_GET['user'], $sessionId);
         Display::addFlash(Display::return_message($message));
         break;
