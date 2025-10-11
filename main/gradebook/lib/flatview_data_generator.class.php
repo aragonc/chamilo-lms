@@ -254,7 +254,7 @@ class FlatViewDataGenerator
        if ($mainCourseCategory->get_require_all_quizzes()) {
            $headers[] = '<span class="text-center">Evaluaciones Req.</span>';
        }
-
+        $headers[] = get_lang('Actions');
         return $headers;
     }
 
@@ -400,6 +400,7 @@ class FlatViewDataGenerator
         }
 
         $course_code = api_get_course_id();
+        $course_id = api_get_course_int_id($course_code);
         $session_id = api_get_session_id();
         $model = ExerciseLib::getCourseScoreModel();
 
@@ -682,6 +683,8 @@ class FlatViewDataGenerator
                     count((empty($evaluationsAdded) ? [] : $evaluationsAdded));
 
             }
+            $nameUser = api_get_person_name($user[3], $user[2]);
+            $row[] = '<button id="btn_modal'.$user_id.'" class="btn btn-default btn-modal" data-user-name="'.$nameUser.'" data-user-id="'.$user_id.'" data-session-id="'.$session_id.'" data-course-id="'.$course_id.'">Registrar Incidencia</button>';
 
             $data[] = $row;
         }

@@ -324,6 +324,35 @@ if (isset($_GET['isStudentView']) && 'false' === $_GET['isStudentView']) {
     echo '<div id="contentArea" style="text-align: center;" >';
     $flatViewTable->display_graph_by_resource();
     echo '</div>';
+    echo "<script>
+            $(document).ready(function() {
+                $(document).on('click', '.btn-modal', function() {
+                    const userId = $(this).data('user-id');
+                    const courseId = $(this).data('course-id');
+                    const sessionId = $(this).data('session-id');
+                    const userName = $(this).data('user-name');
+
+                    // Llenar los campos ocultos
+                    $('#sustenance_user_id').val(userId);
+                    $('#sustenance_course_id').val(courseId);
+                    $('#sustenance_session_id').val(sessionId);
+
+                    // Mostrar información del usuario
+                    $('#userIdDisplay').text(userId);
+                    $('#userNameDisplay').text(userName);
+
+                    // Limpiar los campos del formulario
+                    document.getElementById('formIncidencia').reset();
+                    $('#sustenance_select').val(null);
+
+                    // Cargar datos existentes
+                    //cargarDatosExistentes(userId, courseId, sessionId);
+
+                    // Mostrar modal
+                    $('#modalIncidencia').modal('show');
+                });
+            });
+          </script>";
 }
 
 Display::display_footer();
