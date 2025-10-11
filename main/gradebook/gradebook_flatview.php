@@ -317,13 +317,48 @@ if (isset($_GET['isStudentView']) && 'false' === $_GET['isStudentView']) {
         $showlink,
         $simple_search_form
     );
-
+    $urlAjaxPlugin = api_get_path(WEB_PLUGIN_PATH)."proikos/src/ajax.php";
     // Table
     $flatViewTable->display();
     //@todo load images with jquery
     echo '<div id="contentArea" style="text-align: center;" >';
     $flatViewTable->display_graph_by_resource();
+
     echo '</div>';
+    echo '
+        <style>
+            .btn-modal {
+                margin: 2px;
+            }
+
+            .modal-header.bg-primary {
+                background-color: #007bff !important;
+            }
+
+            .modal-header.bg-primary .text-white {
+                color: white !important;
+            }
+
+            #sustenance_select {
+                border: 1px solid #ced4da;
+                border-radius: 0.25rem;
+            }
+
+            #sustenance_select option {
+                padding: 5px;
+            }
+
+            .alert-info {
+                border-left: 4px solid #17a2b8;
+            }
+
+            .form-text.text-muted {
+                display: block;
+                margin-top: 5px;
+                font-size: 0.875rem;
+            }
+        </style>
+    ';
     echo "<script>
             $(document).ready(function() {
                 $(document).on('click', '.btn-modal', function() {
@@ -346,12 +381,100 @@ if (isset($_GET['isStudentView']) && 'false' === $_GET['isStudentView']) {
                     $('#sustenance_select').val(null);
 
                     // Cargar datos existentes
-                    //cargarDatosExistentes(userId, courseId, sessionId);
+                    loadExistingData(userId, courseId, sessionId);
 
                     // Mostrar modal
                     $('#modalIncidencia').modal('show');
                 });
             });
+
+            /**
+             * Cargar datos existentes del servidor
+             */
+            function loadExistingData(userId, courseId, sessionId) {
+                let urlAjax = '$urlAjaxPlugin'
+                $.ajax({
+                    url: urlAjax + '?action=get_sustenance',
+                    method: 'POST',
+                    dataType: 'json',
+                    data: {
+                        user_id: userId,
+                        course_id: courseId,
+                        session_id: sessionId
+                    },
+                    success: function(response) {
+                        if (response.success && response.data) {
+                            const data = response.data;
+
+                            // Llenar el select con valores existentes
+                            if (data.sustenance_codes) {
+                                const codes = data.sustenance_codes.split(',').map(c => c.trim());
+                                $('#sustenance_select').val(codes);
+                            }
+
+                            // Llenar otros campos
+                            if (data.comment) {
+                                $('#sustenance_comment').val(data.comment);
+                            }
+                            if (data.grade) {
+                                $('#sustenance_grade').val(data.grade);
+                            }
+                            if (data.id) {
+                                $('#sustenance_record_id').val(data.id);
+                            }
+                        }
+                    },
+                    error: function() {
+                        console.log('No hay datos previos o error al cargar');
+                    }
+                });
+            }
+
+            /**
+             * Guardar incidencia al hacer click en el botón
+             */
+            $('#saveSustenanceBtn').click(function() {
+                const userId = $('#sustenance_user_id').val();
+                const sustainanceCodes = $('#sustenance_select').val();
+
+                // Validar que se haya seleccionado algo
+                if (!sustainanceCodes || sustainanceCodes.length === 0) {
+                    alert('Debes seleccionar al menos un tipo de incidencia');
+                    return;
+                }
+
+                const formData = {
+                    user_id: userId,
+                    course_id: $('#sustenance_course_id').val(),
+                    session_id: $('#sustenance_session_id').val(),
+                    record_id: $('#sustenance_record_id').val(),
+                    sustenance_codes: sustainanceCodes,
+                    comment: $('#sustenance_comment').val(),
+                    grade: $('#sustenance_grade').val()
+                };
+
+                $.ajax({
+                    url: '?action=save_sustenance',
+                    method: 'POST',
+                    dataType: 'json',
+                    data: formData,
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Incidencia registrada exitosamente');
+                            $('#modalIncidencia').modal('hide');
+                            // Opcional: recargar la página o actualizar tabla
+                            // location.reload();
+                        } else {
+                            alert('✗ Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error:', error);
+                        alert('✗ Error al guardar los datos: ' + error);
+                    }
+                });
+            });
+
           </script>";
 }
 
