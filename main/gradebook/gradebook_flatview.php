@@ -451,7 +451,7 @@ if (isset($_GET['isStudentView']) && 'false' === $_GET['isStudentView']) {
                     success: function(response) {
                         if (response.success && response.data) {
                             const data = response.data;
-
+                            console.log(data);
                             // Llenar el select con valores existentes
                             if (data.sustenance_codes) {
                                 const codes = data.sustenance_codes.split(',').map(c => c.trim());
@@ -461,9 +461,6 @@ if (isset($_GET['isStudentView']) && 'false' === $_GET['isStudentView']) {
                             // Llenar otros campos
                             if (data.comment) {
                                 $('#sustenance_comment').val(data.comment);
-                            }
-                            if (data.grade) {
-                                $('#sustenance_grade').val(data.grade);
                             }
                             if (data.id) {
                                 $('#sustenance_record_id').val(data.id);
