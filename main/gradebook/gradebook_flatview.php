@@ -361,6 +361,35 @@ if (isset($_GET['isStudentView']) && 'false' === $_GET['isStudentView']) {
     ';
     echo "<script>
             $(document).ready(function() {
+
+                // Resetear el modal cuando se cierra
+                $('#modalIncidencia').on('hidden.bs.modal', function() {
+                    // Limpiar formulario
+                    document.getElementById('formIncidencia').reset();
+
+                    // Limpiar select múltiple
+                    $('#sustenance_select').val(null);
+
+                    // Limpiar campos de texto
+                    $('#sustenance_comment').val('');
+                    $('#userNameDisplay').text('-');
+                    $('#userIdDisplay').text('-');
+
+                    // Limpiar campos ocultos
+                    $('#sustenance_user_id').val('');
+                    $('#sustenance_course_id').val('');
+                    $('#sustenance_session_id').val('');
+                    $('#sustenance_record_id').val('');
+
+                    // Remover alertas si existen
+                    $('.alert').remove();
+
+                    // Restaurar botón a su estado normal
+                    $('#saveSustenanceBtn').prop('disabled', false).html('Guardar Incidencia');
+                });
+
+
+
                 $(document).on('click', '.btn-modal', function() {
                     const userId = $(this).data('user-id');
                     const courseId = $(this).data('course-id');
