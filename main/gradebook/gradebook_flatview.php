@@ -392,6 +392,7 @@ if (isset($_GET['isStudentView']) && 'false' === $_GET['isStudentView']) {
                  * Guardar incidencia al hacer click en el botón
                  */
                 $('#saveSustenanceBtn').click(function() {
+                    let urlAjax = '$urlAjaxPlugin'
                     const userId = $('#sustenance_user_id').val();
                     const sustainanceCodes = $('#sustenance_select').val();
 
@@ -411,7 +412,7 @@ if (isset($_GET['isStudentView']) && 'false' === $_GET['isStudentView']) {
                     };
 
                     $.ajax({
-                        url: '?action=save_sustenance',
+                        url: urlAjax + '?action=save_sustenance',
                         method: 'POST',
                         dataType: 'json',
                         data: formData,
