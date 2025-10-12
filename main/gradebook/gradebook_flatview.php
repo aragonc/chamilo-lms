@@ -386,6 +386,51 @@ if (isset($_GET['isStudentView']) && 'false' === $_GET['isStudentView']) {
                     // Mostrar modal
                     $('#modalIncidencia').modal('show');
                 });
+
+
+                    /**
+                 * Guardar incidencia al hacer click en el botón
+                 */
+                $('#saveSustenanceBtn').click(function() {
+                    const userId = $('#sustenance_user_id').val();
+                    const sustainanceCodes = $('#sustenance_select').val();
+
+                    // Validar que se haya seleccionado algo
+                    if (!sustainanceCodes || sustainanceCodes.length === 0) {
+                        alert('Debes seleccionar al menos un tipo de incidencia');
+                        return;
+                    }
+
+                    const formData = {
+                        user_id: userId,
+                        course_id: $('#sustenance_course_id').val(),
+                        session_id: $('#sustenance_session_id').val(),
+                        record_id: $('#sustenance_record_id').val(),
+                        sustenance_codes: sustainanceCodes,
+                        comment: $('#sustenance_comment').val()
+                    };
+
+                    $.ajax({
+                        url: '?action=save_sustenance',
+                        method: 'POST',
+                        dataType: 'json',
+                        data: formData,
+                        success: function(response) {
+                            if (response.success) {
+                                alert('Incidencia registrada exitosamente');
+                                $('#modalIncidencia').modal('hide');
+                                // Opcional: recargar la página o actualizar tabla
+                                // location.reload();
+                            } else {
+                                alert('Error 1: ' + response.message);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error:', error);
+                            alert('Error 2 al guardar los datos: ' + error);
+                        }
+                    });
+                });
             });
 
             /**
@@ -430,50 +475,7 @@ if (isset($_GET['isStudentView']) && 'false' === $_GET['isStudentView']) {
                 });
             }
 
-            /**
-             * Guardar incidencia al hacer click en el botón
-             */
-            $('#saveSustenanceBtn').click(function() {
-                const userId = $('#sustenance_user_id').val();
-                const sustainanceCodes = $('#sustenance_select').val();
 
-                // Validar que se haya seleccionado algo
-                if (!sustainanceCodes || sustainanceCodes.length === 0) {
-                    alert('Debes seleccionar al menos un tipo de incidencia');
-                    return;
-                }
-
-                const formData = {
-                    user_id: userId,
-                    course_id: $('#sustenance_course_id').val(),
-                    session_id: $('#sustenance_session_id').val(),
-                    record_id: $('#sustenance_record_id').val(),
-                    sustenance_codes: sustainanceCodes,
-                    comment: $('#sustenance_comment').val(),
-                    grade: $('#sustenance_grade').val()
-                };
-
-                $.ajax({
-                    url: '?action=save_sustenance',
-                    method: 'POST',
-                    dataType: 'json',
-                    data: formData,
-                    success: function(response) {
-                        if (response.success) {
-                            alert('Incidencia registrada exitosamente');
-                            $('#modalIncidencia').modal('hide');
-                            // Opcional: recargar la página o actualizar tabla
-                            // location.reload();
-                        } else {
-                            alert('✗ Error: ' + response.message);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error:', error);
-                        alert('✗ Error al guardar los datos: ' + error);
-                    }
-                });
-            });
 
           </script>";
 }
