@@ -9069,3 +9069,4 @@ $Stakeholders = 'Stakeholders';
 $Company = 'Empresa';
 $AreaDependency = 'Aŕea-Dependencia';
 $AllQuizzesAreRequired = 'Todos los cuestionarios son requeridos';
+$Incidence = "Incidencia";
