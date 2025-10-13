@@ -668,6 +668,12 @@ if (!empty($_GET['keyword']) && !empty($_GET['submit'])) {
 }
 
 if (!isset($origin) || $origin !== 'learnpath') {
+    $plugin = ProikosPlugin::create();
+    $urlAjaxPlugin = api_get_path(WEB_PLUGIN_PATH)."proikos/src/ajax.php";
+    $tpl = new Template('', false, false, false, false, false, false);
+    $tpl->assign('url_ajax', $urlAjaxPlugin);
+    $content = $tpl->fetch('proikos/view/proikos_block_exam.tpl');
+    echo $content;
     Display::display_footer();
 }
 
@@ -1011,9 +1017,9 @@ function modify_filter($user_id, $row, $data)
     $sessionId = api_get_session_id();
     $type = isset($_REQUEST['type']) ? intval($_REQUEST['type']) : STUDENT;
 
-    $result = '';
+    $result = '<div class="btn-group" role="group" aria-label="...">';
     if ($is_allowed_to_track) {
-        $result .= '<a href="../mySpace/myStudents.php?'.api_get_cidreq().'&student='.$user_id.'&details=true&course='.$_course['id'].'&origin=user_course&id_session='.api_get_session_id().'" title="'.get_lang('Tracking').'">
+        $result .= '<a class="btn btn-default" href="../mySpace/myStudents.php?'.api_get_cidreq().'&student='.$user_id.'&details=true&course='.$_course['id'].'&origin=user_course&id_session='.api_get_session_id().'" title="'.get_lang('Tracking').'">
             '.Display::return_icon('statistics.png', get_lang('Tracking')).'
         </a>';
     }
@@ -1021,7 +1027,7 @@ function modify_filter($user_id, $row, $data)
     // If platform admin, show the login_as icon (this drastically shortens
     // time taken by support to test things out)
     if (api_is_platform_admin()) {
-        $result .= ' <a href="'.api_get_path(WEB_CODE_PATH).'admin/user_list.php?action=login_as&user_id='.$user_id.'&sec_token='.Security::getTokenFromSession().'">'.
+        $result .= ' <a class="btn btn-default" href="'.api_get_path(WEB_CODE_PATH).'admin/user_list.php?action=login_as&user_id='.$user_id.'&sec_token='.Security::getTokenFromSession().'">'.
             Display::return_icon('login_as.gif', get_lang('LoginAs')).'</a>&nbsp;&nbsp;';
     }
 
@@ -1043,7 +1049,7 @@ function modify_filter($user_id, $row, $data)
 
             $allow = api_get_configuration_value('extra');
             if ($allow) {
-                $result .= '<a href="'.
+                $result .= '<a class="btn btn-default" href="'.
                     api_get_path(WEB_CODE_PATH).'extra/userInfo.php?'.api_get_cidreq().'&editMainUserInfo='.$user_id.'" title="'.get_lang('Edit').'" >'.
                     Display::return_icon('edit.png', get_lang('Edit'), '', ICON_SIZE_SMALL).
                     '</a>&nbsp;';
@@ -1060,11 +1066,16 @@ function modify_filter($user_id, $row, $data)
 
         // edit
         if ($canEditUsers) {
+
+            if ($user_id != $current_user_id || api_is_platform_admin()) {
+                $result .= '<a class="btn btn-default" href="#" data-user-id="'.$user_id.'" data-course-id="'.$course_info['real_id'].'" data-session-id="'.$sessionId.'" title="'.get_lang('BlockExamsToUser').'">'.Display::return_icon('block-exam.png').'</a>';
+            }
             // unregister
             if ($user_id != $current_user_id || api_is_platform_admin()) {
-                $result .= '<a class="btn btn-small btn-danger" href="'.api_get_self().'?'.api_get_cidreq().'&type='.$type.'&unregister=yes&user_id='.$user_id.'" title="'.get_lang('Unreg').' " onclick="javascript:if(!confirm(\''.addslashes(api_htmlentities(get_lang('ConfirmYourChoice'), ENT_QUOTES, $charset)).'\')) return false;">'.
+                $result .= '<a class="btn btn-danger" href="'.api_get_self().'?'.api_get_cidreq().'&type='.$type.'&unregister=yes&user_id='.$user_id.'" title="'.get_lang('Unreg').' " onclick="javascript:if(!confirm(\''.addslashes(api_htmlentities(get_lang('ConfirmYourChoice'), ENT_QUOTES, $charset)).'\')) return false;">'.
                     get_lang('Unreg').'</a>&nbsp;';
             }
+
         }
     } else {
         // Show buttons for unsubscribe
@@ -1076,5 +1087,5 @@ function modify_filter($user_id, $row, $data)
         }
     }
 
-    return $result;
+    return $result.'</div>';
 }

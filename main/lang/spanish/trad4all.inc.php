@@ -9073,3 +9073,4 @@ $DeleteUserSession = 'Eliminar usuario de sesion, reseteando toda la data para u
 $DeleteUserSessionUnchanged = 'Eliminar usuario de sesion, sin alterar el cupo';
 $Incidence = "Incidencia";
 $GenerateSupportComments = "Generar sustentos o comentarios";
+$BlockExamsToUser = "Bloquear examenes a usuario";
