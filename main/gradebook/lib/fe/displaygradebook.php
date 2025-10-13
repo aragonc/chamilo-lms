@@ -247,6 +247,20 @@ class DisplayGradebook
             $exportPdfUrl
         );
 
+        $exportSustenanceUrl = api_get_self().'?'.api_get_cidreq().'&'.http_build_query([
+                'action' => 'generate_sustenance'
+            ]);
+
+        $header .= Display::url(
+            Display::return_icon(
+                'bookmark_red.png',
+                get_lang('GenerateSupportComments'),
+                '',
+                ICON_SIZE_MEDIUM
+            ),
+            $exportSustenanceUrl
+        );
+
         $header .= '</div>';
 
         $dialog = '';

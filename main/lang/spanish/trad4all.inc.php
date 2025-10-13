@@ -9072,3 +9072,4 @@ $AllQuizzesAreRequired = 'Todos los cuestionarios son requeridos';
 $DeleteUserSession = 'Eliminar usuario de sesion, reseteando toda la data para un nuevo cupo';
 $DeleteUserSessionUnchanged = 'Eliminar usuario de sesion, sin alterar el cupo';
 $Incidence = "Incidencia";
+$GenerateSupportComments = "Generar sustentos o comentarios";

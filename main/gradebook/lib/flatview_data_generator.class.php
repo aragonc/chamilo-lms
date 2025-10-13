@@ -403,6 +403,7 @@ class FlatViewDataGenerator
         $course_id = api_get_course_int_id($course_code);
         $session_id = api_get_session_id();
         $model = ExerciseLib::getCourseScoreModel();
+        $plugin = ProikosPlugin::create();
 
         foreach ($selected_users as $user) {
             $row = [];
@@ -452,7 +453,7 @@ class FlatViewDataGenerator
                     }
                 }
             }
-            $plugin = ProikosPlugin::create();
+
             $companyArea = $plugin->getCompanyArea($user[0]);
             $row[] = $user[1];
             $row[] = $companyArea['0']; // Línea 382 (aproximadamente)
@@ -630,6 +631,7 @@ class FlatViewDataGenerator
             if (!$show_all) {
                 //$defaultStyle = empty($style) ? SCORE_DIV_PERCENT : (int) $style;
                 $displayScore = $scoreDisplay->display_score($total_score, $defaultStyle, null, $ignoreScoreColor);
+
                 if (!empty($model)) {
                     $displayScore = ExerciseLib::show_score($total_score[0], $total_score[1]);
                 }
@@ -647,6 +649,7 @@ class FlatViewDataGenerator
                     $defaultStyle = SCORE_DIV_PERCENT;
                 }*/
                 $displayScore = $scoreDisplay->display_score($total_score, $defaultStyle, null, $ignoreScoreColor);
+
                 if (!empty($model)) {
                     $displayScore = ExerciseLib::show_score($total_score[0], $total_score[1]);
                 }
