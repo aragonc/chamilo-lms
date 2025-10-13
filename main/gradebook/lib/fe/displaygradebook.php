@@ -248,7 +248,8 @@ class DisplayGradebook
         );
 
         $exportSustenanceUrl = api_get_self().'?'.api_get_cidreq().'&'.http_build_query([
-                'action' => 'generate_sustenance'
+                'action' => 'generate_sustenance',
+                'selectcat' => $catobj->get_id()
             ]);
 
         $header .= Display::url(

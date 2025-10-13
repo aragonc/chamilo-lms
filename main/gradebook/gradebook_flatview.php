@@ -82,6 +82,8 @@ if ($simple_search_form->validate() && empty($keyword)) {
     $keyword = $values['keyword'];
 }
 
+
+
 if (!empty($keyword)) {
     $users = GradebookUtils::find_students($keyword);
 } else {
@@ -90,6 +92,40 @@ if (!empty($keyword)) {
         $users = GradebookUtils::get_all_users($alleval, $alllinks);
     }
 }
+
+$action = $_GET['action'] ?? null;
+
+if($action =='generate_sustenance' ){
+    require_once api_get_path(SYS_PLUGIN_PATH) . 'proikos/src/SustenanceManager.php';
+
+    $sustenanceManager = new \src\SustenanceManager();
+    $plugin = ProikosPlugin::create();
+    $users = GradebookUtils::get_users_in_course(api_get_course_id());
+    $session_id = api_get_session_id();
+    $course_id = api_get_course_int_id(api_get_course_id());
+    foreach ($users as $user) {
+
+        $courseID = api_get_course_int_id(api_get_course_id());
+        $userScore = $plugin->getResultExerciseStudent($user['0'], $courseID, api_get_session_id());
+
+        $result = $sustenanceManager->asignarSustentosPorNotas(
+            $userScore,
+            $user['0'],
+            $course_id,
+            $session_id,
+            'Asignado automáticamente',
+            true
+        );
+
+
+        //echo $result['message'];
+    }
+    header("Location: ".api_get_self().'?selectcat='.$category_id.'&'.api_get_cidreq());
+    exit;
+
+
+}
+
 $offset = isset($_GET['offset']) ? $_GET['offset'] : '0';
 
 $addparams = ['selectcat' => $cat[0]->get_id()];
