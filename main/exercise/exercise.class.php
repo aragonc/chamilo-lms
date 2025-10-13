@@ -9577,7 +9577,9 @@ class Exercise
                 }
             }
         }
-
+        $user_id = api_get_user_id();
+        $course_id = api_get_course_int_id(api_get_course_id());
+        require_once api_get_path(SYS_PLUGIN_PATH) . 'proikos/src/QuizBlockManager.php';
         $webPath = api_get_path(WEB_CODE_PATH);
         if (!empty($exerciseList)) {
             if ($origin !== 'learnpath') {
@@ -9586,6 +9588,8 @@ class Exercise
                 $mylpid = empty($learnpath_id) ? '' : '&learnpath_id='.$learnpath_id;
                 $mylpitemid = empty($learnpath_item_id) ? '' : '&learnpath_item_id='.$learnpath_item_id;
                 foreach ($exerciseList as $row) {
+                    $is_blocked = \src\QuizBlockManager::isQuizBlocked($user_id, $course_id, $sessionId, $row['iid']);
+
                     $currentRow = [];
                     $my_exercise_id = $row['iid'];
                     $attempt_text = '';
@@ -9593,7 +9597,7 @@ class Exercise
                     $exercise = new Exercise($returnData ? $courseId : 0);
                     $exercise->read($my_exercise_id, false);
 
-                    if (empty($exercise->iid)) {
+                    if (empty($exercise->iid) || $is_blocked) {
                         continue;
                     }
 
