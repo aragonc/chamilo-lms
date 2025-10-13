@@ -705,8 +705,9 @@ class Certificate extends Model
      */
     public function generateCustomCertificate()
     {
+
         $myCertificate = GradebookUtils::get_certificate_by_user_id(
-            0,
+            $this->certificate_data['cat_id'],
             $this->user_id
         );
 

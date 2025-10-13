@@ -714,6 +714,7 @@ class GradebookDataGenerator
     ) {
         $scoreDisplay = ScoreDisplay::instance();
         $score = $item->calc_score($userId);
+        //var_dump($score);
         $model = ExerciseLib::getCourseScoreModel();
         if (!empty($score)) {
             switch ($item->get_item_type()) {
