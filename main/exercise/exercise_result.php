@@ -42,6 +42,12 @@ if (empty($objExercise)) {
     }
     api_not_allowed(true);
 }
+$isFinalExercise = (int)$objExercise->getIsFinalExercise();
+if($isFinalExercise) {
+    $result = api_get_path(WEB_PATH).'main/gradebook/index.php?'.api_get_cidreq();
+    header('Location: '. $result );
+    exit;
+}
 
 $js = '<script>'.api_get_language_translate_html().'</script>';
 $htmlHeadXtra[] = $js;
