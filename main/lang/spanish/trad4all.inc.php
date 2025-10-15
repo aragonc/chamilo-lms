@@ -9074,3 +9074,5 @@ $DeleteUserSessionUnchanged = 'Eliminar usuario de sesion, sin alterar el cupo';
 $Incidence = "Incidencia";
 $GenerateSupportComments = "Generar sustentos o comentarios";
 $BlockExamsToUser = "Bloquear examenes a usuario";
+$ThisFinalExercise = "Ejercicio Final";
+$ThisFinalExerciseHelp = "Considerar este ejercicio como final de un conjunto de ejercicios";

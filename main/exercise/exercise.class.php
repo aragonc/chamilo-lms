@@ -99,6 +99,7 @@ class Exercise
     public $disableHideCorrectAnsweredQuestions;
     public $hideAttemptsTableOnStartPage;
     public $enableMonitor;
+    public $isFinalExercise;
 
     /**
      * Constructor of the class.
@@ -216,6 +217,7 @@ class Exercise
             $this->exerciseCategoryId = isset($object->exercise_category_id) ? (int) $object->exercise_category_id : null;
             $this->preventBackwards = isset($object->prevent_backwards) ? (int) $object->prevent_backwards : 0;
             $this->enableMonitor = $object->enable_monitor;
+            $this->isFinalExercise = $object->is_final_exercise;
             $this->exercise_was_added_in_lp = false;
             $this->lpList = [];
             $this->notifications = [];
@@ -654,6 +656,23 @@ class Exercise
     {
         $this->enableMonitor = (int) $value;
     }
+
+    /**
+     * @return mixed
+     */
+    public function getIsFinalExercise()
+    {
+        return $this->isFinalExercise;
+    }
+
+    /**
+     * @param $value
+     */
+    public function setIsFinalExercise($value)
+    {
+        $this->isFinalExercise = (int) $value;
+    }
+
 
     /**
      * @param int    $start
@@ -1646,6 +1665,7 @@ class Exercise
                 'title' => $exercise,
                 'description' => $description,
                 'enable_monitor' => $this->enableMonitor,
+                'is_final_exercise' => $this->isFinalExercise,
             ];
 
             $paramsExtra = [];
@@ -1671,6 +1691,7 @@ class Exercise
                     'results_disabled' => $results_disabled,
                     'question_selection_type' => $this->getQuestionSelectionType(),
                     'hide_question_title' => $this->getHideQuestionTitle(),
+                    'is_final_exercise' => $this->getIsFinalExercise(),
                 ];
 
                 $allow = api_get_configuration_value('allow_quiz_show_previous_button_setting');
@@ -1770,7 +1791,8 @@ class Exercise
                 'save_correct_answers' => $saveCorrectAnswers,
                 'propagate_neg' => $propagate_neg,
                 'hide_question_title' => $this->getHideQuestionTitle(),
-                'enable_monitor' => $this->enableMonitor
+                'enable_monitor' => $this->enableMonitor,
+                'is_final_exercise' => $this->getIsFinalExercise()
             ];
 
             $allow = api_get_configuration_value('allow_exercise_categories');
@@ -2652,6 +2674,7 @@ class Exercise
             }
 
             $form->addCheckBox('enable_monitor', get_lang('EnableMonitor'), get_lang('YesEnableMonitorStudent'), 1);
+            $form->addCheckBox('is_final_exercise', get_lang('ThisFinalExercise'), get_lang('ThisFinalExerciseHelp'), 1);
 
             $form->addElement('html', '</div>'); //End advanced setting
             $form->addElement('html', '</div>');
@@ -2695,6 +2718,7 @@ class Exercise
                 $defaults['exercise_category_id'] = $this->getExerciseCategoryId();
                 $defaults['prevent_backwards'] = $this->getPreventBackwards();
                 $defaults['enable_monitor'] = $this->getEnableMonitor();
+                $defaults['is_final_exercise'] = $this->getIsFinalExercise();
 
                 if (!empty($this->start_time)) {
                     $defaults['activate_start_date_check'] = 1;
@@ -2916,6 +2940,7 @@ class Exercise
         $this->setNotifications($form->getSubmitValue('notifications'));
         $this->setExerciseCategoryId($form->getSubmitValue('exercise_category_id'));
         $this->setEnableMonitor($form->getSubmitValue('enable_monitor'));
+        $this->setIsFinalExercise($form->getSubmitValue('is_final_exercise'));
         $this->setPageResultConfiguration($form->getSubmitValues());
         $showHideConfiguration = api_get_configuration_value('quiz_hide_question_number');
         if ($showHideConfiguration) {
