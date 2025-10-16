@@ -494,18 +494,23 @@ if (!empty($userList)) {
             .$sessionId,
             ['class' => 'btn btn-default']
         );
+        $removeLink = $removeUserCoupon = '';
+        if($sessionInfo['session_category_id'] == 3){
+            $removeUserCoupon = Display::url(
+                Display::return_icon('delete_coupon.png', get_lang('DeleteUserSession')),
+                api_get_self().'?id_session='.$sessionId.'&action=delete_user_coupon&user='.$user['user_id'].'&sec_token='.Security::getTokenFromSession(),
+                ['onclick' => "javascript:if(!confirm('".get_lang('ConfirmYourChoice')."')) return false;", 'class' => 'btn btn-default']
+            );
+        } else {
+            $removeLink = Display::url(
+                Display::return_icon('delete.png', get_lang('Delete')),
+                api_get_self().'?id_session='.$sessionId.'&action=delete&user='.$user['user_id'].'&sec_token='.Security::getTokenFromSession(),
+                ['onclick' => "javascript:if(!confirm('".get_lang('ConfirmYourChoice')."')) return false;", 'class' => 'btn btn-default'],
+            );
 
-        $removeLink = Display::url(
-            Display::return_icon('delete.png', get_lang('Delete')),
-            api_get_self().'?id_session='.$sessionId.'&action=delete&user='.$user['user_id'].'&sec_token='.Security::getTokenFromSession(),
-            ['onclick' => "javascript:if(!confirm('".get_lang('ConfirmYourChoice')."')) return false;", 'class' => 'btn btn-default'],
-        );
+        }
 
-        $removeUserCoupon = Display::url(
-            Display::return_icon('delete_coupon.png', get_lang('DeleteUserSession')),
-            api_get_self().'?id_session='.$sessionId.'&action=delete_user_coupon&user='.$user['user_id'].'&sec_token='.Security::getTokenFromSession(),
-            ['onclick' => "javascript:if(!confirm('".get_lang('ConfirmYourChoice')."')) return false;", 'class' => 'btn btn-default']
-        );
+
 
         $downloadCertUploadedLink = '';
         if ($allowProikos &&
