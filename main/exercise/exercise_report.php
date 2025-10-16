@@ -427,8 +427,10 @@ if (isset($_REQUEST['comments']) &&
         exit;
     }
 }
+$nameTools = '';
+Display::display_header($nameTools);
 
-$actions = null;
+$actions = '';
 $hideIp = api_get_configuration_value('exercise_hide_ip');
 if ($is_allowedToEdit && $origin !== 'learnpath') {
     // the form
@@ -559,8 +561,6 @@ if (($is_allowedToEdit || $is_tutor || api_is_coach()) &&
             WHERE exe_id = $exe_id AND status = 'incomplete'";
     Database::query($sql);
 }
-
-Display::display_header($nameTools);
 
 // Clean all results for this test before the selected date
 if (($is_allowedToEdit || $is_tutor || api_is_coach()) &&

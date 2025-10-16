@@ -2328,9 +2328,8 @@ HOTSPOT;
         $urlBase = api_get_path(WEB_CODE_PATH).
             'exercise/hotpotatoes_exercise_report.php?action=delete&'.
             api_get_cidreq().'&id=';
+        $actions = null;
         while ($data = Database::fetch_array($res)) {
-            $actions = null;
-
             if ($apiIsAllowedToEdit) {
                 $url = $urlBase.$data['thp_id'].'&path='.$data['exe_name'];
                 $actions = Display::url(
