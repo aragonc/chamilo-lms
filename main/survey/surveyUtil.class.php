@@ -4046,7 +4046,7 @@ class SurveyUtil
                     ['style' => 'margin-top: -4px'],
                     ICON_SIZE_TINY
                 );
-                echo '<a href="'.$url.'">
+                echo '<a class="btn btn-primary" href="'.$url.'">
                     '.$icon
                     .$title
                     .'</a></td>';
