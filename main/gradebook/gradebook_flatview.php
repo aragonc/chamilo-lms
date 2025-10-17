@@ -264,7 +264,8 @@ if (!empty($_GET['export_report']) &&
             $alllinks,
             $params,
             $mainCourseCategory[0],
-            $onlyScore
+            $onlyScore,
+            true
         );
 
         switch ($_GET['export_format']) {

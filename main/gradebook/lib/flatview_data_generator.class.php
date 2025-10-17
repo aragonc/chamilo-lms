@@ -243,7 +243,7 @@ class FlatViewDataGenerator
             }
         }
 
-        $headers[] = '<span class="text-center">'.api_strtoupper(get_lang('GradebookQualificationTotal')).'</span>';
+        $headers[] = get_lang('GradebookQualificationTotal');
 
         if (api_get_configuration_value('gradebook_score_display_custom_standalone')
             && ScoreDisplay::instance()->is_custom()
@@ -252,9 +252,9 @@ class FlatViewDataGenerator
         }
 
        if ($mainCourseCategory->get_require_all_quizzes()) {
-           $headers[] = '<span class="text-center">Evaluaciones Req.</span>';
+           $headers[] = get_lang('RequiredEvaluations');
        }
-        $headers[] = get_lang('Actions');
+        $headers[] = get_lang('Incidences');
         return $headers;
     }
 
@@ -321,7 +321,8 @@ class FlatViewDataGenerator
         $items_count = null,
         $ignoreScoreColor = false,
         $show_all = false,
-        $onlyScore = false
+        $onlyScore = false,
+        $exportFormat = false
     ) {
         // Do some checks on users/items counts, redefine if invalid values
         if (!isset($users_count)) {
@@ -689,9 +690,17 @@ class FlatViewDataGenerator
             $nameUser = api_get_person_name($user[3], $user[2]);
 
             $iconFA = $plugin->getSustenanceIconFA($user_id,$course_id,$session_id);
-            $row[] = '<button id="btn_modal' . $user_id . '" class="btn btn-default btn-modal"
+            if(!$exportFormat){
+                $row[] = '<button id="btn_modal' . $user_id . '" class="btn btn-default btn-modal"
             data-user-name="' . $nameUser . '" data-user-id="' . $user_id . '" data-session-id="' . $session_id . '"
             data-course-id="' . $course_id . '">' .$iconFA.get_lang('Incidence') . '</button>';
+            } else {
+                $sustenance = $plugin->getSustenanceByUserAndSession($user_id, $session_id);
+                $row[] = $sustenance;
+            }
+
+
+
 
             $data[] = $row;
         }

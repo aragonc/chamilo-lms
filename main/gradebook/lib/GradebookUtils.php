@@ -618,7 +618,8 @@ class GradebookUtils
         $alllinks,
         $params,
         $mainCourseCategory = null,
-        $onlyScore = false
+        $onlyScore = false,
+        $exportFormat = false
     ) {
         $datagen = new FlatViewDataGenerator(
             $users,
@@ -642,7 +643,8 @@ class GradebookUtils
             $count,
             $onlyScore,
             true,
-            $onlyScore
+            $onlyScore,
+            $exportFormat
         );
 
         $result = [];
