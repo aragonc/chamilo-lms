@@ -494,8 +494,9 @@ if (!empty($userList)) {
             .$sessionId,
             ['class' => 'btn btn-default']
         );
+
         $removeLink = $removeUserCoupon = '';
-        if($sessionInfo['session_category_id'] == 3){
+        if($sessionInfo['session_mode'] == 1){
             $removeUserCoupon = Display::url(
                 Display::return_icon('delete_coupon.png', get_lang('DeleteUserSession')),
                 api_get_self().'?id_session='.$sessionId.'&action=delete_user_coupon&user='.$user['user_id'].'&sec_token='.Security::getTokenFromSession(),
