@@ -50,7 +50,7 @@ $table_course = Database::get_main_table(TABLE_MAIN_COURSE);
 $csvContent = [];
 
 // only allow platform admins to login_as, or session admins only for students (not teachers nor other admins)
-$actions = [
+$toolbarItems = [
     Display::url(
         Display::return_icon(
             'statistics.png',
@@ -66,7 +66,7 @@ $actions = [
 ];
 
 if (api_can_login_as($userId)) {
-    $actions[] = Display::url(
+    $toolbarItems[] = Display::url(
         Display::return_icon(
             'login_as.png',
             get_lang('LoginAs'),
@@ -78,7 +78,7 @@ if (api_can_login_as($userId)) {
 }
 
 if (api_is_platform_admin()) {
-    $actions[] = Display::url(
+    $toolbarItems[] = Display::url(
         Display::return_icon(
             'edit.png',
             get_lang('Edit'),
@@ -88,7 +88,7 @@ if (api_is_platform_admin()) {
         api_get_path(WEB_CODE_PATH).'admin/user_edit.php?user_id='.$userId
     );
 
-    $actions[] = Display::url(
+    $toolbarItems[] = Display::url(
         Display::return_icon(
             'export_csv.png',
             get_lang('ExportAsCSV'),
@@ -97,7 +97,7 @@ if (api_is_platform_admin()) {
         ),
         api_get_self().'?user_id='.$userId.'&action=export'
     );
-    $actions[] = Display::url(
+    $toolbarItems[] = Display::url(
         Display::return_icon(
             'vcard.png',
             get_lang('UserInfo'),
@@ -106,13 +106,13 @@ if (api_is_platform_admin()) {
         ),
         api_get_path(WEB_PATH).'main/social/vcard_export.php?userId='.$userId
     );
-    $actions[] = Display::url(
+    $toolbarItems[] = Display::url(
         Display::return_icon('new_group.png', get_lang('AddHrmToUser'), [], ICON_SIZE_MEDIUM),
         api_get_path(WEB_CODE_PATH).'admin/add_drh_to_user.php?u='.$userId
     );
 
     if (Skill::isAllowed($userId, false)) {
-        $actions[] = Display::url(
+        $toolbarItems[] = Display::url(
             Display::return_icon(
                 'skill-badges.png',
                 get_lang('AddSkill'),
@@ -615,8 +615,10 @@ if (isset($_GET['action'])) {
     }
 }
 
+
+
 Display::display_header($tool_name);
-echo Display::toolbarAction('toolbar-user-information', [implode(PHP_EOL, $actions)]);
+echo Display::toolbarAction('toolbar-user-information', [implode(PHP_EOL, $toolbarItems)]);
 
 $fullUrlBig = UserManager::getUserPicture(
     $userId,
