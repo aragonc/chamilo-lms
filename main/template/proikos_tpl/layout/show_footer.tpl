@@ -37,7 +37,7 @@
                         <div class="form-group">
                             <label for="sustenance_select"><strong>Tipo de Incidencia (selecciona una o más):</strong></label>
                             <select id="sustenance_select" name="sustenance_codes[]" multiple class="form-control" size="8" required>
-                                <option value="0">Sin observaciones</option>
+                                <option value="99">Sin observaciones</option>
                                 <option value="1">Falta examen de entrada</option>
                                 <option value="2">Falta examen de salida</option>
                                 <option value="3">Falta Taller</option>
