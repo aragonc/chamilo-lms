@@ -9078,3 +9078,4 @@ $BlockExamsToUser = "Bloquear examenes a usuario";
 $ThisFinalExercise = "Ejercicio Final";
 $ThisFinalExerciseHelp = "Considerar este ejercicio como final de un conjunto de ejercicios";
 $RequiredEvaluations = "Evaluaciones requeridas";
+$ThisExerciseIsBlocked = "Este ejercicio esta bloqueado para usted.";

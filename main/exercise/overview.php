@@ -535,24 +535,32 @@ $isLimitReached = ExerciseLib::isQuestionsLimitPerDayReached(
     api_get_session_id()
 );
 
-if (!empty($exercise_url_button) && !$isLimitReached) {
-    if ($quizCheckButtonEnabled) {
-        $html .= Display::div(
-            $btnCheck,
-            ['class' => 'exercise_overview_options']
-        );
-        $html .= '<br>';
-    }
-    if ($enableLinkSmowlInBtn == 'false') {
-        $html .= Display::div(
-            Display::div(
-                $exercise_url_button,
+require_once api_get_path(SYS_PLUGIN_PATH) . 'proikos/src/QuizBlockManager.php';
+$is_blocked = \src\QuizBlockManager::isQuizBlocked(api_get_user_id(), api_get_course_int_id(), api_get_session_id(), $exercise_id);
+
+if($is_blocked){
+    $html.='<div class="alert alert-danger" role="alert">'.get_lang('ThisExerciseIsBlocked').'</div>';
+} else {
+    if (!empty($exercise_url_button) && !$isLimitReached) {
+        if ($quizCheckButtonEnabled) {
+            $html .= Display::div(
+                $btnCheck,
                 ['class' => 'exercise_overview_options']
-            ),
-            ['class' => 'options']
-        );
+            );
+            $html .= '<br>';
+        }
+        if ($enableLinkSmowlInBtn == 'false') {
+            $html .= Display::div(
+                Display::div(
+                    $exercise_url_button,
+                    ['class' => 'exercise_overview_options']
+                ),
+                ['class' => 'options']
+            );
+        }
     }
 }
+
 
 if ($isLimitReached) {
     $maxQuestionsAnswered = (int) api_get_course_setting('quiz_question_limit_per_day');
