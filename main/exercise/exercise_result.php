@@ -32,14 +32,25 @@ if (empty($objExercise)) {
 
 $exeId = isset($_REQUEST['exe_id']) ? (int) $_REQUEST['exe_id'] : 0;
 if (empty($objExercise)) {
-    // Redirect to the exercise overview
-    // Check if the exe_id exists
     $objExercise = new Exercise();
     $exercise_stat_info = $objExercise->get_stat_track_exercise_info_by_exe_id($exeId);
+
     if (!empty($exercise_stat_info) && isset($exercise_stat_info['exe_exo_id'])) {
-        header('Location: overview.php?exerciseId='.$exercise_stat_info['exe_exo_id'].'&'.api_get_cidreq());
-        exit;
+        // AGREGAR ESTA LÍNEA: Cargar el ejercicio por su ID
+        $objExercise->read($exercise_stat_info['exe_exo_id']);
+
+        // Si aún no se pudo cargar, redirigir
+        if (empty($objExercise->iid)) {
+            header('Location: overview.php?exerciseId='.$exercise_stat_info['exe_exo_id'].'&'.api_get_cidreq());
+            exit;
+        }
+    } else {
+        api_not_allowed(true);
     }
+}
+
+// Validación adicional de seguridad
+if (empty($objExercise) || !is_object($objExercise) || empty($objExercise->iid)) {
     api_not_allowed(true);
 }
 
@@ -305,16 +316,32 @@ ExerciseLib::exercise_time_control_delete(
     $learnpath_item_id
 );
 
+if (!empty($objExercise) && is_object($objExercise)) {
+    $isFinalExercise = $objExercise->getIsFinalExercise();
+} else {
+    $isFinalExercise = false;
+}
+
 ExerciseLib::delete_chat_exercise_session($exeId);
 
 if (!in_array($origin, ['learnpath', 'embeddable', 'mobileapp', 'iframe'])) {
     $pageBottom .= '<div class="question-return">';
-    $pageBottom .= Display::url(
-        get_lang('ReturnToCourseHomepage'),
-        api_get_course_url(),
-        ['class' => 'btn btn-primary']
-    );
+    if($isFinalExercise=='1'){
+        $resultUrl = api_get_path(WEB_PATH).'main/gradebook/index.php?'.api_get_cidreq();
+        $pageBottom .= Display::url(
+            get_lang('ReviewYourFinalResult'),
+            $resultUrl,
+            ['class' => 'btn btn-warning btn-lg']
+        );
+    } else {
+        $pageBottom .= Display::url(
+            get_lang('ReturnToCourseHomepage'),
+            api_get_course_url(),
+            ['class' => 'btn btn-primary']
+        );
+    }
     $pageBottom .= '</div>';
+
 
     if (api_is_allowed_to_session_edit()) {
         Exercise::cleanSessionVariables();
@@ -345,13 +372,6 @@ if (!in_array($origin, ['learnpath', 'embeddable', 'mobileapp', 'iframe'])) {
         $pageBottom .= '<script type="text/javascript">'.$href.'</script>';
     }
     $showFooter = false;
-}
-
-$isFinalExercise = (int)$objExercise->getIsFinalExercise();
-if($isFinalExercise) {
-    $result = api_get_path(WEB_PATH).'main/gradebook/index.php?'.api_get_cidreq();
-    header('Location: '. $result );
-    exit;
 }
 
 $template = new Template($nameTools, $showHeader, $showFooter, $showLearnPath);
