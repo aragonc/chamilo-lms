@@ -1,4 +1,4 @@
-<?php
+*<?php
 
 /* For licensing terms, see /license.txt */
 
@@ -247,7 +247,22 @@ switch ($action) {
                     exit;
                 }
             }
-
+            // Verificar si puede inscribirse
+            $check = $proikosPlugin->canUserEnrollInCourse($userId, $sessionId);
+            if (!$check['can_enroll']) {
+                Display::addFlash(
+                    Display::return_message($check['message'], 'error')
+                );
+                header('Location: ' . api_get_path(WEB_CODE_PATH) . 'session/index.php');
+                exit;
+            }
+            $subscribe = false;
+            // Si tiene intentos previos, mostrar advertencia
+            if ($check['attempts'] > 0) {
+                Display::addFlash(
+                    Display::return_message($check['message'], 'warning')
+                );
+            }
             $subscribe = SessionManager::subscribeUsersToSession(
                 $sessionId,
                 [$userId],
