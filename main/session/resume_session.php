@@ -497,11 +497,17 @@ if (!empty($userList)) {
 
         $removeLink = $removeUserCoupon = '';
         if($sessionInfo['session_mode'] == 1){
+            $removeLink = Display::url(
+                Display::return_icon('delete.png', get_lang('Delete')),
+                api_get_self().'?id_session='.$sessionId.'&action=delete&user='.$user['user_id'].'&sec_token='.Security::getTokenFromSession(),
+                ['onclick' => "javascript:if(!confirm('".get_lang('ConfirmYourChoice')."')) return false;", 'class' => 'btn btn-default'],
+            );
             $removeUserCoupon = Display::url(
                 Display::return_icon('delete_coupon.png', get_lang('DeleteUserSession')),
                 api_get_self().'?id_session='.$sessionId.'&action=delete_user_coupon&user='.$user['user_id'].'&sec_token='.Security::getTokenFromSession(),
                 ['onclick' => "javascript:if(!confirm('".get_lang('ConfirmYourChoice')."')) return false;", 'class' => 'btn btn-default']
             );
+
         } else {
             $removeLink = Display::url(
                 Display::return_icon('delete.png', get_lang('Delete')),
@@ -510,8 +516,6 @@ if (!empty($userList)) {
             );
 
         }
-
-
 
         $downloadCertUploadedLink = '';
         if ($allowProikos &&
@@ -550,8 +554,8 @@ if (!empty($userList)) {
         ';
 
         $table->setCellContents($row, 0, $userLink);
-        $link = '<div class="btn-group" role="group" aria-label="...">'.$reportingLink.$courseUserLink.
-            $downloadCertUploadedLink.$removeLink.$addUserToUrlLink.$editUrl.$check_doc.$removeUserCoupon.'</div>';
+        $link = '<div class="btn-group" role="group" aria-label="...">'.$reportingLink.$courseUserLink.$check_doc.
+            $downloadCertUploadedLink.$removeLink.$addUserToUrlLink.$editUrl.$removeUserCoupon.'</div>';
         switch ($user['relation_type']) {
             case 1:
                 $status = get_lang('Drh');
