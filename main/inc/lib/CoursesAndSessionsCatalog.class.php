@@ -1962,7 +1962,7 @@ class CoursesAndSessionsCatalog
                     $sessionsBlock['session_enabled_user'] = 'not_enabled_user';
                 }
 
-                $hasTimeInSessionRestriction = $pluginProikos->hasTimeInSessionRestriction($userId, $session->getId());
+               /*  $hasTimeInSessionRestriction = $pluginProikos->hasTimeInSessionRestriction($userId, $session->getId());
                 if (false !== $hasTimeInSessionRestriction) {
                     $sessionsBlock['subscribe_button'] = Display::div(
                         'Solo puede inscribirse a sesiones de hasta ' . $hasTimeInSessionRestriction['time_in_session'] . ' horas',
@@ -1970,7 +1970,7 @@ class CoursesAndSessionsCatalog
                             'class' => 'alert alert-warning',
                         ]
                     );
-                }
+                } */
             }
 
             if ($sessionFull) {
