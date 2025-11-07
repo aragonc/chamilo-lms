@@ -28,6 +28,7 @@ $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
 if ($allowProikos) {
     $proikosPlugin = ProikosPlugin::create();
     $proikosPlugin->renderModal();
+    $proikosPlugin->renderModalAttempts();
 }
 
 $nameTools = CourseCategory::getCourseCatalogNameTools($action);
@@ -250,10 +251,11 @@ switch ($action) {
             // Verificar si puede inscribirse
             $check = $proikosPlugin->canUserEnrollInCourse($userId, $sessionId);
             if (!$check['can_enroll']) {
-                Display::addFlash(
+                /*Display::addFlash(
                     Display::return_message($check['message'], 'error')
-                );
-                header('Location: ' . api_get_path(WEB_CODE_PATH) . 'session/index.php');
+                );*/
+                $proikosPlugin->setModalMessageAttempts($check['message']);
+                header('Location: '.api_get_path(WEB_CODE_PATH).'auth/courses.php');
                 exit;
             }
             $subscribe = false;
