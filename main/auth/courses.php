@@ -1,4 +1,4 @@
-*<?php
+<?php
 
 /* For licensing terms, see /license.txt */
 
@@ -159,6 +159,7 @@ switch ($action) {
         exit;
 
     case 'subscribe_to_session':
+
         if (!$userCanViewPage) {
             api_not_allowed(true);
         }
@@ -171,9 +172,9 @@ switch ($action) {
             api_not_allowed();
             exit;
         }
+        $sessionInfo = api_get_session_info($sessionId);
 
         if (!$confirmed) {
-            $sessionInfo = api_get_session_info($sessionId);
             $requestCertificates = [];
             $optionalRequestCertificates = [];
             if ($allowProikos && !empty($sessionInfo['request_attach_certificates']) && $sessionInfo['request_attach_certificates'] != 'null') {
@@ -249,7 +250,8 @@ switch ($action) {
                 }
             }
             // Verificar si puede inscribirse
-            $check = $proikosPlugin->canUserEnrollInCourse($userId, $sessionId);
+
+            $check = $proikosPlugin->canUserEnrollInCourse($userId, $sessionId, $sessionInfo['session_category_id']);
             if (!$check['can_enroll']) {
                 /*Display::addFlash(
                     Display::return_message($check['message'], 'error')
