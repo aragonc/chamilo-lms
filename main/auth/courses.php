@@ -251,7 +251,7 @@ switch ($action) {
             }
             // Verificar si puede inscribirse
 
-            $check = $proikosPlugin->canUserEnrollInCourse($userId, $sessionId, $sessionInfo['session_category_id']);
+            $check = $proikosPlugin->canUserEnrollInCourse($userId, $sessionInfo['session_category_id']);
             if (!$check['can_enroll']) {
                 /*Display::addFlash(
                     Display::return_message($check['message'], 'error')
