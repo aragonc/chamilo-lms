@@ -23,7 +23,7 @@ $defaultAction = CoursesAndSessionsCatalog::is(CATALOG_SESSIONS) ? 'display_cata
 $action = isset($_REQUEST['action']) ? Security::remove_XSS($_REQUEST['action']) : $defaultAction;
 $categoryCode = isset($_REQUEST['category_code']) ? Security::remove_XSS($_REQUEST['category_code']) : '';
 $searchTerm = isset($_REQUEST['search_term']) ? Security::remove_XSS($_REQUEST['search_term']) : '';
-
+$proikosPlugin = null;
 $allowProikos = api_get_plugin_setting('proikos', 'tool_enable') === 'true';
 if ($allowProikos) {
     $proikosPlugin = ProikosPlugin::create();
@@ -249,24 +249,27 @@ switch ($action) {
                     exit;
                 }
             }
-            // Verificar si puede inscribirse
 
-            $check = $proikosPlugin->canUserEnrollInCourse($userId, $sessionInfo['session_category_id']);
-            if (!$check['can_enroll']) {
-                /*Display::addFlash(
-                    Display::return_message($check['message'], 'error')
-                );*/
-                $proikosPlugin->setModalMessageAttempts($check['message']);
-                header('Location: '.api_get_path(WEB_CODE_PATH).'auth/courses.php');
-                exit;
+            // Verificar si puede inscribirse
+            if($sessionInfo['session_category_id'] != 1){
+                $check = $proikosPlugin->canUserEnrollInCourse($userId, $sessionInfo['session_category_id']);
+                if (!$check['can_enroll']) {
+                    /*Display::addFlash(
+                        Display::return_message($check['message'], 'error')
+                    );*/
+                    $proikosPlugin->setModalMessageAttempts($check['message']);
+                    header('Location: '.api_get_path(WEB_CODE_PATH).'auth/courses.php');
+                    exit;
+                }
+                $subscribe = false;
+                // Si tiene intentos previos, mostrar advertencia
+                if ($check['attempts'] > 0) {
+                    Display::addFlash(
+                        Display::return_message($check['message'], 'warning')
+                    );
+                }
             }
-            $subscribe = false;
-            // Si tiene intentos previos, mostrar advertencia
-            if ($check['attempts'] > 0) {
-                Display::addFlash(
-                    Display::return_message($check['message'], 'warning')
-                );
-            }
+
             $subscribe = SessionManager::subscribeUsersToSession(
                 $sessionId,
                 [$userId],
