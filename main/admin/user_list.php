@@ -1021,6 +1021,7 @@ $status_options[COURSEMANAGER] = get_lang('Teacher');
 $status_options[DRH] = get_lang('Drh');
 $status_options[SESSIONADMIN] = get_lang('SessionsAdmin');
 $status_options[PLATFORM_ADMIN] = get_lang('Administrator');
+$status_options[CONTRACTOR_ADMIN] = get_lang('ContractorAdmin');
 
 $form->addElement(
     'select',
