@@ -995,6 +995,7 @@ if (isset($first_time) && $first_time == 1 && api_is_allowed_to_edit(null, true)
 
                         $quizCheck = ProikosPlugin::checkUserQuizCompletion($stud_id, $selectCat);
                         $score = $plugin->getScoreCertificate($stud_id,$course_code,$session_id );
+
                         $style = "text-align: center; font-weight: bold;";
                         if($score['has_certificate']){
                             echo '<div class="alert alert-success" style="'.$style.'">
