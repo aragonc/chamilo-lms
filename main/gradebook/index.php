@@ -989,11 +989,11 @@ if (isset($first_time) && $first_time == 1 && api_is_allowed_to_edit(null, true)
                         $params = $plugin->getValuesRegisterData($stud_id, $course_id, $session_id);
                         $checkRegister = $plugin->checkRegisterLogData($stud_id, $course_id, $session_id);
 
-                        if($checkRegister == 0){
+                        $quizCheck = ProikosPlugin::checkUserQuizCompletion($stud_id, $selectCat);
+                        if($checkRegister == 0 && $quizCheck['passed']){
                             $plugin->registerData($params, true);
                         }
 
-                        $quizCheck = ProikosPlugin::checkUserQuizCompletion($stud_id, $selectCat);
                         $score = $plugin->getScoreCertificate($stud_id,$course_code,$session_id );
 
                         $style = "text-align: center; font-weight: bold;";
