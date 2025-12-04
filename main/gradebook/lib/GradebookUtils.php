@@ -1242,7 +1242,7 @@ class GradebookUtils
                 $tbl_user = Database::get_main_table(TABLE_MAIN_USER);
                 $tbl_res = Database::get_main_table(TABLE_MAIN_GRADEBOOK_RESULT);
 
-                $sql = 'SELECT user.user_id, lastname, firstname, user.official_code
+                $sql = 'SELECT user.user_id, user.lastname, user.firstname, user.official_code
                         FROM '.$tbl_res.' as res, '.$tbl_user.' as user
                         WHERE
                             res.evaluation_id = '.intval($eval->get_id()).' AND

@@ -9080,3 +9080,5 @@ $ThisFinalExerciseHelp = "Considerar este ejercicio como final de un conjunto de
 $RequiredEvaluations = "Evaluaciones requeridas";
 $ThisExerciseIsBlocked = "Este ejercicio esta bloqueado para usted.";
 $ReviewYourFinalResult = "Revisar tu resultado final";
+$AgeUser = "Edad";
+$LevelOfEducation = "Grado de instrucción";
