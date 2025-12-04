@@ -3462,6 +3462,13 @@ function api_is_contractor_admin()
     return isset($user['status']) && $user['status'] == CONTRACTOR_ADMIN;
 }
 
+function api_is_petroperu_admin()
+{
+    $user = api_get_user_info();
+
+    return isset($user['status']) && $user['status'] == DRH;
+}
+
 /**
  * Checks whether the current user is a student.
  *

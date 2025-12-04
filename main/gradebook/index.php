@@ -979,7 +979,7 @@ if (isset($first_time) && $first_time == 1 && api_is_allowed_to_edit(null, true)
                     $certificate
                 );
 
-                if(api_is_student() || api_is_contractor_admin()){
+                if(api_is_student() || api_is_contractor_admin() || api_is_petroperu_admin() ){
                     if (api_get_plugin_setting('proikos', 'tool_enable') === 'true') {
                         $plugin = ProikosPlugin::create();
                         $course_id = api_get_course_int_id($course_code);
