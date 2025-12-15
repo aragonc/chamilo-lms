@@ -43,6 +43,10 @@
     $(document).ready(function() {
         $('#petro_code_div').hide();
         $('.terms_conditions_container').hide();
+
+        // Deshabilitar company_petro al inicio (ya que está oculto)
+        $('#registration-two_company_petro').prop('disabled', true).removeAttr('required');
+
         $('#validate_petro').click(function () {
             const valor = $('#registration-two_company_petro').val().trim();
             const mensajeDiv = $('#validation_message');
@@ -114,16 +118,18 @@
         console.log(idSelector);
         if(idSelector == 1 ){
             $('#option-builder').hide();
-            $('#registration-two_company_code').removeAttr('required');
-            $('#registration-two_company_petro').attr("required", true);
+            $('#registration-two_company_code').removeAttr('required').prop('disabled', true); // Deshabilitar también
+            $('#registration-two_company_petro').attr("required", true).prop('disabled', false); // Habilitar
             $('#company_code_div').hide();
             $('#petro_code_div').show();
+            $('.terms_conditions_container').hide(); // Ocultar términos hasta validar
         } else {
             $('#option-builder').show();
-            $('#registration-two_company_code').attr("required", true);
-            $('#registration-two_company_petro').removeAttr('required');
+            $('#registration-two_company_code').attr("required", true).prop('disabled', false); // Habilitar
+            $('#registration-two_company_petro').removeAttr('required').prop('disabled', true); // Deshabilitar
             $('#petro_code_div').hide();
             $('#company_code_div').show();
+            $('.terms_conditions_container').hide(); // Ocultar términos hasta validar
         }
         $.ajax({
             url: urlAjax + "?action=get_position&id_stakeholders=" + idSelector,

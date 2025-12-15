@@ -84,6 +84,7 @@
     const total = yesBtn ? inputsRequired.length : 0;
     const formUploadAction = '{{ _p.web_plugin }}proikos/src/ajax.php?action=upload_user_certificates&session_id={{ session_id }}';
 
+
     function updateStatus() {
         if (yesBtn === null) {
             return;
@@ -129,10 +130,21 @@
     }
 
     updateStatus();
+    let isSubmitting = false;
 
     yesBtn.addEventListener('click', function (e) {
         e.preventDefault();
+
+        if (isSubmitting) {
+            return false; // bloquea segundo clic
+        }
+
+        isSubmitting = true;
+
         const href = yesBtn.getAttribute('data-href');
+        yesBtn.setAttribute('disabled', 'disabled');
+        yesBtn.classList.add('disabled');
+        yesBtn.textContent = 'Procesando...';
 
         if (inputs && inputs.length) {
             const formData = new FormData();
@@ -142,23 +154,22 @@
                 }
             });
 
-            yesBtn.setAttribute('disabled', 'disabled');
             fetch(formUploadAction, {
                 method: 'POST',
                 body: formData
             })
-            .then(response => {
-                console.log('response', response);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                yesBtn.removeAttribute('disabled');
-            })
-            .finally(() => {
-                window.location = href;
-            });
+                .catch(error => {
+                    console.error('Error:', error);
+                    isSubmitting = false;
+                    yesBtn.removeAttribute('disabled');
+                    yesBtn.textContent = 'Sí';
+                })
+                .finally(() => {
+                    window.location.href = href;
+                });
+
         } else {
-            window.location = href;
+            window.location.href = href;
         }
     });
 

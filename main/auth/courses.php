@@ -270,6 +270,17 @@ switch ($action) {
                 }
             }
 
+            $isSubscribed = SessionManager::isUserSubscribedAsStudent(
+                $userId,
+                $sessionId
+            );
+
+            if ($isSubscribed) {
+                // Ya está inscrito → redirigir sin consumir cupo
+                header('Location: '.api_get_path(WEB_PATH).'user_portal.php');
+                exit;
+            }
+
             $subscribe = SessionManager::subscribeUsersToSession(
                 $sessionId,
                 [$userId],
@@ -278,7 +289,18 @@ switch ($action) {
             );
 
             if ($allowProikos && true === $subscribe) {
-                $proikosPlugin->contratingCompaniesQuotaSessionDetModel()->useQuota($userQuotaBySessionId['data']['id'], $userId);
+                //$proikosPlugin->contratingCompaniesQuotaSessionDetModel()->useQuota($userQuotaBySessionId['data']['id'], $userId);
+                $quotaUsed = $proikosPlugin
+                    ->contratingCompaniesQuotaSessionDetModel()
+                    ->useQuota(
+                        $userQuotaBySessionId['data']['id'],
+                        $userId
+                    );
+
+                if (!$quotaUsed) {
+                    // Ya estaba consumido, opcional: log o mensaje
+                    error_log("Quota already used. user=$userId quota_id=".$userQuotaBySessionId['data']['id']);
+                }
             }
 
             $coursesList = SessionManager::get_course_list_by_session_id($sessionId);

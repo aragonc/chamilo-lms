@@ -12,3 +12,4 @@
 {{ text_after_registration }}
 
 {% endblock %}
+
