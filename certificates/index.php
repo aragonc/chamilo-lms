@@ -31,6 +31,11 @@ if (!empty($category) && !empty($category->get_course_code())) {
 
 
 switch ($action) {
+    case 'export_view':
+        $certificate = new Certificate($certificateId, $userId);
+        $certificateData = $certificate->get($certificateId);
+        EasyCertificatePlugin::redirectCheckFree($certificate, $certificateId, $userId);
+        break;
     case 'export':
         $certificate = new Certificate($certificateId, $userId);
         $certificateData = $certificate->get($certificateId);
