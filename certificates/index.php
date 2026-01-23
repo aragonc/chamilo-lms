@@ -102,7 +102,7 @@ switch ($action) {
         $certificateData = $certificate->get($certificateId);
 
         if (api_get_plugin_setting('easycertificate', 'enable_plugin_easycertificate') === 'true') {
-            EasyCertificatePlugin::redirectCheck($certificate, $certificateId, $userId);
+            EasyCertificatePlugin::viewCertificateHTML($certificate, $certificateId, $userId);
         } else {
             CustomCertificatePlugin::redirectCheck($certificate, $certificateId, $userId);
         }
