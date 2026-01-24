@@ -95,6 +95,9 @@ switch ($action) {
     case 'view':
         if(api_get_plugin_setting('easycertificate', 'enable_plugin_easycertificate') === 'true'){
             $result = EasyCertificatePlugin::getGenerateInfoCertificate(false, $codCertificate);
+            $newUrl = api_get_path(WEB_PATH)."plugin/easycertificate/search.php?type=view&c_cert=" . urlencode($codCertificate);
+            header("Location: " . $newUrl);
+
         }
         break;
     default:
