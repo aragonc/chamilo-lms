@@ -18,6 +18,21 @@ $session_id = api_get_session_id();
 $course_id = api_get_course_int_id();
 $courseInfo = api_get_course_info();
 
+// LOAD DATA & DISPLAY TABLE
+$is_platform_admin = api_is_platform_admin();
+$is_course_admin = api_is_allowed_to_edit(null, true);
+
+if(!$is_platform_admin && !$is_course_admin) {
+    $plugin = ProikosPlugin::create();
+    $enable = $plugin->get('force_results_view') == 'true';
+    if($enable){
+        $url = api_get_path(WEB_PATH).'plugin/proikos/academic_result.php?'.api_get_cidreq();
+        header('Location: '.$url);
+        exit;
+    }
+}
+
+
 $action = isset($_GET['action']) ? $_GET['action'] : null;
 $itemId = isset($_GET['itemId']) ? $_GET['itemId'] : 0;
 
@@ -668,9 +683,6 @@ if (api_get_configuration_value('allow_skill_rel_items') == true) {
     $htmlContentExtraClass[] = 'feature-item-user-skill-on';
 }
 
-// LOAD DATA & DISPLAY TABLE
-$is_platform_admin = api_is_platform_admin();
-$is_course_admin = api_is_allowed_to_edit(null, true);
 $simple_search_form = '';
 
 if (isset($_GET['studentoverview'])) {
