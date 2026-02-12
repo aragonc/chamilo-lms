@@ -247,7 +247,8 @@ class AzureActiveDirectory extends Plugin
     /**
      * @throws Exception
      */
-    public function registerUser(array $azureUserInfo) {
+    public function registerUser(array $azureUserInfo)
+    {
         if (empty($azureUserInfo)) {
             throw new Exception('Groups info not found.');
         }
@@ -311,6 +312,8 @@ class AzureActiveDirectory extends Plugin
                 $extra,
             ] = $this->formatUserData($azureUserInfo);
 
+            $userInfo = api_get_user_info($userId);
+
             $userId = UserManager::update_user(
                 $userId,
                 $firstNme,
@@ -322,7 +325,7 @@ class AzureActiveDirectory extends Plugin
                 STUDENT,
                 null,
                 $phone,
-                null,
+                $userInfo['picture_uri'],
                 null,
                 $active,
                 null,
@@ -402,7 +405,8 @@ class AzureActiveDirectory extends Plugin
     /**
      * @throws Exception
      */
-    private function formatUserData(array $azureUserInfo): array {
+    private function formatUserData(array $azureUserInfo): array
+    {
         $phone = null;
 
         if (isset($azureUserInfo['telephoneNumber'])) {

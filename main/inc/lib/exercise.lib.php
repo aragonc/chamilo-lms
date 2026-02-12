@@ -288,16 +288,16 @@ class ExerciseLib
                     if ('true' === OnlyofficePlugin::create()->get('enable_onlyoffice_plugin')) {
                         global $exe_id;
                         if (!empty($objQuestionTmp->extra)) {
-                            $fileUrl = api_get_course_path()."/exercises/onlyoffice/{$exerciseId}/{$questionId}/" . $objQuestionTmp->extra;
+                            $fileUrl = api_get_course_path()."/exercises/onlyoffice/{$exerciseId}/{$questionId}/".$objQuestionTmp->extra;
                             $documentUrl = OnlyofficeTools::getPathToView($fileUrl, false, $exe_id, $questionId);
                             echo '<div class="office-doc-container">';
                             echo "<iframe src='{$documentUrl}' width='100%' height='600' style='border:none;'></iframe>";
                             echo '</div>';
                         } else {
-                            echo '<p>' . get_lang('NoOfficeDocProvided') . '</p>';
+                            echo '<p>'.get_lang('NoOfficeDocProvided').'</p>';
                         }
                     } else {
-                        echo '<p>' . get_lang('OnlyOfficePluginRequired') . '</p>';
+                        echo '<p>'.get_lang('OnlyOfficePluginRequired').'</p>';
                     }
                     break;
                 case ORAL_EXPRESSION:
@@ -2441,6 +2441,8 @@ HOTSPOT;
         $courseId = $values['course_id'] ?? 0;
         $exerciseId = $values['exercise_id'] ?? 0;
         $status = $values['status'] ?? 0;
+        $questionType = $values['questionType'] ?? ($values['questionTypeId'] ?? 0);
+        $showAttemptsInSessions = api_get_configuration_value('show_exercise_attempts_in_all_user_sessions');
         $whereCondition = '';
         if (isset($_GET['filter_by_user']) && !empty($_GET['filter_by_user'])) {
             $filter_user = (int) $_GET['filter_by_user'];
@@ -2486,7 +2488,10 @@ HOTSPOT;
             false,
             false,
             true,
-            $status
+            $status,
+            $showAttemptsInSessions,
+            $questionType,
+            true
         );
 
         if (!empty($result)) {
@@ -3244,9 +3249,6 @@ HOTSPOT;
 
                                 if (api_is_drh() && !api_is_platform_admin()) {
                                     $delete_link = null;
-                                }
-                                if (api_is_session_admin()) {
-                                    $delete_link = '';
                                 }
                                 if ($revised == 3) {
                                     $delete_link = null;
@@ -5455,7 +5457,7 @@ EOT;
 
                 // Category report
                 $category_was_added_for_this_test = false;
-                if (isset($objQuestionTmp->category) && !empty($objQuestionTmp->category)) {
+                if (!empty($objQuestionTmp->category)) {
                     if (!isset($category_list[$objQuestionTmp->category]['score'])) {
                         $category_list[$objQuestionTmp->category]['score'] = 0;
                     }
@@ -5493,7 +5495,7 @@ EOT;
                     $category_list[$objQuestionTmp->category]['total_questions']++;
                     $category_was_added_for_this_test = true;
                 }
-                if (isset($objQuestionTmp->category_list) && !empty($objQuestionTmp->category_list)) {
+                if (!empty($objQuestionTmp->category_list)) {
                     foreach ($objQuestionTmp->category_list as $category_id) {
                         $category_list[$category_id]['score'] += $my_total_score;
                         $category_list[$category_id]['total'] += $my_total_weight;
@@ -5502,7 +5504,7 @@ EOT;
                 }
 
                 // No category for this question!
-                if ($category_was_added_for_this_test == false) {
+                if (!$category_was_added_for_this_test) {
                     if (!isset($category_list['none']['score'])) {
                         $category_list['none']['score'] = 0;
                     }
@@ -6253,6 +6255,8 @@ EOT;
      */
     public static function getFeedbackText($message)
     {
+        $message = Security::remove_XSS($message);
+
         return Display::return_message($message, 'warning', false);
     }
 
@@ -7420,20 +7424,6 @@ EOT;
         return false;
     }
 
-    private static function subscribeSessionWhenFinishedFailure(int $exerciseId): void
-    {
-        $failureSession = self::getSessionWhenFinishedFailure($exerciseId);
-
-        if ($failureSession) {
-            SessionManager::subscribeUsersToSession(
-                $failureSession->getId(),
-                [api_get_user_id()],
-                SESSION_VISIBLE_READ_ONLY,
-                false
-            );
-        }
-    }
-
     /**
      * Get formatted feedback comments for an exam attempt.
      */
@@ -7471,19 +7461,19 @@ EOT;
         }
 
         if (empty($commentsByQuestion)) {
-            return "<p>" . get_lang('NoAdditionalComments') . "</p>";
+            return "<p>".get_lang('NoAdditionalComments')."</p>";
         }
 
-        $output = "<h3>" . get_lang('TeacherFeedback') . "</h3>";
+        $output = "<h3>".get_lang('TeacherFeedback')."</h3>";
         $output .= "<table border='1' cellpadding='5' cellspacing='0' width='100%' style='border-collapse: collapse;'>";
 
         foreach ($commentsByQuestion as $questionId => $data) {
             $output .= "<tr>
-                        <td><b>" . get_lang('Question') . " #$questionId:</b> " . $data['title'] . "</td>
+                        <td><b>".get_lang('Question')." #$questionId:</b> ".$data['title']."</td>
                     </tr>";
             foreach ($data['comments'] as $comment) {
                 $output .= "<tr>
-                            <td style='padding-left: 20px;'><i>" . get_lang('Feedback') . ":</i> $comment</td>
+                            <td style='padding-left: 20px;'><i>".get_lang('Feedback').":</i> $comment</td>
                         </tr>";
             }
         }
@@ -7491,5 +7481,19 @@ EOT;
         $output .= "</table>";
 
         return $output;
+    }
+
+    private static function subscribeSessionWhenFinishedFailure(int $exerciseId): void
+    {
+        $failureSession = self::getSessionWhenFinishedFailure($exerciseId);
+
+        if ($failureSession) {
+            SessionManager::subscribeUsersToSession(
+                $failureSession->getId(),
+                [api_get_user_id()],
+                SESSION_VISIBLE_READ_ONLY,
+                false
+            );
+        }
     }
 }
