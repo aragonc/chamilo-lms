@@ -165,6 +165,21 @@ class HTML_QuickForm_text extends HTML_QuickForm_input
                     ';
                 }
                 break;
+            case FormValidator::LAYOUT_NEW:
+                $template = '<div class="form-group" id="form_'.$this->getName().'_group">
+                    <label for="form_'.$this->getName().'" class="form-label label">
+                    <!-- BEGIN required --><span class="form_required">*</span><!-- END required -->
+                        {label}
+                    </label>
+                    {element}
+                    <!-- BEGIN label_2 -->
+                        <p class="help-block">{label_2}</p>
+                    <!-- END label_2 -->
+                    <!-- BEGIN error -->
+                        <span class="help-inline-error">{error}</span>
+                    <!-- END error -->
+                </div>';
+                break;
         }
 
         return $template;

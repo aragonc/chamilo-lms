@@ -500,6 +500,25 @@ class HTML_QuickForm_file extends HTML_QuickForm_input
                             {element}
                         </div>';
                 break;
+            case FormValidator::LAYOUT_NEW:
+                $template = '
+                   <div id="file_'.$name.'" class="custom-file form-group {error_class}">
+
+                        <label {label-for} class="custom-file-label label" >
+                            <!-- BEGIN required --><span class="form_required">*</span><!-- END required -->
+                            {label}
+                        </label>
+                            {icon}
+                            {element}
+                            <!-- BEGIN label_2 -->
+                                <p class="help-block">{label_2}</p>
+                            <!-- END label_2 -->
+                            <!-- BEGIN error -->
+                                <span class="help-inline help-block">{error}</span>
+                            <!-- END error -->
+                    </div>
+                ';
+                break;
         }
     }
 

@@ -16,6 +16,7 @@ class FormValidator extends HTML_QuickForm
     public const LAYOUT_BOX = 'box';
     public const LAYOUT_BOX_NO_LABEL = 'box-no-label';
     public const LAYOUT_GRID = 'grid';
+    public const LAYOUT_NEW = 'box-new';
 
     public const TIMEPICKER_INCREMENT_DEFAULT = 15;
 

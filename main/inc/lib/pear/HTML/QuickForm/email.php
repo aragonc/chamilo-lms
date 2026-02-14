@@ -61,4 +61,30 @@ class HTML_QuickForm_email extends HTML_QuickForm_input
     {
         $this->updateAttributes(array('maxlength'=>$maxlength));
     }
+
+    public function getTemplate($layout)
+    {
+        $template = '<div class="form-group">
+                        <label for="label_'.$this->getName().'" class="form-label">{label}</label>
+                        {element}
+                    </div>';
+        switch ($layout) {
+            case FormValidator::LAYOUT_NEW:
+                $template = '<div class="form-group" id="form_'.$this->getName().'_group">
+                        <label for="form_'.$this->getName().'" class="form-label label">
+                        <!-- BEGIN required --><span class="form_required">*</span><!-- END required -->
+                            {label}
+                        </label>
+                        {element}
+                        <!-- BEGIN label_2 -->
+                            <p class="help-block">{label_2}</p>
+                        <!-- END label_2 -->
+                        <!-- BEGIN error -->
+                            <span class="help-inline help-block">{error}</span>
+                        <!-- END error -->
+                    </div>';
+                break;
+        }
+        return $template;
+    }
 }

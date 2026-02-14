@@ -127,4 +127,52 @@ class HTML_QuickForm_password extends HTML_QuickForm_text
                 document.getElementById(\''.$pwdId.'\').setAttribute(\'type\', this.checked ? \'text\' : \'password\')
             };</script>';
     }
+
+    public function getTemplate($layout)
+    {
+        $attributes = $this->getAttributes();
+
+        switch ($layout) {
+
+
+            case FormValidator::LAYOUT_NEW:
+                $template = '
+                <!-- BEGIN required --><span class="form_required">*</span><!-- END required -->
+                <label for="form_' . $this->getName() . '" class="form-label">
+                    {label}
+                </label>
+                <div class="input-group mb-3" id="form_' . $this->getName() . '_group">
+                  {element}
+                  <div class="input-group-append">
+                    <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility(\'' . htmlspecialchars($this->getName()) . '\')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                  </div>
+                  <!-- BEGIN label_2 -->
+                            <p class="help-block">{label_2}</p>
+                        <!-- END label_2 -->
+                        <!-- BEGIN error -->
+                            <span class="help-inline-error">{error}</span>
+                        <!-- END error -->
+                </div>
+
+               ';
+                break;
+            default:
+                $template = '<div id="form_' . $this->getName() . '_group" class="form-group {error_class}">
+                         <label for="form_' . $this->getName() . '" class="form-label">
+                            <!-- BEGIN required --><span class="form_required">*</span><!-- END required -->
+                            {label}
+                        </label>
+                            {element}
+                        <!-- BEGIN error -->
+                            <div class="help-info-form">{error}</div>
+                        <!-- END error -->
+                        </div>';
+                break;
+        }
+
+        return $template;
+    }
+
 }

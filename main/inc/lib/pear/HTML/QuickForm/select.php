@@ -644,6 +644,15 @@ class HTML_QuickForm_select extends HTML_QuickForm_element
                             {element}
                         </div>';
                 break;
+            case FormValidator::LAYOUT_NEW:
+                $template = '<div class="form-group">
+                        <label {label-for} class="form-label label">
+                        <!-- BEGIN required --><span class="form_required">*</span><!-- END required -->
+                        {label}
+                        </label>
+                        {element}
+                    </div>';
+                break;
         }
     }
 }
