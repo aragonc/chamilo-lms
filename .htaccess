@@ -22,6 +22,29 @@ RedirectMatch 403 ^/app/config/.*\.yml(\.dist)?$
 RewriteCond %{QUERY_STRING} ^id=(.*)$
 RewriteRule ^certificates/$ certificates/index.php?id=%1 [L]
 
+# BEGIN School Plugin
+RewriteRule ^dashboard$ plugin/school/start.php [L]
+RewriteRule ^previous$ plugin/school/previous.php [L]
+RewriteRule ^certified$ plugin/school/certificates.php [L]
+RewriteRule ^notifications$ plugin/school/notifications.php [L]
+RewriteRule ^profile$ plugin/school/profile.php [L]
+RewriteRule ^avatar$ plugin/school/avatar.php [L]
+RewriteRule ^password$ plugin/school/password.php [L]
+RewriteRule ^requests$ plugin/school/requests.php [L]
+RewriteRule ^shopping$ plugin/school/shopping.php [L]
+RewriteRule ^help$ plugin/school/help.php [L]
+RewriteRule ^school-admin$ plugin/school/admin.php [L]
+RewriteRule ^documents$ plugin/school/student_documents.php?%{QUERY_STRING} [L,QSA]
+RewriteRule ^view/course/(\d{1,})$ plugin/school/view.php?session_id=$1 [L]
+RewriteRule ^home/course/([^/]+)$ plugin/school/home.php?cDir=$1 [L]
+RewriteRule ^reset/token/([^/]+)$ plugin/school/reset.php?token=$1 [L]
+RewriteRule ^attendance$ plugin/school/attendance.php [L]
+RewriteRule ^attendance/scan$ plugin/school/attendance_scan.php [L,QSA]
+RewriteRule ^attendance/kiosk$ plugin/school/attendance_kiosk.php [L]
+RewriteRule ^extra-profile$ plugin/school/extra_profile_data.php [L]
+
+# END School Plugin
+
 # Course redirection
 RewriteRule ^courses/([^/]+)/?$ main/course_home/course_home.php?cDir=$1 [QSA,L]
 RewriteRule ^courses/([^/]+)/index.php$ main/course_home/course_home.php?cDir=$1 [QSA,L]
