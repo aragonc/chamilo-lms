@@ -47,6 +47,12 @@ RewriteRule ^attendance/my$ plugin/school/attendance_my.php [L]
 RewriteRule ^attendance/scan$ plugin/school/attendance_scan.php [L,QSA]
 RewriteRule ^attendance/kiosk$ plugin/school/attendance_kiosk.php [L]
 RewriteRule ^extra-profile$ plugin/school/extra_profile_data.php [L]
+RewriteRule ^login$ plugin/school/login.php [L]
+
+# Redirect homepage to School login
+RewriteCond %{REQUEST_URI} ^/index\.php$ [OR]
+RewriteCond %{REQUEST_URI} ^/$
+RewriteRule ^.*$ plugin/school/login.php [L]
 
 # END School Plugin
 

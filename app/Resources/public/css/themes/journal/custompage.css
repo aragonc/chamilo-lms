@@ -1,7 +1,7 @@
 :root {
-    --primary-color: #FF0000;
-    --success-color: #16D090;
-    --bgcolor : #072f62;
+    --primary-color: #0e386f;
+    --success-color: #fe151b;
+    --bgcolor : #ffcc00;
 }
 
 body {
@@ -43,13 +43,13 @@ body {
     padding: 30px 35px;
 }
 .custompage h3.title, legend {
-    font-weight: 900;
-    font-size: 24px;
-    color: #486F88;
+    font-weight: 800;
+    font-size: 20px;
+    color: #0e386f;
     padding: 1rem 0;
 }
 .custompage label {
-    color: #486F88;
+    color: #0e386f;
     font-weight: 400;
 }
 .custompage #vegas{
@@ -75,14 +75,12 @@ body {
     color: #fff;
     background-color: var(--primary-color);
     border-color: var(--primary-color);;
-    text-transform: uppercase;
     font-weight: bold;
 }
 .btn-success {
     color: #fff;
     background-color: var(--success-color);
     border-color: var(--success-color);
-    text-transform: uppercase;
     font-weight: bold;
 }
 .custompage .software-name {
