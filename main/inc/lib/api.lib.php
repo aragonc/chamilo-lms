@@ -51,6 +51,12 @@ define('INVITEE', 20);
 define('HRM_REQUEST', 21); //HRM has request for vinculation with user
 define('COURSE_EXLEARNER', 22);
 
+// School plugin roles
+define('SCHOOL_PARENT', 23);
+define('SCHOOL_GUARDIAN', 24);
+define('SCHOOL_SECRETARY', 25);
+define('SCHOOL_AUXILIARY', 26);
+
 // Table of status
 $_status_list[COURSEMANAGER] = 'teacher'; // 1
 $_status_list[SESSIONADMIN] = 'session_admin'; // 3
@@ -58,6 +64,10 @@ $_status_list[DRH] = 'drh'; // 4
 $_status_list[STUDENT] = 'user'; // 5
 $_status_list[ANONYMOUS] = 'anonymous'; // 6
 $_status_list[INVITEE] = 'invited'; // 20
+$_status_list[SCHOOL_PARENT] = 'school_parent'; // 23
+$_status_list[SCHOOL_GUARDIAN] = 'school_guardian'; // 24
+$_status_list[SCHOOL_SECRETARY] = 'school_secretary'; // 25
+$_status_list[SCHOOL_AUXILIARY] = 'school_auxiliary'; // 26
 
 // COURSE VISIBILITY CONSTANTS
 /** only visible for course admin */
@@ -6177,6 +6187,10 @@ function api_get_status_langvars()
         ANONYMOUS => get_lang('Anonymous', ''),
         STUDENT_BOSS => get_lang('RoleStudentBoss', ''),
         INVITEE => get_lang('Invited'),
+        SCHOOL_PARENT => get_lang('SchoolParent', ''),
+        SCHOOL_GUARDIAN => get_lang('SchoolGuardian', ''),
+        SCHOOL_SECRETARY => get_lang('SchoolSecretary', ''),
+        SCHOOL_AUXILIARY => get_lang('SchoolAuxiliary', ''),
     ];
 }
 

@@ -7829,6 +7829,14 @@ SQL;
             $status[INVITEE] = get_lang('Invitee');
         }
 
+        // Add School plugin roles when plugin is active
+        if (api_get_plugin_setting('school', 'tool_enable') === 'true') {
+            $status[SCHOOL_PARENT] = get_lang('SchoolParent');
+            $status[SCHOOL_GUARDIAN] = get_lang('SchoolGuardian');
+            $status[SCHOOL_SECRETARY] = get_lang('SchoolSecretary');
+            $status[SCHOOL_AUXILIARY] = get_lang('SchoolAuxiliary');
+        }
+
         return $status;
     }
 

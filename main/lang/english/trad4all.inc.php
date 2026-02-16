@@ -9122,4 +9122,9 @@ $Unify = "Unify";
 $AreYouSureToUnify = "Are you sure to unify";
 $FinalUser = "Final user";
 $WillMergeNUsers = "Will merge {n} users";
+// School plugin roles
+$SchoolParent = "Parent";
+$SchoolGuardian = "Guardian";
+$SchoolSecretary = "Secretary";
+$SchoolAuxiliary = "Auxiliary";
 ?>

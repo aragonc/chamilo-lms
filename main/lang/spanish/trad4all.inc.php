@@ -9147,4 +9147,9 @@ $Unify = "Unificar";
 $AreYouSureToUnify = "Estas seguro de unificar";
 $FinalUser = "Usuario final";
 $WillMergeNUsers = "Fusionará {n} usuarios";
+// School plugin roles
+$SchoolParent = "Padre de familia";
+$SchoolGuardian = "Apoderado";
+$SchoolSecretary = "Secretaria";
+$SchoolAuxiliary = "Auxiliar";
 ?>

@@ -1133,10 +1133,11 @@ class ExtraField extends Model
                             'extra_'.$field_details['variable'],
                             'html_filter'
                         );
+                        $defaults = [];
                         if (!empty($field_details['default_value'])) {
                             $defaults['extra_'.$field_details['variable']] = $field_details['default_value'];
                         }
-                        if (!isset($form->_defaultValues['extra_'.$field_details['variable']])) {
+                        if (!empty($defaults) && !isset($form->_defaultValues['extra_'.$field_details['variable']])) {
                             $form->setDefaults($defaults);
                         }
                         if ($freezeElement) {
