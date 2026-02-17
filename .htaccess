@@ -48,6 +48,18 @@ RewriteRule ^certified$ plugin/school/src/misc/certificates.php [L]
 RewriteRule ^documents$ plugin/school/src/misc/student_documents.php?%{QUERY_STRING} [L,QSA]
 RewriteRule ^requests$ plugin/school/src/misc/requests.php [L]
 RewriteRule ^help$ plugin/school/src/misc/help.php [L]
+RewriteRule ^payments$ plugin/school/src/payments/payments.php [L]
+RewriteRule ^payments/students$ plugin/school/src/payments/students.php [L,QSA]
+RewriteRule ^payments/register$ plugin/school/src/payments/register.php [L,QSA]
+RewriteRule ^payments/discounts$ plugin/school/src/payments/discounts.php [L,QSA]
+RewriteRule ^payments/my$ plugin/school/src/payments/my_payments.php [L]
+RewriteRule ^payments/reports$ plugin/school/src/payments/reports.php [L,QSA]
+RewriteRule ^payments/receipt$ plugin/school/src/payments/receipt.php [L,QSA]
+RewriteRule ^products$ plugin/school/src/products/products.php [L]
+RewriteRule ^products/sell$ plugin/school/src/products/sell.php [L,QSA]
+RewriteRule ^products/sales$ plugin/school/src/products/sales.php [L,QSA]
+RewriteRule ^products/my$ plugin/school/src/products/my_purchases.php [L]
+RewriteRule ^products/receipt$ plugin/school/src/products/receipt.php [L,QSA]
 # END School Plugin
 
 
