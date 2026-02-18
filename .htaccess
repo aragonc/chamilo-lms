@@ -61,6 +61,10 @@ RewriteRule ^products/sell$ plugin/school/src/products/sell.php [L,QSA]
 RewriteRule ^products/sales$ plugin/school/src/products/sales.php [L,QSA]
 RewriteRule ^products/my$ plugin/school/src/products/my_purchases.php [L]
 RewriteRule ^products/receipt$ plugin/school/src/products/receipt.php [L,QSA]
+RewriteRule ^academic$ plugin/school/src/academic/index.php [L]
+RewriteRule ^academic/settings$ plugin/school/src/academic/settings.php [L]
+RewriteRule ^academic/classroom$ plugin/school/src/academic/classroom.php [L,QSA]
+RewriteRule ^payments/pricing$ plugin/school/src/payments/pricing.php [L,QSA]
 # END School Plugin
 
 
