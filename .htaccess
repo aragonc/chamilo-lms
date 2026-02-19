@@ -65,6 +65,10 @@ RewriteRule ^academic$ plugin/school/src/academic/index.php [L]
 RewriteRule ^academic/settings$ plugin/school/src/academic/settings.php [L]
 RewriteRule ^academic/classroom$ plugin/school/src/academic/classroom.php [L,QSA]
 RewriteRule ^payments/pricing$ plugin/school/src/payments/pricing.php [L,QSA]
+RewriteRule ^matricula$ plugin/school/src/matricula/list.php [L]
+RewriteRule ^matricula/nueva$ plugin/school/src/matricula/form.php [L]
+RewriteRule ^matricula/editar$ plugin/school/src/matricula/form.php [L,QSA]
+RewriteRule ^matricula/ver$ plugin/school/src/matricula/view.php [L,QSA]
 # END School Plugin
 
 
