@@ -518,6 +518,7 @@ class HTML_QuickForm_file extends HTML_QuickForm_input
                             <!-- END error -->
                     </div>
                 ';
+                return $template;
                 break;
         }
     }
