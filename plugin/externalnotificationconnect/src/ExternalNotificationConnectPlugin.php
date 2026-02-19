@@ -181,6 +181,7 @@ class ExternalNotificationConnectPlugin extends Plugin implements HookPluginInte
     private function installDBTables()
     {
         $em = Database::getManager();
+        $em->getConnection()->getDatabasePlatform()->registerDoctrineTypeMapping('enum', 'string');
 
         try {
             (new SchemaTool($em))
@@ -195,11 +196,16 @@ class ExternalNotificationConnectPlugin extends Plugin implements HookPluginInte
     private function uninstallDBTables()
     {
         $em = Database::getManager();
+        $em->getConnection()->getDatabasePlatform()->registerDoctrineTypeMapping('enum', 'string');
 
-        (new SchemaTool($em))
-            ->dropSchema([
-                $em->getClassMetadata(AccessToken::class),
-            ]);
+        try {
+            (new SchemaTool($em))
+                ->dropSchema([
+                    $em->getClassMetadata(AccessToken::class),
+                ]);
+        } catch (ToolsException $e) {
+            return;
+        }
     }
 
     /**

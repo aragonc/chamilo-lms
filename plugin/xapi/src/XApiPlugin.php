@@ -177,32 +177,43 @@ class XApiPlugin extends Plugin implements HookPluginInterface
         $em = Database::getManager();
         $pluginEm = self::getEntityManager();
 
-        $schemaTool = new SchemaTool($em);
-        $schemaTool->dropSchema(
-            [
-                $em->getClassMetadata(ActivityProfile::class),
-                $em->getClassMetadata(ActivityState::class),
-                $em->getClassMetadata(SharedStatement::class),
-                $em->getClassMetadata(ToolLaunch::class),
-                $em->getClassMetadata(LrsAuth::class),
-                $em->getClassMetadata(Cmi5Item::class),
-                $em->getClassMetadata(InternalLog::class),
-            ]
-        );
+        $em->getConnection()->getDatabasePlatform()->registerDoctrineTypeMapping('enum', 'string');
+        $pluginEm->getConnection()->getDatabasePlatform()->registerDoctrineTypeMapping('enum', 'string');
 
-        $pluginSchemaTool = new SchemaTool($pluginEm);
-        $pluginSchemaTool->dropSchema(
-            [
-                $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Attachment::class),
-                $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\StatementObject::class),
-                $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Result::class),
-                $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Verb::class),
-                $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Extensions::class),
-                $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Context::class),
-                $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Actor::class),
-                $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Statement::class),
-            ]
-        );
+        try {
+            $schemaTool = new SchemaTool($em);
+            $schemaTool->dropSchema(
+                [
+                    $em->getClassMetadata(ActivityProfile::class),
+                    $em->getClassMetadata(ActivityState::class),
+                    $em->getClassMetadata(SharedStatement::class),
+                    $em->getClassMetadata(ToolLaunch::class),
+                    $em->getClassMetadata(LrsAuth::class),
+                    $em->getClassMetadata(Cmi5Item::class),
+                    $em->getClassMetadata(InternalLog::class),
+                ]
+            );
+        } catch (\Exception $e) {
+            error_log('XApi uninstall (main em): ' . $e->getMessage());
+        }
+
+        try {
+            $pluginSchemaTool = new SchemaTool($pluginEm);
+            $pluginSchemaTool->dropSchema(
+                [
+                    $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Attachment::class),
+                    $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\StatementObject::class),
+                    $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Result::class),
+                    $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Verb::class),
+                    $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Extensions::class),
+                    $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Context::class),
+                    $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Actor::class),
+                    $pluginEm->getClassMetadata(\XApi\Repository\Doctrine\Mapping\Statement::class),
+                ]
+            );
+        } catch (\Exception $e) {
+            error_log('XApi uninstall (plugin em): ' . $e->getMessage());
+        }
     }
 
     /**
@@ -560,6 +571,9 @@ class XApiPlugin extends Plugin implements HookPluginInterface
     {
         $em = Database::getManager();
         $pluginEm = self::getEntityManager();
+
+        $em->getConnection()->getDatabasePlatform()->registerDoctrineTypeMapping('enum', 'string');
+        $pluginEm->getConnection()->getDatabasePlatform()->registerDoctrineTypeMapping('enum', 'string');
 
         $schemaTool = new SchemaTool($em);
         $schemaTool->createSchema(

@@ -104,7 +104,9 @@ class GoogleMeetPlugin extends Plugin
         foreach ($iconsList as $icon) {
             $src = $sourceDir.$icon;
             $dest = $destinationDir.$icon;
-            copy($src, $dest);
+            if (is_writable(dirname($dest))) {
+                copy($src, $dest);
+            }
         }
     }
 
