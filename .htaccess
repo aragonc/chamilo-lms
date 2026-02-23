@@ -43,6 +43,7 @@ RewriteRule ^extra-profile$ plugin/school/src/profile/extra_profile_data.php [L]
 RewriteRule ^notifications$ plugin/school/src/notifications/notifications.php [L]
 RewriteRule ^shopping$ plugin/school/src/shopping/shopping.php [L]
 RewriteRule ^school-admin$ plugin/school/src/admin/admin.php [L]
+RewriteRule ^admin/usuarios$ plugin/school/src/admin/usuarios.php [L,QSA]
 RewriteRule ^reset/token/([^/]+)$ plugin/school/src/auth/reset.php?token=$1 [L]
 RewriteRule ^certified$ plugin/school/src/misc/certificates.php [L]
 RewriteRule ^documents$ plugin/school/src/misc/student_documents.php?%{QUERY_STRING} [L,QSA]
@@ -69,6 +70,8 @@ RewriteRule ^matricula$ plugin/school/src/matricula/list.php [L]
 RewriteRule ^matricula/nueva$ plugin/school/src/matricula/form.php [L]
 RewriteRule ^matricula/editar$ plugin/school/src/matricula/form.php [L,QSA]
 RewriteRule ^matricula/ver$ plugin/school/src/matricula/view.php [L,QSA]
+RewriteRule ^matricula/alumnos$ plugin/school/src/matricula/alumnos.php [L,QSA]
+
 # END School Plugin
 
 
