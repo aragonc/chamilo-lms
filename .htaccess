@@ -75,6 +75,9 @@ RewriteRule ^matricula/editar$ plugin/school/src/matricula/form.php [L,QSA]
 RewriteRule ^matricula/ver$ plugin/school/src/matricula/view.php [L,QSA]
 RewriteRule ^matricula/alumnos$ plugin/school/src/matricula/alumnos.php [L,QSA]
 RewriteRule ^matricula/tarjetas-print$ plugin/school/src/matricula/tarjetas_print.php [L,QSA]
+RewriteRule ^payments/refunds$ plugin/school/src/payments/refunds.php [L,QSA]
+RewriteRule ^payments/refund-receipt$ plugin/school/src/payments/refund_receipt.php [L,QSA]
+RewriteRule ^my-aula$ plugin/school/src/classroom/my_classroom.php [L,QSA]
 
 # END School Plugin
 
