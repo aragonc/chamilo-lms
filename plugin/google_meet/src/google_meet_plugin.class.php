@@ -235,6 +235,11 @@ class GoogleMeetPlugin extends Plugin
 
     public static function getBtnMeetSession($sessionId): string
     {
+        $plugin = self::create();
+        if ($plugin->get(self::SETTING_ENABLED) !== 'true') {
+            return '';
+        }
+
         $tableMeetList = Database::get_main_table(self::TABLE_MEET_LIST);
         $sessionId = (int) $sessionId;
         $sql = "SELECT * FROM $tableMeetList WHERE session_id = $sessionId AND activate = 1";
