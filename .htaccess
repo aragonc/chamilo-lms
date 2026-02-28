@@ -80,6 +80,8 @@ RewriteRule ^matricula/tarjetas-print$ plugin/school/src/matricula/tarjetas_prin
 RewriteRule ^payments/refunds$ plugin/school/src/payments/refunds.php [L,QSA]
 RewriteRule ^payments/refund-receipt$ plugin/school/src/payments/refund_receipt.php [L,QSA]
 RewriteRule ^my-aula$ plugin/school/src/classroom/my_classroom.php [L,QSA]
+RewriteRule ^my-aula/mis-alumnos$ plugin/school/src/classroom/mis_alumnos.php [L,QSA]
+RewriteRule ^my-aula/horario$ plugin/school/src/classroom/schedule.php [L,QSA]
 
 # END School Plugin
 
