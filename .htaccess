@@ -46,6 +46,7 @@ RewriteRule ^datos-adicionales$ plugin/school/src/profile/datos_adicionales.php 
 RewriteRule ^notifications$ plugin/school/src/notifications/notifications.php [L]
 RewriteRule ^shopping$ plugin/school/src/shopping/shopping.php [L]
 RewriteRule ^school-admin$ plugin/school/src/admin/admin.php [L]
+RewriteRule ^school-admin/settings$ plugin/school/src/admin/settings.php [L]
 RewriteRule ^admin/usuarios$ plugin/school/src/admin/usuarios.php [L,QSA]
 RewriteRule ^admin/tarjetas-print$ plugin/school/src/admin/tarjetas_print.php [L,QSA]
 RewriteRule ^admin/ficha$ plugin/school/src/admin/ficha_usuario.php [L,QSA]
