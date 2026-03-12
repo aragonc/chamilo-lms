@@ -7103,12 +7103,22 @@ class SessionManager
 
         $currentTime = time();
 
-        // If no previous access, return false
+        // If no previous access, return full duration
         if (count($courseAccess) == 0) {
             return $duration;
         }
 
         $firstAccess = api_strtotime($courseAccess['login_course_date'], 'UTC');
+
+        // If the user was re-enrolled after their first access, use the
+        // registration date as the starting point so the duration resets.
+        if (!empty($subscription['registered_at'])) {
+            $registeredAt = api_strtotime($subscription['registered_at'], 'UTC');
+            if ($registeredAt > $firstAccess) {
+                $firstAccess = $registeredAt;
+            }
+        }
+
         $endDateInSeconds = $firstAccess + $duration * 24 * 60 * 60;
         $leftDays = round(($endDateInSeconds - $currentTime) / 60 / 60 / 24);
 
