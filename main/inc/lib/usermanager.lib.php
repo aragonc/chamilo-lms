@@ -3752,6 +3752,10 @@ class UserManager
                 if ($is_time_over) {
                     // History
                     if ($row['duration']) {
+                        // If no access_end_date, session has no expiry → never show in history
+                        if (empty($row['access_end_date'])) {
+                            continue;
+                        }
                         if ($daysLeft >= 0) {
                             continue;
                         }
