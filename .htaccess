@@ -86,6 +86,9 @@ RewriteRule ^my-aula$ plugin/school/src/classroom/my_classroom.php [L,QSA]
 RewriteRule ^my-aula/mis-alumnos$ plugin/school/src/classroom/mis_alumnos.php [L,QSA]
 RewriteRule ^my-aula/horario$ plugin/school/src/classroom/schedule.php [L,QSA]
 RewriteRule ^supervision$ plugin/school/src/supervision/index.php [L,QSA]
+RewriteRule ^support$ plugin/school/src/support/list.php [L]
+RewriteRule ^support/view$ plugin/school/src/support/view.php [L,QSA]
+RewriteRule ^support/settings$ plugin/school/src/support/settings.php [L]
 
 # END School Plugin
 
