@@ -4048,6 +4048,15 @@ function api_not_allowed(
         CustomPages::display(CustomPages::INDEX_UNLOGGED);
     }
 
+    // School plugin: redirect anonymous/expired sessions to the custom login page
+    if (empty($user_id) || api_is_anonymous()) {
+        if (!headers_sent()) {
+            $_SESSION['school_plugin_redirect'] = $_SERVER['REQUEST_URI'];
+            header('Location: ' . $home_url . 'login');
+            exit;
+        }
+    }
+
     $origin = api_get_origin();
 
     $msg = null;
