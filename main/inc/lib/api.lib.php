@@ -4050,8 +4050,16 @@ function api_not_allowed(
 
     // School plugin: redirect anonymous/expired sessions to the custom login page
     if (empty($user_id) || api_is_anonymous()) {
-        if (!headers_sent()) {
-            $_SESSION['school_plugin_redirect'] = $_SERVER['REQUEST_URI'];
+        $currentUri = $_SERVER['REQUEST_URI'] ?? '';
+        $isLoginPage = (
+            strpos($currentUri, '/login') !== false ||
+            strpos($currentUri, 'auth/login') !== false ||
+            strpos($currentUri, 'lostPassword') !== false ||
+            strpos($currentUri, 'reset/token') !== false ||
+            strpos($currentUri, 'school/src/auth') !== false
+        );
+        if (!$isLoginPage && !headers_sent()) {
+            $_SESSION['school_plugin_redirect'] = $currentUri;
             header('Location: ' . $home_url . 'login');
             exit;
         }
