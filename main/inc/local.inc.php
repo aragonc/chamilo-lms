@@ -1591,7 +1591,7 @@ if ((isset($uidReset) && $uidReset) || $cidReset) {
         $is_sessionAdmin = false;
     }
 
-    if (isset($_cid) && $_cid) {
+    if (isset($_cid) && $_cid && is_array($_course)) {
         $my_user_id = isset($user_id) ? (int) $user_id : 0;
         $variable = 'accept_legal_'.$my_user_id.'_'.$_course['real_id'].'_'.$session_id;
 
