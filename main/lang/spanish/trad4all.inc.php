@@ -9152,4 +9152,5 @@ $SchoolParent = "Padre de familia";
 $SchoolGuardian = "Apoderado";
 $SchoolSecretary = "Secretaria";
 $SchoolAuxiliary = "Auxiliar";
+$SchoolDirector = "Director(a)";
 ?>

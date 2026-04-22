@@ -7835,6 +7835,7 @@ SQL;
             $status[SCHOOL_GUARDIAN] = get_lang('SchoolGuardian');
             $status[SCHOOL_SECRETARY] = get_lang('SchoolSecretary');
             $status[SCHOOL_AUXILIARY] = get_lang('SchoolAuxiliary');
+            $status[SCHOOL_DIRECTOR] = get_lang('SchoolDirector');
         }
 
         return $status;

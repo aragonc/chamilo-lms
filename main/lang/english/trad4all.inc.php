@@ -9127,4 +9127,5 @@ $SchoolParent = "Parent";
 $SchoolGuardian = "Guardian";
 $SchoolSecretary = "Secretary";
 $SchoolAuxiliary = "Auxiliary";
+$SchoolDirector = "Director";
 ?>

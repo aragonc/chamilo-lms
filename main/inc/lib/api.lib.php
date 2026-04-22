@@ -56,6 +56,7 @@ define('SCHOOL_PARENT', 23);
 define('SCHOOL_GUARDIAN', 24);
 define('SCHOOL_SECRETARY', 25);
 define('SCHOOL_AUXILIARY', 26);
+define('SCHOOL_DIRECTOR', 27);
 
 // Table of status
 $_status_list[COURSEMANAGER] = 'teacher'; // 1
@@ -68,6 +69,7 @@ $_status_list[SCHOOL_PARENT] = 'school_parent'; // 23
 $_status_list[SCHOOL_GUARDIAN] = 'school_guardian'; // 24
 $_status_list[SCHOOL_SECRETARY] = 'school_secretary'; // 25
 $_status_list[SCHOOL_AUXILIARY] = 'school_auxiliary'; // 26
+$_status_list[SCHOOL_DIRECTOR] = 'school_director'; // 27
 
 // COURSE VISIBILITY CONSTANTS
 /** only visible for course admin */
@@ -6192,6 +6194,7 @@ function api_get_status_langvars()
         SCHOOL_GUARDIAN => get_lang('SchoolGuardian', ''),
         SCHOOL_SECRETARY => get_lang('SchoolSecretary', ''),
         SCHOOL_AUXILIARY => get_lang('SchoolAuxiliary', ''),
+        SCHOOL_DIRECTOR => get_lang('SchoolDirector', ''),
     ];
 }
 
