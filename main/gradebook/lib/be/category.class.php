@@ -139,12 +139,9 @@ class Category implements GradebookItem
         return $this->weight;
     }
 
-    /**
-     * @return bool
-     */
-    public function is_locked()
+    public function is_locked(): bool
     {
-        return isset($this->locked) && $this->locked == 1 ? true : false;
+        return isset($this->locked) && $this->locked == 1;
     }
 
     /**
@@ -440,7 +437,7 @@ class Category implements GradebookItem
      * @param bool   $order_by    Whether to show all "session"
      *                            categories (true) or hide them (false) in case there is no session id
      *
-     * @return array
+     * @return array<int, Category>
      */
     public static function load(
         $id = null,
@@ -450,7 +447,7 @@ class Category implements GradebookItem
         $visible = null,
         $session_id = null,
         $order_by = null
-    ) {
+    ): array {
         //if the category given is explicitly 0 (not null), then create
         // a root category object (in memory)
         if (isset($id) && (int) $id === 0) {
@@ -898,7 +895,8 @@ class Category implements GradebookItem
             $user_id,
             null,
             $this->course_code,
-            $this->session_id
+            $this->session_id,
+            null
         );
 
         if (isset($score) && isset($score[0])) {
@@ -939,7 +937,8 @@ class Category implements GradebookItem
         $stud_id = null,
         $type = null,
         $course_code = '',
-        $session_id = null
+        $session_id = null,
+        $forCertificate = 1
     ) {
         $key = 'category:'.$this->id.'student:'.(int) $stud_id.'type:'.$type.'course:'.$course_code.'session:'.(int) $session_id;
         $useCache = api_get_configuration_value('gradebook_use_apcu_cache');
@@ -957,14 +956,16 @@ class Category implements GradebookItem
                 $cats = $this->get_subcategories(
                     $stud_id,
                     $course_code,
-                    $session_id
+                    $session_id,
+                    null,
+                    $forCertificate
                 );
-                $evals = $this->get_evaluations($stud_id, false, $course_code);
-                $links = $this->get_links($stud_id, false, $course_code);
+                $evals = $this->get_evaluations($stud_id, false, $course_code, $session_id, $forCertificate);
+                $links = $this->get_links($stud_id, false, $course_code, $session_id, $forCertificate);
             } else {
-                $cats = $this->get_subcategories($stud_id);
-                $evals = $this->get_evaluations($stud_id);
-                $links = $this->get_links($stud_id);
+                $cats = $this->get_subcategories($stud_id, '', $session_id, null, $forCertificate);
+                $evals = $this->get_evaluations($stud_id, false, '', $session_id, $forCertificate);
+                $links = $this->get_links($stud_id, false, '', $session_id, $forCertificate);
             }
 
             // Calculate score
@@ -1756,7 +1757,8 @@ class Category implements GradebookItem
         $studentId = null,
         $course_code = null,
         $session_id = null,
-        $order = null
+        $order = null,
+        $forCertificate = 1
     ) {
         // 1 student
         if (isset($studentId)) {
@@ -1769,7 +1771,7 @@ class Category implements GradebookItem
                     null,
                     $course_code,
                     $this->id,
-                    api_is_allowed_to_edit() ? null : 1,
+                    api_is_allowed_to_edit() ? null : $forCertificate,
                     $session_id,
                     $order
                 );
@@ -1849,7 +1851,8 @@ class Category implements GradebookItem
         $studentId = null,
         $recursive = false,
         $course_code = '',
-        $sessionId = 0
+        $sessionId = 0,
+        $forCertificate = 1
     ) {
         $evals = [];
         $course_code = empty($course_code) ? $this->get_course_code() : $course_code;
@@ -1869,7 +1872,7 @@ class Category implements GradebookItem
                     null,
                     $course_code,
                     $this->id,
-                    api_is_allowed_to_edit() ? null : 1
+                    api_is_allowed_to_edit() ? null : $forCertificate
                 );
             }
         } else {
@@ -1955,7 +1958,8 @@ class Category implements GradebookItem
         $studentId = null,
         $recursive = false,
         $course_code = '',
-        $sessionId = 0
+        $sessionId = 0,
+        $forCertificate = 1
     ) {
         $links = [];
         $course_code = empty($course_code) ? $this->get_course_code() : $course_code;
@@ -1972,7 +1976,7 @@ class Category implements GradebookItem
                 null,
                 $course_code,
                 $this->id,
-                api_is_allowed_to_edit() ? null : 1
+                api_is_allowed_to_edit() ? null : $forCertificate
             );
         } else {
             // All students -> only for course/platform admin
@@ -2771,10 +2775,7 @@ class Category implements GradebookItem
         return $this->weight - $subWeight;
     }
 
-    /**
-     * @return Category
-     */
-    private static function create_root_category()
+    private static function create_root_category(): Category
     {
         $cat = new Category();
         $cat->set_id(0);
@@ -2794,9 +2795,9 @@ class Category implements GradebookItem
     /**
      * @param Doctrine\DBAL\Driver\Statement|null $result
      *
-     * @return array
+     * @return array<int, Category>
      */
-    private static function create_category_objects_from_sql_result($result)
+    private static function create_category_objects_from_sql_result($result): array
     {
         $categories = [];
         $allow = api_get_configuration_value('allow_gradebook_stats');

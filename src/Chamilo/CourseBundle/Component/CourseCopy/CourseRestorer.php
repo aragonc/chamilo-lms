@@ -56,6 +56,7 @@ class CourseRestorer
         'links',
         'works',
         'xapi_tool',
+        'h5p_tool',
         'surveys',
         'learnpath_category',
         'learnpaths',
@@ -70,6 +71,7 @@ class CourseRestorer
     /** Setting per tool */
     public $tool_copy_settings = [];
     public $isXapiEnabled = false;
+    public $isH5pEnabled = false;
 
     /**
      * If true adds the text "copy" in the title of an item (only for LPs right now).
@@ -159,6 +161,7 @@ class CourseRestorer
         $teacher_list = CourseManager::get_teacher_list_from_course_code($course_info['code']);
         $this->first_teacher_id = api_get_user_id();
         $this->isXapiEnabled = \XApiPlugin::create()->isEnabled();
+        $this->isH5pEnabled = false; //\H5pImportPlugin::create()->isEnabled();
 
         if (!empty($teacher_list)) {
             foreach ($teacher_list as $teacher) {
@@ -196,6 +199,9 @@ class CourseRestorer
 
         foreach ($this->tools_to_restore as $tool) {
             if ('xapi_tool' == $tool && !$this->isXapiEnabled) {
+                continue;
+            }
+            if ('h5p_tool' == $tool && !$this->isH5pEnabled) {
                 continue;
             }
             $function_build = 'restore_'.$tool;
@@ -1968,6 +1974,10 @@ class CourseRestorer
                         'hide_question_title' => isset($quiz->hide_question_title) ? $quiz->hide_question_title : 0,
                     ];
 
+                    if (true === api_get_configuration_value('exercise_text_when_finished_failure')) {
+                        $params['text_when_finished_failure'] = (string) $quiz->text_when_finished_failure;
+                    }
+
                     $allow = api_get_configuration_value('allow_notification_setting_per_exercise');
                     if ($allow) {
                         $params['notifications'] = isset($quiz->notifications) ? $quiz->notifications : '';
@@ -3341,6 +3351,10 @@ class CourseRestorer
             $tool = RESOURCE_XAPI_TOOL;
         }
 
+        if ('h5p' === $tool && $this->isH5pEnabled) {
+            $tool = RESOURCE_H5P_TOOL;
+        }
+
         if (isset($this->course->resources[$tool][$ref]) &&
             isset($this->course->resources[$tool][$ref]->destination_id) &&
             !empty($this->course->resources[$tool][$ref]->destination_id)
@@ -3666,6 +3680,7 @@ class CourseRestorer
                 unset($obj->params['id']);
                 unset($obj->params['iid']);
                 $obj->params['c_id'] = $this->destination_course_id;
+                $obj->params['session_id'] = $sessionId;
                 $last_id = Database::insert($table_attendance, $obj->params);
 
                 if (is_numeric($last_id)) {

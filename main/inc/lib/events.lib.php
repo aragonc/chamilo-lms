@@ -1429,7 +1429,7 @@ class Event
                         status = 'incomplete' ";
             Database::query($sql);
             self::addEvent(
-                LOG_EXERCISE_RESULT_DELETE,
+                LOG_EXERCISE_RESULT_DELETE_INCOMPLETE,
                 LOG_EXERCISE_AND_USER_ID,
                 $exercise_id.'-'.$user_id,
                 null,
@@ -2257,7 +2257,7 @@ class Event
         $courseId,
         $userId,
         $sessionId,
-        $minutes = 5
+        $minutes = 0.5
     ) {
         if (Session::read('login_as')) {
             return false;
@@ -2288,7 +2288,7 @@ class Event
 
         $result = Database::query($sql);
 
-        // Save every 5 minutes by default
+        // Save every 30 seconds by default
         $seconds = $minutes * 60;
         $maxSeconds = 3600; // Only update if max diff is one hour
         if (Database::num_rows($result)) {
@@ -2367,8 +2367,8 @@ class Event
                         user_id = $userId AND
                         c_id = $courseId  AND
                         session_id = $sessionId AND
-                        login_course_date > '$time'
-                    ORDER BY login_course_date DESC
+                        logout_course_date > '$time'
+                    ORDER BY logout_course_date DESC
                     LIMIT 1";
             $result = Database::query($sql);
             $insert = false;
@@ -2385,9 +2385,15 @@ class Event
             }
 
             if ($insert) {
+                $defaultExtraTime = api_get_configuration_value('tracking_default_course_extra_time_on_logout');
+                $loginCourseDate = $currentDate = api_get_utc_datetime();
+                if (!empty($defaultExtraTime)) {
+                    $loginDiff = time() - $defaultExtraTime;
+                    $loginCourseDate = api_get_utc_datetime($loginDiff);
+                }
                 $ip = Database::escape_string(api_get_real_ip());
                 $sql = "INSERT INTO $tableCourseAccess (c_id, user_ip, user_id, login_course_date, logout_course_date, counter, session_id)
-                        VALUES ($courseId, '$ip', $userId, '$currentDate', '$currentDate', 1, $sessionId)";
+                        VALUES ($courseId, '$ip', $userId, '$loginCourseDate', '$currentDate', 1, $sessionId)";
                 Database::query($sql);
             }
 
@@ -2817,5 +2823,66 @@ class Event
             $courseId,
             $sessionId
         );
+    }
+
+    /**
+     * Retrieves audit items from the track_e_default table.
+     *
+     * This function fetches audit data based on various optional criteria and
+     * formats the result to remove the "default_" prefix from each field.
+     */
+    public static function getAuditItems(
+        string $defaultEventType,
+        ?int $cId = null,
+        ?int $sessionId = null,
+        ?string $afterDate = null,
+        ?string $beforeDate = null,
+        ?int $userId = null,
+        int $offset = 0,
+        int $limit = 100
+    ): array {
+        $tblTrackEDefault = Database::get_main_table(TABLE_STATISTIC_TRACK_E_DEFAULT);
+
+        $whereConditions = ['default_event_type = ? ' => $defaultEventType];
+
+        if ($cId !== null) {
+            $whereConditions[' AND c_id = ? '] = $cId;
+        }
+        if ($sessionId !== null) {
+            $whereConditions[' AND session_id = ? '] = $sessionId;
+        }
+        if ($afterDate !== null) {
+            $whereConditions[' AND default_date >= ? '] = $afterDate;
+        }
+        if ($beforeDate !== null) {
+            $whereConditions[' AND default_date <= ? '] = $beforeDate;
+        }
+        if ($userId !== null) {
+            $whereConditions[' AND default_user_id = ? '] = $userId;
+        }
+
+        $conditions = [
+            'where' => $whereConditions,
+            'order' => 'default_date DESC',
+            'limit' => "$offset, $limit",
+        ];
+
+        $results = Database::select(
+            'default_user_id, c_id, default_date, default_event_type, default_value_type, default_value, session_id',
+            $tblTrackEDefault,
+            $conditions
+        );
+
+        $formattedResults = [];
+        foreach ($results as $result) {
+            $formattedResult = [];
+            foreach ($result as $key => $value) {
+                $newKey = str_replace('default_', '', $key);
+                $formattedResult[$newKey] = $value;
+            }
+            $formattedResults[] = $formattedResult;
+        }
+
+        return $formattedResults;
     }
 }

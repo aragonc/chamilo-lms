@@ -19,6 +19,7 @@ use Chamilo\CourseBundle\Component\CourseCopy\Resources\ForumPost;
 use Chamilo\CourseBundle\Component\CourseCopy\Resources\ForumTopic;
 use Chamilo\CourseBundle\Component\CourseCopy\Resources\Glossary;
 use Chamilo\CourseBundle\Component\CourseCopy\Resources\GradeBookBackup;
+use Chamilo\CourseBundle\Component\CourseCopy\Resources\H5pTool;
 use Chamilo\CourseBundle\Component\CourseCopy\Resources\LearnPathCategory;
 use Chamilo\CourseBundle\Component\CourseCopy\Resources\Link;
 use Chamilo\CourseBundle\Component\CourseCopy\Resources\LinkCategory;
@@ -107,6 +108,7 @@ class CourseBuilder
     public $itemListToAdd = [];
 
     public $isXapiEnabled = false;
+    public $isH5pEnabled = false;
 
     /**
      * Create a new CourseBuilder.
@@ -224,9 +226,8 @@ class CourseBuilder
      *
      * @param int    $session_id
      * @param string $courseCode
-     * @param bool   $withBaseContent   true if you want to get the elements that exists in the course and
-     *                                  in the session, (session_id = 0 or session_id = X)
-     * @param array  $parseOnlyToolList
+     * @param bool   $withBaseContent true if you want to get the elements that exists in the course and
+     *                                in the session, (session_id = 0 or session_id = X)
      * @param array  $toolsFromPost
      *
      * @return Course The course object structure
@@ -235,7 +236,7 @@ class CourseBuilder
         $session_id = 0,
         $courseCode = '',
         $withBaseContent = false,
-        $parseOnlyToolList = [],
+        array $parseOnlyToolList = [],
         $toolsFromPost = []
     ) {
         $course = api_get_course_info($courseCode);
@@ -246,6 +247,13 @@ class CourseBuilder
             $this->tools_to_build[] = 'xapi_tool';
             $this->toolToName['xapi_tool'] = RESOURCE_XAPI_TOOL;
             $this->isXapiEnabled = $xapiEnabled;
+        }
+
+        $h5pEnabled = false; // \H5pImportPlugin::create()->isEnabled();
+        if ($h5pEnabled) {
+            $this->tools_to_build[] = 'h5p_tool';
+            $this->toolToName['h5p_tool'] = RESOURCE_H5P_TOOL;
+            $this->isH5pEnabled = $h5pEnabled;
         }
 
         foreach ($this->tools_to_build as $tool) {
@@ -1766,6 +1774,15 @@ class CourseBuilder
             );
         }
 
+        if (isset($itemList['h5p']) && $this->isH5pEnabled) {
+            $this->buildH5pTool(
+                $sessionId,
+                $courseId,
+                true,
+                $itemList['h5p']
+            );
+        }
+
         if (!empty($itemList['student_publication'])) {
             $this->build_works(
                 $sessionId,
@@ -1966,6 +1983,34 @@ class CourseBuilder
         while ($row = Database::fetch_array($rs, 'ASSOC')) {
             $xapiTool = new XapiTool($row);
             $this->course->add_resource($xapiTool);
+        }
+    }
+
+    public function buildH5pTool(
+        $sessionId = 0,
+        $courseId = 0,
+        $withBaseContent = false,
+        $idList = []
+    ) {
+        if (!$this->isH5pEnabled) {
+            return false;
+        }
+
+        $courseId = (int) $courseId;
+        $sessionId = (int) $sessionId;
+        $sessionCondition = api_get_session_condition($sessionId, true, $withBaseContent);
+
+        $idCondition = '';
+        if (!empty($idList)) {
+            $idList = array_map('intval', $idList);
+            $idCondition = ' AND iid IN ("'.implode('","', $idList).'") ';
+        }
+
+        $sql = "SELECT * FROM plugin_h5p_import WHERE c_id = $courseId $sessionCondition $idCondition";
+        $rs = Database::query($sql);
+        while ($row = Database::fetch_array($rs, 'ASSOC')) {
+            $h5pTool = new H5pTool($row);
+            $this->course->add_resource($h5pTool);
         }
     }
 

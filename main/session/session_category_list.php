@@ -32,7 +32,7 @@ $sort = isset($_GET['sort']) && in_array($_GET['sort'], $columns) ? Security::re
 $idChecked = isset($_REQUEST['idChecked']) ? Security::remove_XSS($_REQUEST['idChecked']) : null;
 $order = $_REQUEST['order'] ?? 'ASC';
 $order = $order === 'ASC' ? 'DESC' : 'ASC';
-$keyword = isset($_REQUEST['keyword']) ? Security::remove_XSS($_REQUEST['keyword']) : null;
+$keyword = null;
 
 if ($action === 'delete_on_session' || $action === 'delete_off_session') {
     $delete_session = $action === 'delete_on_session' ? true : false;
@@ -40,6 +40,14 @@ if ($action === 'delete_on_session' || $action === 'delete_off_session') {
     Display::addFlash(Display::return_message(get_lang('SessionCategoryDelete')));
     header('Location: '.api_get_self().'?sort='.$sort);
     exit();
+}
+
+$frmSearch = new FormValidator('search', 'get', 'session_category_list.php', '', [], FormValidator::LAYOUT_INLINE);
+$frmSearch->addText('keyword', get_lang('Search'), false);
+$frmSearch->addButtonSearch(get_lang('Search'));
+
+if ($frmSearch->validate()) {
+    $keyword = Security::remove_XSS($frmSearch->exportValues()['keyword']);
 }
 
 $interbreadcrumb[] = ['url' => 'session_list.php', 'name' => get_lang('SessionList')];
@@ -114,16 +122,7 @@ if (isset($_GET['search']) && $_GET['search'] === 'advanced') {
             </div>
             <div class="col-md-6">
                 <div class="pull-right">
-                    <form method="POST" action="session_category_list.php" class="form-inline">
-                        <div class="form-group">
-                            <input class="form-control" type="text" name="keyword" value="<?php echo $keyword; ?>"
-                                   aria-label="<?php echo get_lang('Search'); ?>"/>
-                            <button class="btn btn-default" type="submit" name="name"
-                                    value="<?php echo get_lang('Search'); ?>"><em
-                                        class="fa fa-search"></em> <?php echo get_lang('Search'); ?></button>
-                            <!-- <a href="session_list.php?search=advanced"><?php echo get_lang('AdvancedSearch'); ?></a> -->
-                        </div>
-                    </form>
+                    <?php echo $frmSearch->returnForm(); ?>
                 </div>
             </div>
         </div>
@@ -139,28 +138,30 @@ if (isset($_GET['search']) && $_GET['search'] === 'advanced') {
                 <div>
                     <?php
                     if ($page) {
-                        ?>
-                        <a href="<?php echo api_get_self(); ?>?page=<?php echo $page
-                            - 1; ?>&sort=<?php echo $sort; ?>&order=<?php echo Security::remove_XSS(
-                            $order
-                        ); ?>&keyword=<?php echo $keyword; ?><?php echo @$cond_url; ?>"><?php echo get_lang(
-                                'Previous'
-                            ); ?></a>
-                        <?php
+                        echo Display::url(
+                            get_lang('Previous'),
+                            api_get_self().'?'.http_build_query([
+                                'page' => $page - 1,
+                                'sort' => $sort,
+                                'order' => $order,
+                                'keyword' => $keyword,
+                            ])
+                        );
                     } else {
                         echo get_lang('Previous');
                     } ?>
                     |
                     <?php
                     if ($nbr_results > $limit) {
-                        ?>
-                        <a href="<?php echo api_get_self(); ?>?page=<?php echo $page
-                            + 1; ?>&sort=<?php echo $sort; ?>&order=<?php echo Security::remove_XSS(
-                            $order
-                        ); ?>&keyword=<?php echo $keyword; ?><?php echo @$cond_url; ?>"><?php echo get_lang(
-                                'Next'
-                            ); ?></a>
-                        <?php
+                        echo Display::url(
+                            get_lang('Next'),
+                            api_get_self().'?'.http_build_query([
+                                'page' => $page + 1,
+                                'sort' => $sort,
+                                'order' => $order,
+                                'keyword' => $keyword,
+                            ])
+                        );
                     } else {
                         echo get_lang('Next');
                     } ?>
@@ -238,28 +239,30 @@ if (isset($_GET['search']) && $_GET['search'] === 'advanced') {
                 <?php
                 if ($num > $limit) {
                     if ($page) {
-                        ?>
-                        <a href="<?php echo api_get_self(); ?>?page=<?php echo $page
-                            - 1; ?>&sort=<?php echo $sort; ?>&order=<?php echo Security::remove_XSS(
-                            $_REQUEST['order']
-                        ); ?>&keyword=<?php echo $_REQUEST['keyword']; ?><?php echo @$cond_url; ?>">
-                            <?php echo get_lang('Previous'); ?></a>
-                        <?php
+                        echo Display::url(
+                            get_lang('Previous'),
+                            api_get_self().'?'.http_build_query([
+                                'page' => $page - 1,
+                                'sort' => $sort,
+                                'order' => $order,
+                                'keyword' => $keyword,
+                            ]),
+                        );
                     } else {
                         echo get_lang('Previous');
                     } ?>
                     |
                     <?php
                     if ($nbr_results > $limit) {
-                        ?>
-
-                        <a href="<?php echo api_get_self(); ?>?page=<?php echo $page
-                            + 1; ?>&sort=<?php echo $sort; ?>&order=<?php echo Security::remove_XSS(
-                            $_REQUEST['order']
-                        ); ?>&keyword=<?php echo $_REQUEST['keyword']; ?><?php echo @$cond_url; ?>">
-                            <?php echo get_lang('Next'); ?></a>
-
-                        <?php
+                        echo Display::url(
+                            get_lang('Next'),
+                            api_get_self().'?'.http_build_query([
+                                'page' => $page + 1,
+                                'sort' => $sort,
+                                'order' => $order,
+                                'keyword' => $keyword,
+                            ])
+                        );
                     } else {
                         echo get_lang('Next');
                     }

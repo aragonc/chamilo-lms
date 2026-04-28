@@ -73,7 +73,7 @@ if (!empty($exercise_stat_info['data_tracking'])) {
     $question_list = explode(',', $exercise_stat_info['data_tracking']);
 }
 
-if (empty($exercise_stat_info) || empty($question_list)) {
+if (empty($exercise_stat_info) || empty($question_list) || $exercise_stat_info['exe_user_id'] != api_get_user_id()) {
     api_not_allowed();
 }
 
@@ -82,7 +82,7 @@ $interbreadcrumb[] = ['url' => 'exercise.php?'.api_get_cidreq(), 'name' => get_l
 $hideHeaderAndFooter = in_array($origin, ['learnpath', 'embeddable', 'iframe']);
 
 if (!$hideHeaderAndFooter) {
-    Display::display_header($nameTools, get_lang('Exercise'));
+    Display::display_header($nameTools, 'Exercise');
 } else {
     Display::display_reduced_header();
 }

@@ -162,7 +162,7 @@ if (api_get_setting('login_is_email') == 'true') {
 }
 
 // Phone
-$form->addElement('text', 'phone', get_lang('PhoneNumber'), ['autocomplete' => 'off', 'id' => 'phone']);
+$form->addText('phone', get_lang('PhoneNumber'), false, ['autocomplete' => 'off', 'id' => 'phone']);
 // Picture
 $form->addFile(
     'picture',
@@ -278,30 +278,33 @@ $form->addGroup($group, 'mail', get_lang('SendMailToNewUser'));
 $hideNeverExpiresOpt = api_get_configuration_value('user_hide_never_expire_option');
 $lblExpiration = '';
 $defaultExpiration = 0;
-if ($hideNeverExpiresOpt) {
-    $lblExpiration = get_lang('ExpirationDate');
-    $defaultExpiration = 1;
-    $group = [];
-    $group[] = $form->createElement('radio', 'radio_expiration_date', get_lang('ExpirationDate'), get_lang('Enabled'), 1);
-    $group[] = $form->createElement(
-        'DateTimePicker',
-        'expiration_date',
-        null
-    );
-} else {
-    $form->addElement('radio', 'radio_expiration_date', get_lang('ExpirationDate'), get_lang('NeverExpires'), 0);
-    $group = [];
-    $group[] = $form->createElement('radio', 'radio_expiration_date', null, get_lang('Enabled'), 1);
-    $group[] = $form->createElement(
-        'DateTimePicker',
-        'expiration_date',
-        null,
-        [
-            'onchange' => 'javascript: enable_expiration_date();',
-        ]
-    );
+$hideExpirationDate = api_get_configuration_value('user_hide_expiration_date_for_session_admin');
+if (!$hideExpirationDate || api_is_platform_admin()) {
+    if ($hideNeverExpiresOpt && !api_is_platform_admin()) {
+        $lblExpiration = get_lang('ExpirationDate');
+        $defaultExpiration = 1;
+        $group = [];
+        $group[] = $form->createElement('radio', 'radio_expiration_date', get_lang('ExpirationDate'), get_lang('Enabled'), 1);
+        $group[] = $form->createElement(
+            'DateTimePicker',
+            'expiration_date',
+            null
+        );
+    } else {
+        $form->addElement('radio', 'radio_expiration_date', get_lang('ExpirationDate'), get_lang('NeverExpires'), 0);
+        $group = [];
+        $group[] = $form->createElement('radio', 'radio_expiration_date', null, get_lang('Enabled'), 1);
+        $group[] = $form->createElement(
+            'DateTimePicker',
+            'expiration_date',
+            null,
+            [
+                'onchange' => 'javascript: enable_expiration_date();',
+            ]
+        );
+    }
+    $form->addGroup($group, 'max_member_group', $lblExpiration, null, false);
 }
-$form->addGroup($group, 'max_member_group', $lblExpiration, null, false);
 
 // Active account or inactive account
 $form->addElement('radio', 'active', get_lang('ActiveAccount'), get_lang('Active'), 1);
@@ -399,7 +402,13 @@ if ($form->validate()) {
         }
 
         if ($user['radio_expiration_date'] == '1') {
-            $expiration_date = $user['expiration_date'];
+            if (!empty($user['expiration_date'])) {
+                $expiration_date = $user['expiration_date'];
+            } else {
+                if (!empty($days)) {
+                    $expiration_date = api_get_local_time('+'.$days.' day');
+                }
+            }
         } else {
             $expiration_date = null;
         }
@@ -496,7 +505,9 @@ if ($form->validate()) {
 
         Display::addFlash(Display::return_message($message, 'normal', false));
 
-        if (isset($_POST['submit_plus'])) {
+        if (isset($_POST['submit_plus'])
+            || (api_is_session_admin() && api_get_configuration_value('limit_session_admin_list_users'))
+        ) {
             //we want to add more. Prepare report message and redirect to the same page (to clean the form)
             header('Location: user_add.php?sec_token='.$tok);
             exit;

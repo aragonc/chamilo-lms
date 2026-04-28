@@ -77,6 +77,7 @@ class ExtraField extends Model
     public $pageUrl;
     public $extraFieldType = 0;
 
+    public $table;
     public $table_field_options;
     public $table_field_values;
     public $table_field_tag;
@@ -177,6 +178,9 @@ class ExtraField extends Model
             case 'attendance_calendar':
                 $this->extraFieldType = EntityExtraField::ATTENDANCE_CALENDAR_TYPE;
                 break;
+            case 'attendance':
+                $this->extraFieldType = EntityExtraField::ATTENDANCE_TYPE;
+                break;
         }
 
         $this->pageUrl = 'extra_fields.php?type='.$this->type;
@@ -212,6 +216,7 @@ class ExtraField extends Model
             'message',
             'document',
             'attendance_calendar',
+            'attendance',
         ];
 
         if (api_get_configuration_value('allow_scheduled_announcements')) {
@@ -778,14 +783,13 @@ class ExtraField extends Model
 
         $itemId = (int) $itemId;
         $form->addHidden('item_id', $itemId);
-        $extraData = false;
         if (!empty($itemId)) {
             $extraData = $this->get_handler_extra_data($itemId);
             if (!empty($showOnlyTheseFields)) {
                 $setData = [];
                 foreach ($showOnlyTheseFields as $variable) {
                     $extraName = 'extra_'.$variable;
-                    if (in_array($extraName, array_keys($extraData))) {
+                    if (array_key_exists($extraName, $extraData)) {
                         $setData[$extraName] = $extraData[$extraName];
                     }
                 }
@@ -820,13 +824,40 @@ class ExtraField extends Model
             $help
         );
 
-        if (!empty($requiredFields)) {
-            /** @var HTML_QuickForm_input $element */
-            foreach ($form->getElements() as $element) {
-                $name = str_replace('extra_', '', $element->getName());
-                if (in_array($name, $requiredFields)) {
-                    $form->setRequired($element);
-                }
+        // Ensure $requiredFields is an array
+        $requiredFields = is_array($requiredFields) ? $requiredFields : [];
+        // Fetch the configured “unique extra field” var
+        $uniqueField = api_get_configuration_value('extra_field_to_validate_on_user_registration');
+        // Determine if we’re editing an existing user (item_id present) or creating a new one
+        $currentUserId = $form->getElementValue('item_id') ?: null;
+
+        // Always mark the unique extra field as required on user forms
+        if (
+            $this->type === 'user'
+            && !empty($uniqueField)
+            && !in_array($uniqueField, $requiredFields, true)
+        ) {
+            $requiredFields[] = $uniqueField;
+        }
+
+        /** @var HTML_QuickForm_element $element */
+        foreach ($form->getElements() as $element) {
+            // Strip the “extra_” prefix to get the field name
+            $name = str_replace('extra_', '', $element->getName());
+
+            // 1) Mark as required if configured
+            if (in_array($name, $requiredFields, true)) {
+                $form->setRequired($element);
+            }
+
+            // 2) If this is the special extra field on a user form, add uniqueness validation
+            if ($this->type === 'user' && !empty($uniqueField) && $name === $uniqueField) {
+                $this->applyExtraFieldUniquenessRule(
+                    $form,
+                    $name,
+                    $uniqueField,
+                    $currentUserId
+                );
             }
         }
 
@@ -1102,6 +1133,12 @@ class ExtraField extends Model
                             'extra_'.$field_details['variable'],
                             'html_filter'
                         );
+                        if (!empty($field_details['default_value'])) {
+                            $defaults['extra_'.$field_details['variable']] = $field_details['default_value'];
+                        }
+                        if (!isset($form->_defaultValues['extra_'.$field_details['variable']])) {
+                            $form->setDefaults($defaults);
+                        }
                         if ($freezeElement) {
                             $form->freeze('extra_'.$field_details['variable']);
                         }
@@ -1367,6 +1404,23 @@ class ExtraField extends Model
                                             ]
                                         );
                                         $selectedOptions[] = $tag['tag'];
+                                    }
+                                } else {
+                                    if (!empty($extraData) && isset($extraData['extra_'.$field_details['variable']])) {
+                                        $data = $extraData['extra_'.$field_details['variable']];
+                                        if (!empty($data)) {
+                                            foreach ($data as $option) {
+                                                $tagsSelect->addOption(
+                                                    $option,
+                                                    $option,
+                                                    [
+                                                        'selected' => 'selected',
+                                                        'class' => 'selected',
+                                                    ]
+                                                );
+                                                $selectedOptions[] = $option;
+                                            }
+                                        }
                                     }
                                 }
                                 $url = api_get_path(WEB_AJAX_PATH).'user_manager.ajax.php';
@@ -2256,10 +2310,10 @@ class ExtraField extends Model
 
             $form->addText(
                 'display_text',
-                [get_lang('Name'), $translateButton]
+                [get_lang('Title'), $translateButton]
             );
         } else {
-            $form->addText('display_text', get_lang('Name'));
+            $form->addText('display_text', get_lang('Title'));
         }
 
         // Field type
@@ -2273,7 +2327,14 @@ class ExtraField extends Model
             ['id' => 'field_type']
         );
         $form->addLabel(get_lang('Example'), '<div id="example">-</div>');
-        $form->addText('variable', get_lang('FieldLabel'), false);
+        $form->addElement(
+            'text',
+            'variable',
+            [
+                get_lang('SysId'),
+                get_lang('ExtraFieldIdComment'),
+            ]
+        );
         $form->addElement(
             'text',
             'field_options',
@@ -3189,6 +3250,102 @@ JAVASCRIPT;
         $result = Database::store_result($result);
 
         return $result;
+    }
+
+    /**
+     * For one given field ID, get all the item_id + value.
+     *
+     * @return array
+     */
+    public function getAllValuesByFieldId(int $fieldId)
+    {
+        $type = $this->get_field_type_by_id($fieldId);
+        $sql = "SELECT item_id, value FROM ".$this->table_field_values." WHERE field_id = $fieldId";
+        $res = Database::query($sql);
+        $values = [];
+        if (Database::num_rows($res) > 0) {
+            while ($row = Database::fetch_array($res)) {
+                if (is_null($row['value'])) {
+                    // If the entry exists but is NULL, consider it an empty string (to reproduce the behaviour of UserManager::get_extra_user_data()
+                    $values[$row['item_id']] = '';
+                } else {
+                    if ($type == self::FIELD_TYPE_SELECT_MULTIPLE) {
+                        $values[$row['item_id']] = explode(';', $row['value']);
+                    } elseif (empty($row['value'])) {
+                        // Avoid "0" values when no value should be set
+                        $values[$row['item_id']] = null;
+                    } else {
+                        $values[$row['item_id']] = $row['value'];
+                    }
+                }
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * Gets the default value for one specific field.
+     *
+     * @param int $fieldId Field ID
+     *
+     * @return mixed Default value for the field (could be null, or usually a string)
+     */
+    public function getDefaultValueByFieldId(int $fieldId)
+    {
+        $sql = "SELECT default_value FROM $this->table WHERE id = $fieldId";
+        $res = Database::query($sql);
+        if (Database::num_rows($res) > 0) {
+            $row = Database::fetch_array($res);
+
+            return $row['default_value'];
+        }
+
+        return null;
+    }
+
+    /**
+     * Add the “unique per URL” validation rule for the extra‑field.
+     *
+     * @param          &$form
+     * @param string   $fieldVar      The extra‐field variable name (without “extra_”)
+     * @param string   $uniqueField   Configured unique field var
+     * @param int|null $currentUserId Null for creation, or the existing user ID when editing
+     */
+    protected function applyExtraFieldUniquenessRule(&$form, string $fieldVar, string $uniqueField, ?int $currentUserId): void
+    {
+        // Only apply if this is the configured unique field
+        if ($fieldVar !== $uniqueField) {
+            return;
+        }
+
+        $elementName = 'extra_'.$fieldVar;
+        $message = sprintf(
+            get_lang('A user with the same %s already exists in this portal'),
+            $fieldVar
+        );
+
+        if ($currentUserId === null) {
+            // Creation: forbid any existing match
+            $form->addRule(
+                $elementName,
+                $message,
+                'callback',
+                ['UserManager', 'isExtraFieldValueUniquePerUrl']
+            );
+        } else {
+            // Editing: allow if the only match is this same user
+            $form->addRule(
+                $elementName,
+                $message,
+                'callback',
+                function (string $value) use ($currentUserId) {
+                    $existingId = UserManager::isExtraFieldValueUniquePerUrl($value, true);
+
+                    return $existingId === null || $existingId == $currentUserId;
+                }
+            );
+        }
     }
 
     /**

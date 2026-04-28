@@ -459,15 +459,11 @@ class UserManager
         if (empty($expirationDate) || $expirationDate == '0000-00-00 00:00:00') {
             // Default expiration date
             // if there is a default duration of a valid account then
-            // we have to change the expiration_date accordingly
+            // the expiration_date has to be set taking it into account before calling create_user()
             // Accept 0000-00-00 00:00:00 as a null value to avoid issues with
             // third party code using this method with the previous (pre-1.10)
             // value of 0000...
-            if (api_get_setting('account_valid_duration') != '') {
-                $expirationDate = new DateTime($currentDate);
-                $days = (int) api_get_setting('account_valid_duration');
-                $expirationDate->modify('+'.$days.' day');
-            }
+            $expirationDate = null;
         } else {
             $expirationDate = api_get_utc_datetime($expirationDate);
             $expirationDate = new \DateTime($expirationDate, new DateTimeZone('UTC'));
@@ -582,7 +578,9 @@ class UserManager
                     false,
                     false,
                     false
-                );
+        );
+                // the complete_name is not used in the default Chamilo template but used in a specific template -refs BT#21334
+                $tplSubject->assign('complete_name', stripslashes(api_get_person_name($firstName, $lastName)));
                 $layoutSubject = $tplSubject->get_template('mail/subject_registration_platform.tpl');
                 $emailSubject = $tplSubject->fetch($layoutSubject);
                 $sender_name = api_get_person_name(
@@ -1574,7 +1572,7 @@ class UserManager
         $creator_id = null,
         $hr_dept_id = 0,
         $extra = null,
-        $language = 'english',
+        $language = null,
         $encrypt_method = '',
         $send_email = false,
         $reset_password = 0,
@@ -1618,7 +1616,7 @@ class UserManager
 
         // Checking the user language
         $languages = api_get_languages();
-        if (!in_array($language, $languages['folder'])) {
+        if (empty($language) || !in_array($language, $languages['folder'])) {
             $language = api_get_setting('platformLanguage');
         }
 
@@ -1670,6 +1668,23 @@ class UserManager
         if (!is_null($password)) {
             $user->setPlainPassword($password);
             Event::addEvent(LOG_USER_PASSWORD_UPDATE, LOG_USER_ID, $user_id);
+            $date = api_get_local_time(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                'Y-m-d'
+            );
+            $extraFieldValue = new ExtraFieldValue('user');
+            $extraFieldValue->save(
+                [
+                    'item_id' => $user->getId(),
+                    'variable' => 'password_updated_at',
+                    'value' => $date,
+                ]
+            );
         }
 
         $userManager->updateUser($user, true);
@@ -1697,7 +1712,6 @@ class UserManager
 
         if (!empty($email) && $send_email) {
             $recipient_name = api_get_person_name($firstname, $lastname, null, PERSON_NAME_EMAIL_ADDRESS);
-            $emailsubject = '['.api_get_setting('siteName').'] '.get_lang('YourReg').' '.api_get_setting('siteName');
             $sender_name = api_get_person_name(
                 api_get_setting('administratorName'),
                 api_get_setting('administratorSurname'),
@@ -1722,48 +1736,120 @@ class UserManager
                 false,
                 false
             );
-            // variables for the default template
             $tplContent->assign('complete_name', stripslashes(api_get_person_name($firstname, $lastname)));
             $tplContent->assign('login_name', $username);
-
             $originalPassword = '';
             if ($reset_password > 0) {
                 $originalPassword = stripslashes($original_password);
             }
             $tplContent->assign('original_password', $originalPassword);
+            // variables for the default template
             $tplContent->assign('portal_url', $url);
             // Adding this variable but not used in default template, used for task BT19518 with a customized template
             $tplContent->assign('status_type', $status);
-
-            $layoutContent = $tplContent->get_template('mail/user_edit_content.tpl');
-            $emailBody = $tplContent->fetch($layoutContent);
-
-            $mailTemplateManager = new MailTemplateManager();
-
-            if (!empty($emailTemplate) &&
-                isset($emailTemplate['user_edit_content.tpl']) &&
-                !empty($emailTemplate['user_edit_content.tpl'])
-            ) {
-                $userInfo = api_get_user_info($user_id);
-                $emailBody = $mailTemplateManager->parseTemplate($emailTemplate['user_edit_content.tpl'], $userInfo);
-            }
-
             $creatorInfo = api_get_user_info($creator_id);
             $creatorEmail = isset($creatorInfo['email']) ? $creatorInfo['email'] : '';
-
-            api_mail_html(
-                $recipient_name,
-                $email,
-                $emailsubject,
-                $emailBody,
-                $sender_name,
-                $email_admin,
+            $tplSubject = new Template(
                 null,
-                null,
-                null,
-                null,
-                $creatorEmail
+                false,
+                false,
+                false,
+                false,
+                false
             );
+            // the complete_name is not used in the default Chamilo template but used in a specific template -refs BT#21334
+            $tplSubject->assign('complete_name', stripslashes(api_get_person_name($firstName, $lastName)));
+            $layoutSubject = $tplSubject->get_template('mail/subject_user_edit.tpl');
+            $emailSubject = $tplSubject->fetch($layoutSubject);
+
+            if (!is_null($password) && api_get_configuration_value('send_two_inscription_confirmation_mail')) {
+                // The user has a new password *and* we need to tell him so,
+                // but the configuration is set to send 2 separate e-mails
+                // (one for username, one for password) when sending pass
+                $layoutContent = $tplContent->get_template('mail/new_user_first_email_confirmation.tpl');
+                $emailBody = $tplContent->fetch($layoutContent);
+                $mailTemplateManager = new MailTemplateManager();
+                if (!empty($emailTemplate) &&
+                    isset($emailTemplate['new_user_first_email_confirmation.tpl']) &&
+                    !empty($emailTemplate['new_user_first_email_confirmation.tpl'])
+                ) {
+                    $userInfo = api_get_user_info($user_id);
+                    $emailBody = $mailTemplateManager->parseTemplate(
+                        $emailTemplate['new_user_first_email_confirmation.tpl'],
+                        $userInfo
+                    );
+                }
+
+                api_mail_html(
+                    $recipient_name,
+                    $email,
+                    $emailSubject,
+                    $emailBody,
+                    $sender_name,
+                    $email_admin,
+                    null,
+                    null,
+                    null,
+                    null,
+                    $creatorEmail
+                );
+
+                $layoutContent = $tplContent->get_template('mail/new_user_second_email_confirmation.tpl');
+                $emailBody = $tplContent->fetch($layoutContent);
+                $mailTemplateManager = new MailTemplateManager();
+                if (!empty($emailTemplate) &&
+                    isset($emailTemplate['new_user_second_email_confirmation.tpl']) &&
+                    !empty($emailTemplate['new_user_second_email_confirmation.tpl'])
+                ) {
+                    $userInfo = api_get_user_info($user_id);
+                    $emailBody = $mailTemplateManager->parseTemplate(
+                        $emailTemplate['new_user_second_email_confirmation.tpl'],
+                        $userInfo
+                    );
+                }
+
+                api_mail_html(
+                    $recipient_name,
+                    $email,
+                    $emailSubject,
+                    $emailBody,
+                    $sender_name,
+                    $email_admin,
+                    null,
+                    null,
+                    null,
+                    null,
+                    $creatorEmail
+                );
+            } else {
+                $layoutContent = $tplContent->get_template('mail/user_edit_content.tpl');
+                $emailBody = $tplContent->fetch($layoutContent);
+                $mailTemplateManager = new MailTemplateManager();
+                if (!empty($emailTemplate) &&
+                    isset($emailTemplate['user_edit_content.tpl']) &&
+                    !empty($emailTemplate['user_edit_content.tpl'])
+                ) {
+                    $userInfo = api_get_user_info($user_id);
+                    $emailBody = $mailTemplateManager->parseTemplate(
+                        $emailTemplate['user_edit_content.tpl'],
+                        $userInfo
+                    );
+                }
+
+                api_mail_html(
+                    $recipient_name,
+                    $email,
+                    $emailSubject,
+                    $emailBody,
+                    $sender_name,
+                    $email_admin,
+                    null,
+                    null,
+                    null,
+                    null,
+                    $creatorEmail
+                );
+            }
         }
 
         if (!empty($hook)) {
@@ -2266,7 +2352,13 @@ class UserManager
             }
         }
 
-        $sql .= str_replace("\'", "'", Database::escape_string($extraConditions));
+        // $extraConditions is a caller-constructed SQL fragment, not a scalar
+        // value — escaping it as a string then immediately un-escaping the
+        // result (str_replace("\'", "'", ...)) produced a net-zero effect while
+        // giving a false sense of safety. Callers are responsible for ensuring
+        // any values embedded in $extraConditions are individually escaped or
+        // validated before being passed here.
+        $sql .= $extraConditions;
 
         if (!empty($order_by) && count($order_by) > 0) {
             $sql .= ' ORDER BY '.Database::escape_string(implode(',', $order_by));
@@ -2326,6 +2418,12 @@ class UserManager
 
         $sql_query .= ' WHERE 1 = 1 ';
         if (count($conditions) > 0) {
+            $andActive = "";
+            if (isset($conditions['active'])) {
+                $andActive = " AND active = ".(int) $conditions['active'];
+                unset($conditions['active']);
+            }
+
             $temp_conditions = [];
             foreach ($conditions as $field => $value) {
                 $field = Database::escape_string($field);
@@ -2337,16 +2435,21 @@ class UserManager
                 }
             }
             if (!empty($temp_conditions)) {
-                $sql_query .= ' AND '.implode(' '.$condition.' ', $temp_conditions);
+                $sql_query .= ' AND ('.implode(' '.$condition.' ', $temp_conditions).') ';
             }
 
             if (api_is_multiple_url_enabled()) {
                 $sql_query .= ' AND auru.access_url_id = '.api_get_current_access_url_id();
             }
+            $sql_query .= $andActive;
         } else {
             if (api_is_multiple_url_enabled()) {
                 $sql_query .= ' AND auru.access_url_id = '.api_get_current_access_url_id();
             }
+        }
+
+        if (api_is_session_admin() && (api_get_setting('prevent_session_admins_to_manage_all_users') === 'true')) {
+            $sql_query .= ' AND user.creator_id = '.api_get_user_id();
         }
 
         if (!empty($onlyThisUserList)) {
@@ -3249,6 +3352,7 @@ class UserManager
      * @param    bool    Whether to prefix the fields indexes with "extra_" (might be used by formvalidator)
      * @param    bool    Whether to return invisible fields as well
      * @param    bool    Whether to split multiple-selection fields or not
+     * @param    mixed   Whether to filter on the value of filter
      *
      * @return array Array of fields => value for the given user
      */
@@ -3300,12 +3404,8 @@ class UserManager
                 } else {
                     $sqlu = "SELECT value as fval
                             FROM $t_ufv
-                            WHERE field_id=".$row['id']." AND item_id = ".$user_id;
+                            WHERE field_id = ".$row['id']." AND item_id = ".$user_id;
                     $resu = Database::query($sqlu);
-                    // get default value
-                    $sql_df = "SELECT default_value as fval_df FROM $t_uf
-                               WHERE id=".$row['id'];
-                    $res_df = Database::query($sql_df);
 
                     if (Database::num_rows($resu) > 0) {
                         $rowu = Database::fetch_array($resu);
@@ -3314,6 +3414,10 @@ class UserManager
                             $fval = explode(';', $rowu['fval']);
                         }
                     } else {
+                        // get default value
+                        $sql_df = "SELECT default_value as fval_df FROM $t_uf
+                               WHERE id = ".$row['id'];
+                        $res_df = Database::query($sql_df);
                         $row_df = Database::fetch_array($res_df);
                         $fval = $row_df['fval_df'];
                     }
@@ -4428,18 +4532,16 @@ class UserManager
         if ($user_id === false) {
             return false;
         }
-        $service_name = Database::escape_string($api_service);
-        if (is_string($service_name) === false) {
-            return false;
-        }
-        $t_api = Database::get_main_table(TABLE_MAIN_USER_API_KEY);
-        $md5 = md5((time() + ($user_id * 5)) - rand(10000, 10000)); //generate some kind of random key
-        $sql = "INSERT INTO $t_api (user_id, api_key,api_service) VALUES ($user_id,'$md5','$service_name')";
-        $res = Database::query($sql);
-        if ($res === false) {
-            return false;
-        } //error during query
-        $num = Database::insert_id();
+
+        $apiKey = bin2hex(random_bytes(16)); // cryptographically secure random API key
+        $num = Database::insert(
+            Database::get_main_table(TABLE_MAIN_USER_API_KEY),
+            [
+                'user_id' => $user_id,
+                'api_key' => $apiKey,
+                'api_service' => $api_service,
+            ]
+        );
 
         return $num == 0 ? false : $num;
     }
@@ -6160,7 +6262,7 @@ class UserManager
         return $icon_link;
     }
 
-    public static function addUserAsAdmin(User $user)
+    public static function addUserAsAdmin(User $user, bool $andFlush = true)
     {
         if ($user) {
             $userId = $user->getId();
@@ -6171,11 +6273,11 @@ class UserManager
             }
 
             $user->addRole('ROLE_SUPER_ADMIN');
-            self::getManager()->updateUser($user, true);
+            self::getManager()->updateUser($user, $andFlush);
         }
     }
 
-    public static function removeUserAdmin(User $user)
+    public static function removeUserAdmin(User $user, bool $andFlush = true)
     {
         $userId = (int) $user->getId();
         if (self::is_admin($userId)) {
@@ -6183,7 +6285,7 @@ class UserManager
             $sql = "DELETE FROM $table WHERE user_id = $userId";
             Database::query($sql);
             $user->removeRole('ROLE_SUPER_ADMIN');
-            self::getManager()->updateUser($user, true);
+            self::getManager()->updateUser($user, $andFlush);
         }
     }
 
@@ -6903,7 +7005,7 @@ SQL;
 
     public static function blockIfMaxLoginAttempts(array $userInfo)
     {
-        if (false === (bool) $userInfo['active'] || null === $userInfo['last_login']) {
+        if (!isset($userInfo['active']) || false === (bool) $userInfo['active'] || null === $userInfo['last_login']) {
             return;
         }
 
@@ -7633,29 +7735,79 @@ SQL;
 
     public static function redirectToResetPassword($userId)
     {
-        if (!api_get_configuration_value('force_renew_password_at_first_login')) {
-            return;
+        $forceRenew = api_get_configuration_value('force_renew_password_at_first_login');
+
+        if ($forceRenew) {
+            $askPassword = self::get_extra_user_data_by_field(
+                $userId,
+                'ask_new_password'
+            );
+
+            if (!empty($askPassword) && isset($askPassword['ask_new_password']) &&
+                1 === (int) $askPassword['ask_new_password']
+            ) {
+                $uniqueId = api_get_unique_id();
+                $userObj = api_get_user_entity($userId);
+
+                $userObj->setConfirmationToken($uniqueId);
+                $userObj->setPasswordRequestedAt(new \DateTime());
+
+                Database::getManager()->persist($userObj);
+                Database::getManager()->flush();
+
+                $url = api_get_path(WEB_CODE_PATH).'auth/reset.php?token='.$uniqueId;
+                api_location($url);
+            }
         }
 
-        $askPassword = self::get_extra_user_data_by_field(
-            $userId,
-            'ask_new_password'
-        );
+        $forceRotateDays = api_get_configuration_value('security_password_rotate_days');
+        $forceRotate = false;
 
-        if (!empty($askPassword) && isset($askPassword['ask_new_password']) &&
-            1 === (int) $askPassword['ask_new_password']
-        ) {
-            $uniqueId = api_get_unique_id();
-            $userObj = api_get_user_entity($userId);
+        if ($forceRotateDays > 0) {
+            // get the date of the last password update recorded
+            $lastUpdate = self::get_extra_user_data_by_field(
+                $userId,
+                'password_updated_at'
+            );
 
-            $userObj->setConfirmationToken($uniqueId);
-            $userObj->setPasswordRequestedAt(new \DateTime());
+            if (empty($lastUpdate) or empty($lastUpdate['password_updated_at'])) {
+                $userObj = api_get_user_entity($userId);
+                $registrationDate = $userObj->getRegistrationDate();
+                $now = new \DateTime(null, new DateTimeZone('UTC'));
+                $interval = $now->diff($registrationDate);
+                $daysSince = $interval->format('%a');
+                if ($daysSince > $forceRotateDays) {
+                    $forceRotate = true;
+                }
+            } else {
+                $now = new \DateTime(null, new DateTimeZone('UTC'));
+                // In some cases, old records might contain an incomplete Y-m-d H:i:s format
+                if (strlen($lastUpdate['password_updated_at']) == 10) {
+                    $lastUpdate['password_updated_at'] .= ' 00:00:00';
+                }
+                if (strlen($lastUpdate['password_updated_at']) == 16) {
+                    $lastUpdate['password_updated_at'] .= ':00';
+                }
+                $date = \DateTime::createFromFormat('Y-m-d H:i:s', $lastUpdate['password_updated_at'], new DateTimeZone('UTC'));
+                $interval = $now->diff($date);
+                $daysSince = $interval->format('%a');
+                if ($daysSince > $forceRotateDays) {
+                    $forceRotate = true;
+                }
+            }
+            if ($forceRotate) {
+                $uniqueId = api_get_unique_id();
+                $userObj = api_get_user_entity($userId);
 
-            Database::getManager()->persist($userObj);
-            Database::getManager()->flush();
+                $userObj->setConfirmationToken($uniqueId);
+                $userObj->setPasswordRequestedAt(new \DateTime());
 
-            $url = api_get_path(WEB_CODE_PATH).'auth/reset.php?token='.$uniqueId;
-            api_location($url);
+                Database::getManager()->persist($userObj);
+                Database::getManager()->flush();
+
+                $url = api_get_path(WEB_CODE_PATH).'auth/reset.php?token='.$uniqueId.'&rotate=1';
+                api_location($url);
+            }
         }
     }
 
@@ -7731,10 +7883,18 @@ SQL;
 
     public static function getAllowedRolesAsTeacher(): array
     {
-        return [
-            COURSEMANAGER,
-            SESSIONADMIN,
-        ];
+        if (api_get_configuration_value('course_allow_student_role_to_be_teacher')) {
+            return [
+                STUDENT,
+                COURSEMANAGER,
+                SESSIONADMIN,
+            ];
+        } else {
+            return [
+                COURSEMANAGER,
+                SESSIONADMIN,
+            ];
+        }
     }
 
     /**
@@ -7929,6 +8089,293 @@ SQL;
                 });
             }
         }';
+    }
+
+    /**
+     * Get a list of users with the given e-mail address + their "active" field value (0 or 1).
+     *
+     * @param string $mail User id
+     *
+     * @return array List of users e-mails + active field
+     */
+    public static function getUsersByMail(string $mail): array
+    {
+        $resultData = Database::select(
+            'id, active',
+            Database::get_main_table(TABLE_MAIN_USER),
+            [
+                'where' => ['email = ?' => $mail],
+            ],
+            'all',
+            null
+        );
+
+        if ($resultData === false) {
+            return [];
+        }
+
+        return $resultData;
+    }
+
+    /**
+     * Get whether we can send an e-mail or not.
+     * If the e-mail is not in the database, send the mail.
+     * If the e-mail is in the database but none of its occurences is active, don't send.
+     *
+     * @param string $mail The e-mail address to check
+     *
+     * @return bool Whether we can send an e-mail or not
+     */
+    public static function isEmailingAllowed(string $mail): bool
+    {
+        $list = self::getUsersByMail($mail);
+        if (empty($list)) {
+            // No e-mail matches, send the mail
+            return true;
+        }
+        $send = false;
+        foreach ($list as $id => $user) {
+            if ($user['active'] == 1) {
+                // as soon as we find at least one active user, send the mail
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * return user hash based on user_id and loggedin user's salt.
+     *
+     * @param int user_id id of the user for whom we need the hash
+     *
+     * @return string containing the hash
+     */
+    public static function generateUserHash(int $user_id): string
+    {
+        $currentUserId = api_get_user_id();
+        $userManager = self::getManager();
+        /** @var User $user */
+        $user = self::getRepository()->find($currentUserId);
+        if (empty($user)) {
+            return false;
+        }
+
+        return rawurlencode(api_encrypt_hash($user_id, $user->getSalt()));
+    }
+
+    /**
+     * return decrypted hash or false.
+     *
+     * @param string hash    hash that is to be decrypted
+     */
+    public static function decryptUserHash(string $hash): string
+    {
+        $currentUserId = api_get_user_id();
+        $userManager = self::getManager();
+        /** @var User $user */
+        $user = self::getRepository()->find($currentUserId);
+        if (empty($user)) {
+            return false;
+        }
+
+        return api_decrypt_hash(rawurldecode($hash), $user->getSalt());
+    }
+
+    /**
+     * Search for users based on given filters.
+     */
+    public static function searchUsers(array $filters = [], array $editableFields = []): array
+    {
+        $where = [];
+
+        $accessUrlRelUserTable = Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_USER);
+        $userGroupTable = Database::get_main_table(TABLE_USERGROUP_REL_USER);
+
+        $isMultipleUrl = (api_is_platform_admin() || api_is_session_admin()) && api_get_multiple_access_url();
+        $urlId = api_get_current_access_url_id();
+
+        if (!empty($filters['keywordFirstname'])) {
+            $where[] = "u.firstname LIKE '%".Database::escape_string($filters['keywordFirstname'])."%'";
+        }
+        if (!empty($filters['keywordLastname'])) {
+            $where[] = "u.lastname LIKE '%".Database::escape_string($filters['keywordLastname'])."%'";
+        }
+        if (!empty($filters['keywordUsername'])) {
+            $where[] = "u.username LIKE '%".Database::escape_string($filters['keywordUsername'])."%'";
+        }
+        if (!empty($filters['keywordEmail'])) {
+            $where[] = "u.email LIKE '%".Database::escape_string($filters['keywordEmail'])."%'";
+        }
+        if (!empty($filters['keywordOfficialCode'])) {
+            $where[] = "u.official_code LIKE '%".Database::escape_string($filters['keywordOfficialCode'])."%'";
+        }
+        if (!empty($filters['keywordStatus']) && $filters['keywordStatus'] !== '%') {
+            $where[] = "u.status = '".Database::escape_string($filters['keywordStatus'])."'";
+        }
+        if (!empty($filters['keywordActive']) && empty($filters['keywordInactive'])) {
+            $where[] = "u.active = 1";
+        } elseif (empty($filters['keywordActive']) && !empty($filters['keywordInactive'])) {
+            $where[] = "u.active = 0";
+        }
+
+        if ($isMultipleUrl) {
+            $where[] = "u.id IN (SELECT user_id FROM $accessUrlRelUserTable WHERE access_url_id = $urlId)";
+        }
+
+        if (!empty($filters['class_id'])) {
+            $where[] = "u.id IN (SELECT user_id FROM $userGroupTable WHERE usergroup_id = ".(int) $filters['class_id'].")";
+        }
+
+        $extraField = new ExtraField('user');
+        $extraFieldResults = null;
+        $extraFieldHasData = false;
+
+        foreach ($filters as $key => $value) {
+            if (str_starts_with($key, 'extra_')) {
+                if (is_array($value)) {
+                    $value = array_filter($value, function ($v) {
+                        return $v !== null && $v !== '';
+                    });
+                }
+
+                if (empty($value)) {
+                    continue;
+                }
+
+                $variable = substr($key, 6);
+                $fieldInfo = $extraField->get_handler_field_info_by_field_variable($variable);
+                if ($fieldInfo) {
+                    $extraFieldHasData = true;
+                    $values = is_array($value) ? $value : [$value];
+
+                    $fieldResults = [];
+                    foreach ($values as $singleValue) {
+                        if (empty($singleValue)) {
+                            continue;
+                        }
+
+                        if ($fieldInfo['field_type'] == ExtraField::FIELD_TYPE_TAG) {
+                            $result = $extraField->getAllUserPerTag($fieldInfo['id'], $singleValue);
+                            $result = empty($result) ? [] : array_column($result, 'user_id');
+                        } else {
+                            $result = UserManager::get_extra_user_data_by_value($variable, $singleValue, true);
+                        }
+
+                        if (!empty($result)) {
+                            $fieldResults[] = $result;
+                        }
+                    }
+
+                    if (!empty($values) && empty($fieldResults)) {
+                        $extraFieldResults = [];
+                        break;
+                    }
+
+                    $mergedFieldResults = call_user_func_array('array_merge', $fieldResults);
+
+                    if ($extraFieldResults === null) {
+                        $extraFieldResults = $mergedFieldResults;
+                    } else {
+                        $extraFieldResults = array_intersect($extraFieldResults, $mergedFieldResults);
+                    }
+
+                    if (empty($extraFieldResults)) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($extraFieldHasData && $extraFieldResults === null) {
+            $extraFieldResults = [];
+        }
+
+        if ($extraFieldHasData) {
+            if (empty($extraFieldResults)) {
+                $where[] = "u.id IN ('-1')";
+            } else {
+                $where[] = "u.id IN ('".implode("','", array_unique($extraFieldResults))."')";
+            }
+        }
+
+        $fields = ['u.id', 'u.username'];
+
+        if (!empty($editableFields)) {
+            foreach ($editableFields as $field) {
+                $fields[] = "u.".Database::escapeField($field);
+            }
+        }
+
+        $sortableFields = [
+            0 => 'u.id',
+            1 => 'u.username',
+        ];
+
+        $columnIndex = $_GET['users_column'] ?? 0;
+        $direction = strtoupper($_GET['users_direction'] ?? 'ASC');
+
+        if (!in_array($direction, ['ASC', 'DESC'])) {
+            $direction = 'ASC';
+        }
+
+        $orderBy = $sortableFields[$columnIndex] ?? 'u.id';
+
+        $sql = "SELECT ".implode(", ", $fields)." FROM ".Database::get_main_table(TABLE_MAIN_USER)." u";
+        if (!empty($where)) {
+            $sql .= " WHERE ".implode(" AND ", $where);
+        }
+        $sql .= " ORDER BY $orderBy $direction";
+
+        return Database::store_result(Database::query($sql), 'ASSOC');
+    }
+
+    /**
+     * Check or fetch a user by extra‑field on this portal.
+     *
+     * @param string $value    The extra‑field value to test (e.g. DNI).
+     * @param bool   $returnId If true, return the existing user ID or null; otherwise return true/false for uniqueness.
+     *
+     * @return bool|int|null When $returnId===false: true if unique, false if already exists.
+     *                       When $returnId===true: existing user ID or null if none.
+     */
+    public static function isExtraFieldValueUniquePerUrl(string $value, bool $returnId = false)
+    {
+        $field = api_get_configuration_value('extra_field_to_validate_on_user_registration');
+        if (empty($field) || $value === '') {
+            // If there's nothing to check, treat as “unique” or “no ID”
+            return $returnId ? null : true;
+        }
+
+        $accessUrlId = api_get_current_access_url_id();
+
+        $tUser = Database::get_main_table(TABLE_MAIN_USER);
+        $tField = Database::get_main_table(TABLE_EXTRA_FIELD);
+        $tValue = Database::get_main_table(TABLE_EXTRA_FIELD_VALUES);
+        $tRelUrl = Database::get_main_table(TABLE_MAIN_ACCESS_URL_REL_USER);
+
+        $sql = "
+        SELECT u.id
+        FROM   {$tUser} u
+        JOIN   {$tValue} v   ON v.item_id    = u.id
+        JOIN   {$tField} f   ON f.id         = v.field_id
+        JOIN   {$tRelUrl} url ON url.user_id = u.id
+        WHERE  f.variable        = '".Database::escape_string($field)."'
+          AND  v.value           = '".Database::escape_string($value)."'
+          AND  url.access_url_id = {$accessUrlId}
+        LIMIT  1
+    ";
+
+        $result = Database::query($sql);
+        $row = Database::fetch_array($result, 'ASSOC');
+
+        if ($returnId) {
+            // return the existing user ID, or null if none
+            return $row['id'] ?? null;
+        }
+
+        // return true if no match was found (i.e. unique), false otherwise
+        return empty($row);
     }
 
     /**

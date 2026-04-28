@@ -153,7 +153,13 @@ class UserGroup extends Model
             while ($data = Database::fetch_array($result)) {
                 $userId = $data['user_id'];
                 $userInfo = api_get_user_info($userId);
-                $data['name'] = $userInfo['complete_name_with_username'];
+                if ('true' === api_get_setting('order_user_list_by_official_code')) {
+                    $officialCode = !empty($userInfo['official_code']) ? $userInfo['official_code'].' - ' : '? - ';
+                    $data['name'] = $officialCode.$userInfo['complete_name_with_username'];
+                } else {
+                    $officialCode = !empty($userInfo['official_code']) ? ' - '.$userInfo['official_code'] : null;
+                    $data['name'] = $userInfo['complete_name_with_username']." $officialCode";
+                }
 
                 if ($showCalendar) {
                     $calendar = $calendarPlugin->getUserCalendar($userId);
@@ -719,22 +725,35 @@ class UserGroup extends Model
     /**
      * Gets a list of session ids by user group.
      *
-     * @param int $id group id
+     * @param int  $id                group id
+     * @param bool $returnSessionData Whether to return an array with info (true) or just the session ID (false)
      *
      * @return array
      */
-    public function get_sessions_by_usergroup($id)
+    public function get_sessions_by_usergroup($id, $returnSessionData = false)
     {
-        $results = Database::select(
-            'session_id',
-            $this->usergroup_rel_session_table,
-            ['where' => ['usergroup_id = ?' => $id]]
-        );
+        if ($returnSessionData) {
+            $results = Database::select(
+                'g.session_id, s.name, s.description, s.nbr_users, s.nbr_courses',
+                $this->usergroup_rel_session_table." g, ".$this->session_table." s",
+                ['where' => ['g.session_id = s.id AND g.usergroup_id = ?' => $id]]
+            );
+        } else {
+            $results = Database::select(
+                'session_id',
+                $this->usergroup_rel_session_table,
+                ['where' => ['usergroup_id = ?' => $id]]
+            );
+        }
 
         $array = [];
         if (!empty($results)) {
             foreach ($results as $row) {
-                $array[] = $row['session_id'];
+                if ($returnSessionData) {
+                    $array[$row['session_id']] = $row;
+                } else {
+                    $array[] = $row['session_id'];
+                }
             }
         }
 
@@ -790,25 +809,40 @@ class UserGroup extends Model
     }
 
     /**
-     * Gets a list of user ids by user group.
+     * Retrieves a list of user IDs belonging to a user group based on a specific type of relation.
      *
-     * @param int $id       user group id
-     * @param int $relation
+     * @param int   $id       The ID of the user group.
+     * @param int   $relation The type of relation to consider. Defaults to 0, which implies any type of relation.
+     * @param array $order    Optional. An array of columns to sort the results by.
+     *                        Each element of the array should be a column name, and the sorting is ascending by default.
+     *                        Example: ['firstname', 'lastname'] translates to 'ORDER BY firstname ASC, lastname ASC'.
      *
-     * @return array with a list of user ids
+     * @return array A list of user IDs that meet the specified criteria.
+     *               If no users are found, an empty array is returned.
      */
-    public function getUsersByUsergroupAndRelation($id, $relation = 0)
+    public function getUsersByUsergroupAndRelation($id, $relation = 0, $order = [])
     {
         $relation = (int) $relation;
+        $conditions = [];
         if (empty($relation)) {
-            $conditions = ['where' => ['usergroup_id = ? AND (relation_type = 0 OR relation_type IS NULL OR relation_type = "") ' => [$id]]];
+            $conditions['where'] = [
+                'usergroup_id = ? AND (relation_type = 0 OR relation_type IS NULL OR relation_type = "")' => [$id],
+            ];
         } else {
-            $conditions = ['where' => ['usergroup_id = ? AND relation_type = ?' => [$id, $relation]]];
+            $conditions['where'] = [
+                'usergroup_id = ? AND relation_type = ?' => [$id, $relation],
+            ];
+        }
+
+        if (!empty($order)) {
+            $conditions['order'] = implode(', ', array_map(function ($item) {
+                return $item.' ASC';
+            }, $order));
         }
 
         $results = Database::select(
-            'user_id',
-            $this->usergroup_rel_user_table,
+            'ug.user_id',
+            "{$this->usergroup_rel_user_table} ug INNER JOIN {$this->table_user} u ON ug.user_id = u.id",
             $conditions
         );
 
@@ -912,8 +946,10 @@ class UserGroup extends Model
      * @param int   $usergroup_id          usergroup id
      * @param array $list                  list of session ids
      * @param bool  $deleteCurrentSessions Optional. Empty the session list for the usergroup (class)
+     *
+     * @return array List of IDs of the sessions added to the usergroup
      */
-    public function subscribe_sessions_to_usergroup($usergroup_id, $list, $deleteCurrentSessions = true)
+    public function subscribe_sessions_to_usergroup($usergroup_id, $list, $deleteCurrentSessions = true): array
     {
         $current_list = $this->get_sessions_by_usergroup($usergroup_id);
         $user_list = $this->get_users_by_usergroup($usergroup_id);
@@ -921,8 +957,11 @@ class UserGroup extends Model
         $delete_items = $new_items = [];
         if (!empty($list)) {
             foreach ($list as $session_id) {
-                if (!in_array($session_id, $current_list)) {
-                    $new_items[] = $session_id;
+                if (SessionManager::isValidId($session_id)) {
+                    // Only if the session IDs given are not bogus
+                    if (!in_array($session_id, $current_list)) {
+                        $new_items[] = $session_id;
+                    }
                 }
             }
         }
@@ -963,7 +1002,7 @@ class UserGroup extends Model
             }
         }
 
-        $sessions = '';
+        $sessions = [];
         // Adding new relationships.
         if (!empty($new_items)) {
             foreach ($new_items as $session_id) {
@@ -977,18 +1016,20 @@ class UserGroup extends Model
                         null,
                         false
                     );
-                    $sessions .= $session_id.',';
+                    $sessions[] = $session_id;
                 }
             }
             // Add event to system log
             Event::addEvent(
                 LOG_GROUP_PORTAL_SESSION_SUBSCRIBED,
                 LOG_GROUP_PORTAL_ID,
-                'gid: '.$usergroup_id.' - sids: '.substr($sessions, 0, -1),
+                'gid: '.$usergroup_id.' - sids: '.implode(',', $sessions),
                 api_get_utc_datetime(),
                 api_get_user_id()
             );
         }
+
+        return $sessions;
     }
 
     /**
@@ -1024,9 +1065,9 @@ class UserGroup extends Model
             $this->unsubscribe_courses_from_usergroup($usergroup_id, $delete_items);
         }
 
+        $courses = [];
         // Adding new relationships
         if (!empty($new_items)) {
-            $courses = '';
             foreach ($new_items as $course_id) {
                 $course_info = api_get_course_info_by_id($course_id);
                 if ($course_info) {
@@ -1088,29 +1129,33 @@ class UserGroup extends Model
                         $params
                     );
                 }
-                $courses .= $course_id.',';
+                $courses[] = $course_id;
             }
             // Add event to system log
             Event::addEvent(
                 LOG_GROUP_PORTAL_COURSE_SUBSCRIBED,
                 LOG_GROUP_PORTAL_ID,
-                'gid: '.$usergroup_id.' - cids: '.substr($courses, 0, -1),
+                'gid: '.$usergroup_id.' - cids: '.implode(',', $courses),
                 api_get_utc_datetime(),
                 api_get_user_id()
             );
         }
+
+        return $courses;
     }
 
     /**
+     * Unsubscribe a usergroup from a list of courses.
+     *
      * @param int   $usergroup_id
      * @param array $delete_items
      */
     public function unsubscribe_courses_from_usergroup($usergroup_id, $delete_items)
     {
+        $courses = [];
         // Deleting items.
         if (!empty($delete_items)) {
             $user_list = $this->get_users_by_usergroup($usergroup_id);
-            $courses = '';
             foreach ($delete_items as $course_id) {
                 $course_info = api_get_course_info_by_id($course_id);
                 if ($course_info) {
@@ -1133,18 +1178,71 @@ class UserGroup extends Model
                             ],
                         ]
                     );
-                    $courses .= $course_id.',';
+                    $courses[] = $course_id;
                 }
             }
             // Add event to system log
             Event::addEvent(
                 LOG_GROUP_PORTAL_COURSE_UNSUBSCRIBED,
                 LOG_GROUP_PORTAL_ID,
-                'gid: '.$usergroup_id.' - cids: '.substr($courses, 0, -1),
+                'gid: '.$usergroup_id.' - cids: '.implode(',', $courses),
                 api_get_utc_datetime(),
                 api_get_user_id()
             );
         }
+
+        return $courses;
+    }
+
+    /**
+     * Unsubscribe a usergroup from a list of sessions.
+     *
+     * @param int   $groupId
+     * @param array $items   Session IDs to remove from the group
+     *
+     * @return array The list of session IDs that have been unsubscribed from the group
+     */
+    public function unsubscribeSessionsFromUserGroup($groupId, $items)
+    {
+        // Deleting items.
+        $sessions = [];
+        if (!empty($items)) {
+            $users = $this->get_users_by_usergroup($groupId);
+            foreach ($items as $sessionId) {
+                if (SessionManager::isValidId($sessionId)) {
+                    if (!api_get_configuration_value('usergroup_do_not_unsubscribe_users_from_session_on_session_unsubscribe')) {
+                        if (!empty($users)) {
+                            foreach ($users as $userId) {
+                                SessionManager::unsubscribe_user_from_session(
+                                    $sessionId,
+                                    $userId
+                                );
+                            }
+                        }
+                    }
+                    Database::delete(
+                        $this->usergroup_rel_session_table,
+                        [
+                            'usergroup_id = ? AND session_id = ?' => [
+                                $groupId,
+                                $sessionId,
+                            ],
+                        ]
+                    );
+                    $sessions[] = $sessionId;
+                }
+            }
+            // Add event to system log
+            Event::addEvent(
+                LOG_GROUP_PORTAL_SESSION_UNSUBSCRIBED,
+                LOG_GROUP_PORTAL_ID,
+                'gid: '.$groupId.' - sids: '.implode(',', $sessions),
+                api_get_utc_datetime(),
+                api_get_user_id()
+            );
+        }
+
+        return $sessions;
     }
 
     /**
@@ -1340,6 +1438,8 @@ class UserGroup extends Model
     }
 
     /**
+     * Returns whether teachers can access the classes, as per 'allow_teachers_to_classes' setting.
+     *
      * @return bool
      */
     public function allowTeachers()
@@ -1435,21 +1535,25 @@ class UserGroup extends Model
      */
     public function getDataToExport($options = [])
     {
+        $and = '';
+        if (!empty($options) && !empty($options['where'])) {
+            $and = ' AND ';
+        }
         if ($this->getUseMultipleUrl()) {
             $urlId = api_get_current_access_url_id();
             $from = $this->table." u
                     INNER JOIN {$this->access_url_rel_usergroup} a
                     ON (u.id = a.usergroup_id)";
-            $options = ['where' => ['access_url_id = ? ' => $urlId]];
+            $options['where'][$and.' access_url_id = ? '] = $urlId;
             if ($this->allowTeachers()) {
-                $options['where'] = [' author_id = ? ' => api_get_user_id()];
+                $options['where'] = [' AND author_id = ? ' => api_get_user_id()];
             }
-            $classes = Database::select('u.id, name, description', $from, $options);
+            $classes = Database::select('u.id, name, description, group_type, visibility', $from, $options);
         } else {
             if ($this->allowTeachers()) {
-                $options['where'] = [' author_id = ? ' => api_get_user_id()];
+                $options['where'] = [$and.' author_id = ? ' => api_get_user_id()];
             }
-            $classes = Database::select('id, name, description', $this->table, $options);
+            $classes = Database::select('id, name, description, group_type, visibility', $this->table, $options);
         }
 
         $result = [];
@@ -1772,28 +1876,59 @@ class UserGroup extends Model
 
         // Storing the new photos in 4 versions with various sizes.
 
-        /*$image->resize(
-        // get original size and set width (widen) or height (heighten).
-        // width or height will be set maintaining aspect ratio.
-            $image->getSize()->widen( 700 )
-        );*/
+        $srcImage = imagecreatefromstring(file_get_contents($source_file));
+        if ($srcImage === false) {
+            return false;
+        }
 
-        // Usign the Imagine service
-        $imagine = new Imagine\Gd\Imagine();
-        $image = $imagine->open($source_file);
+        $srcWidth = imagesx($srcImage);
+        $srcHeight = imagesy($srcImage);
 
-        $options = [
-            'quality' => 90,
-        ];
+        // Closure: resizes $srcImage to $w x $h and saves to $dest
+        $saveResized = function ($w, $h, $dest) use ($srcImage, $srcWidth, $srcHeight, $extension) {
+            $dst = imagecreatetruecolor($w, $h);
+            if ($extension === 'png' || $extension === 'gif') {
+                imagealphablending($dst, false);
+                imagesavealpha($dst, true);
+                $transparent = imagecolorallocatealpha($dst, 255, 255, 255, 127);
+                imagefilledrectangle($dst, 0, 0, $w, $h, $transparent);
+            }
+            imagecopyresampled($dst, $srcImage, 0, 0, 0, 0, $w, $h, $srcWidth, $srcHeight);
+            switch ($extension) {
+                case 'jpg':
+                case 'jpeg':
+                    imagejpeg($dst, $dest, 90);
+                    break;
+                case 'png':
+                    imagepng($dst, $dest, 1);
+                    break;
+                case 'gif':
+                    imagegif($dst, $dest);
+                    break;
+            }
+            imagedestroy($dst);
+        };
 
-        //$image->resize(new Imagine\Image\Box(200, 200))->save($path.'big_'.$filename);
-        $image->resize($image->getSize()->widen(200))->save($path.'big_'.$filename, $options);
+        // Helper: compute dimensions to fit within $maxW x $maxH keeping aspect ratio
+        $fitDimensions = function ($maxW, $maxH) use ($srcWidth, $srcHeight) {
+            if ($srcWidth <= 0 || $srcHeight <= 0) {
+                return [$maxW, $maxH];
+            }
+            $scale = min($maxW / $srcWidth, $maxH / $srcHeight);
 
-        $image = $imagine->open($source_file);
-        $image->resize(new Imagine\Image\Box(85, 85))->save($path.'medium_'.$filename, $options);
+            return [(int) round($srcWidth * $scale), (int) round($srcHeight * $scale)];
+        };
 
-        $image = $imagine->open($source_file);
-        $image->resize(new Imagine\Image\Box(22, 22))->save($path.'small_'.$filename);
+        [$bigW, $bigH] = $fitDimensions(200, 200);
+        $saveResized($bigW, $bigH, $path.'big_'.$filename);
+
+        [$medW, $medH] = $fitDimensions(85, 85);
+        $saveResized($medW, $medH, $path.'medium_'.$filename);
+
+        [$smlW, $smlH] = $fitDimensions(22, 22);
+        $saveResized($smlW, $smlH, $path.'small_'.$filename);
+
+        imagedestroy($srcImage);
 
         /*
         $small  = self::resize_picture($source_file, 22);
@@ -1841,15 +1976,19 @@ class UserGroup extends Model
                 WHERE usergroup_id = $id";
         Database::query($sql);
 
-        parent::delete($id);
+        $res = parent::delete($id);
         // Add event to system log
-        Event::addEvent(
-            LOG_GROUP_PORTAL_DELETED,
-            LOG_GROUP_PORTAL_ID,
-            'id: '.$id,
-            api_get_utc_datetime(),
-            api_get_user_id()
-        );
+        if ($res) {
+            Event::addEvent(
+                LOG_GROUP_PORTAL_DELETED,
+                LOG_GROUP_PORTAL_ID,
+                'id: '.$id,
+                api_get_utc_datetime(),
+                api_get_user_id()
+            );
+        }
+
+        return $res;
     }
 
     /**
@@ -2063,7 +2202,7 @@ class UserGroup extends Model
         if (file_exists($file)) {
             $picture['file'] = $image_array['dir'].$size_picture.$picture_file;
             if ($height > 0) {
-                $dimension = api_getimagesize($picture['file']);
+                $dimension = api_getimagesize($file);
                 $margin = ($height - $dimension['width']) / 2;
                 //@ todo the padding-top should not be here
             }
@@ -2360,14 +2499,14 @@ class UserGroup extends Model
     }
 
     /**
-     * Deletes an url and session relationship.
+     * Deletes the subscription of a user to a usergroup.
      *
      * @author Julio Montoya
      *
      * @param int $userId
      * @param int $groupId
      *
-     * @return bool true if success
+     * @return bool true on success
      * */
     public function delete_user_rel_group($userId, $groupId)
     {
@@ -2413,6 +2552,10 @@ class UserGroup extends Model
         $user_id = (int) $user_id;
         $group_id = (int) $group_id;
         $relation_type = (int) $relation_type;
+        // Temporary hack to avoid issues with roles - see #4980
+        if ($relation_type == GROUP_USER_PERMISSION_READER) {
+            $relation_type = 0;
+        }
         if (!empty($user_id) && !empty($group_id)) {
             $role = $this->get_user_group_role($user_id, $group_id);
 
@@ -2769,7 +2912,7 @@ class UserGroup extends Model
             return [];
         }
 
-        $sql = "SELECT u.id, u.firstname, u.lastname, relation_type
+        $sql = "SELECT u.id, u.firstname, u.lastname, gu.relation_type
                 FROM $tbl_user u
 			    INNER JOIN $table_group_rel_user gu
 			    ON (gu.user_id = u.id)
@@ -3307,5 +3450,37 @@ class UserGroup extends Model
         $result = Database::query($sql);
 
         return Database::store_result($result, 'ASSOC');
+    }
+
+    /**
+     * Check the given ID matches an existing group.
+     *
+     * @return bool
+     */
+    public function groupExists(int $groupId)
+    {
+        $sql = "SELECT id FROM ".$this->table." WHERE id = ".$groupId;
+        $result = Database::query($sql);
+        if (Database::num_rows($result) === 1) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check the given ID matches an existing user.
+     *
+     * @return bool
+     */
+    public function userExists(int $userId)
+    {
+        $sql = "SELECT id FROM ".$this->table_user." WHERE id = ".$userId;
+        $result = Database::query($sql);
+        if (Database::num_rows($result) === 1) {
+            return true;
+        }
+
+        return false;
     }
 }

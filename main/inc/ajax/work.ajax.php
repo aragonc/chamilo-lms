@@ -76,9 +76,12 @@ switch ($action) {
                 }
                 if (!empty($fileList)) {
                     foreach ($fileList as $n => $file) {
-                        $tmpFile = $tempDirectory.$file['name'];
+                        $tmpFile = disable_dangerous_file(
+                            api_replace_dangerous_char($file['name'])
+                        );
+
                         file_put_contents(
-                            $tmpFile,
+                            $tempDirectory.$tmpFile,
                             fopen($file['tmp_name'], 'r'),
                             FILE_APPEND
                         );
@@ -117,14 +120,8 @@ switch ($action) {
                 }
 
                 $resultList = [];
-                foreach ($fileList as $file) {
-                    if (isset($_REQUEST['chunkAction']) && 'done' === $_REQUEST['chunkAction']) {
-                        // to rename and move the finished file
-                        $chunkedFile = api_get_path(SYS_ARCHIVE_PATH).$file['name'];
-                        $file['tmp_name'] = $chunkedFile;
-                        $file['size'] = filesize($chunkedFile);
-                        $file['copy_file'] = true;
-                    }
+                foreach ($fileList as $fileInfo) {
+                    $file = processChunkedFile($fileInfo);
 
                     $globalFile = [];
                     $globalFile['files'] = $file;

@@ -455,7 +455,7 @@ class Template
         $origin = api_get_origin();
         $show_course_navigation_menu = '';
         if (!empty($this->course_id) && $this->user_is_logged_in) {
-            if ($origin !== 'embeddable' && api_get_setting('show_toolshortcuts') !== 'false') {
+            if ($origin !== 'iframe' && $origin !== 'embeddable' && api_get_setting('show_toolshortcuts') !== 'false') {
                 // Course toolbar
                 $courseToolBar = CourseHome::show_navigation_tool_shortcuts();
             }
@@ -632,7 +632,11 @@ class Template
             $css[] = api_get_cdn_path($webPublicPath.'assets/'.$file);
         }
 
-        $css[] = $webJsPath.'mediaelement/plugins/vrview/vrview.css';
+        $isVrViewEnabled = Display::isVrViewEnabled();
+
+        if ($isVrViewEnabled) {
+            $css[] = $webJsPath.'mediaelement/plugins/vrview/vrview.css';
+        }
 
         $features = api_get_configuration_value('video_features');
         $defaultFeatures = [
@@ -643,9 +647,12 @@ class Template
             'tracks',
             'volume',
             'fullscreen',
-            'vrview',
             'markersrolls',
         ];
+
+        if ($isVrViewEnabled) {
+            $defaultFeatures[] = 'vrview';
+        }
 
         if (!empty($features) && isset($features['features'])) {
             foreach ($features['features'] as $feature) {
@@ -762,17 +769,21 @@ class Template
     {
         global $disable_js_and_css_files, $htmlHeadXtra;
         $isoCode = api_get_language_isocode();
+        $isVrViewEnabled = Display::isVrViewEnabled();
         $selectLink = 'bootstrap-select/dist/js/i18n/defaults-'.$isoCode.'_'.strtoupper($isoCode).'.min.js';
 
         if ($isoCode == 'en') {
             $selectLink = 'bootstrap-select/dist/js/i18n/defaults-'.$isoCode.'_US.min.js';
         }
         // JS files
-        $js_files = [
-            'chosen/chosen.jquery.min.js',
-            'mediaelement/plugins/vrview/vrview.js',
-            'mediaelement/plugins/markersrolls/markersrolls.min.js',
-        ];
+        $js_files = [];
+        $js_files[] = 'chosen/chosen.jquery.min.js';
+
+        if ($isVrViewEnabled) {
+            $js_files[] = 'mediaelement/plugins/vrview/vrview.js';
+        }
+
+        $js_files[] = 'mediaelement/plugins/markersrolls/markersrolls.min.js';
 
         if (api_get_setting('accessibility_font_resize') === 'true') {
             $js_files[] = 'fontresize.js';
@@ -784,12 +795,14 @@ class Template
             'jquery/dist/jquery.min.js',
             'bootstrap/dist/js/bootstrap.min.js',
             'jquery-ui/jquery-ui.min.js',
+            'en' !== $isoCode ? "jquery-ui/ui/minified/i18n/datepicker-$isoCode.js" : null,
             'jqueryui-touch-punch/jquery.ui.touch-punch.min.js',
             'moment/min/moment-with-locales.js',
             'bootstrap-daterangepicker/daterangepicker.js',
             'jquery-timeago/jquery.timeago.js',
             'mediaelement/build/mediaelement-and-player.min.js',
             'jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.min.js',
+            'en' !== $isoCode ? "jqueryui-timepicker-addon/dist/i18n/jquery-ui-timepicker-$isoCode.js" : null,
             'image-map-resizer/js/imageMapResizer.min.js',
             'jquery.scrollbar/jquery.scrollbar.min.js',
             'readmore-js/readmore.min.js',
@@ -850,6 +863,8 @@ class Template
                 $bowerJsFiles[] = 'jquery-ui/ui/minified/i18n/datepicker-'.$isoCode.'.min.js';
             }
         }
+
+        $bowerJsFiles = array_filter($bowerJsFiles);
 
         foreach ($bowerJsFiles as $file) {
             $js_file_to_string .= '<script src="'.api_get_cdn_path(api_get_path(WEB_PUBLIC_PATH).'assets/'.$file).'"></script>'."\n";
@@ -1223,6 +1238,9 @@ class Template
             'icon' => 'user fa-fw',
             'placeholder' => get_lang('UserName'),
         ];
+        if (api_get_configuration_value('security_login_autocomplete_disable') === true) {
+            $params['autocomplete'] = 'new-password';
+        }
         $browserAutoCapitalize = false;
         // Avoid showing the autocapitalize option if the browser doesn't
         // support it: this attribute is against the HTML5 standard
@@ -1241,6 +1259,9 @@ class Template
             'icon' => 'lock fa-fw',
             'placeholder' => get_lang('Pass'),
         ];
+        if (api_get_configuration_value('security_login_autocomplete_disable') === true) {
+            $params['autocomplete'] = 'new-password';
+        }
         if ($browserAutoCapitalize) {
             $params['autocapitalize'] = 'none';
         }
@@ -1309,20 +1330,56 @@ class Template
         $html = $form->returnForm();
         if (api_get_setting('openid_authentication') == 'true') {
             include_once api_get_path(SYS_CODE_PATH).'auth/openid/login.php';
-            $html .= '<div>'.openid_form().'</div>';
+            $html .= '<div>'.openid_form()->returnForm().'</div>';
         }
 
         $pluginKeycloak = api_get_plugin_setting('keycloak', 'tool_enable') === 'true';
         $plugin = null;
         if ($pluginKeycloak) {
             $pluginUrl = api_get_path(WEB_PLUGIN_PATH).'keycloak/start.php?sso';
-            $pluginUrl = Display::url('Keycloak', $pluginUrl, ['class' => 'btn btn-primary']);
-            $html .= '<div>'.$pluginUrl.'</div>';
+            $pluginUrl = Display::url('Keycloak', $pluginUrl, ['class' => 'btn btn-block btn-primary']);
+            $html .= '<div style="margin-top: 10px">'.$pluginUrl.'</div>';
         }
 
         $html .= '<div></div>';
 
         return $html;
+    }
+
+    public function enableCookieUsageWarning()
+    {
+        $form = new FormValidator(
+            'cookiewarning',
+            'post',
+            '',
+            '',
+            [
+                //'onsubmit' => "$(this).toggle('show')",
+            ],
+            FormValidator::LAYOUT_BOX_NO_LABEL
+        );
+        $form->addHidden('acceptCookies', '1');
+        $form->addHtml(
+            '<div class="cookieUsageValidation">
+                '.get_lang('YouAcceptCookies').'
+                <button class="btn btn-link" onclick="$(this).next().toggle(\'slow\'); $(this).toggle(\'slow\')" type="button">
+                    ('.get_lang('More').')
+                </button>
+                <div style="display:none; margin:20px 0;">
+                    '.get_lang('HelpCookieUsageValidation').'
+                </div>
+                <button class="btn btn-link" onclick="$(this).parents(\'form\').submit()" type="button">
+                    ('.get_lang('Accept').')
+                </button>
+            </div>'
+        );
+        $form->protect();
+
+        if ($form->validate()) {
+            api_set_site_use_cookie_warning_cookie();
+        } else {
+            $this->assign('frmDisplayCookieUsageWarning', $form->returnForm());
+        }
     }
 
     /**
@@ -1894,6 +1951,11 @@ class Template
         $setting = api_get_configuration_value('security_referrer_policy');
         if (!empty($setting)) {
             header('Referrer-Policy: '.$setting);
+        }
+        // Permissions-Policy
+        $setting = api_get_configuration_value('security_permissions_policy');
+        if (!empty($setting)) {
+            header('Permissions-Policy: '.$setting);
         }
         // end of HTTP headers security block
     }

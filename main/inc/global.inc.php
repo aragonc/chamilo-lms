@@ -100,6 +100,7 @@ $libraryPath = __DIR__.'/lib/';
 
 // @todo convert this libs in classes
 require_once $libraryPath.'database.constants.inc.php';
+require_once $libraryPath.'formvalidator/FormValidator.class.php';
 require_once $libraryPath.'text.lib.php';
 require_once $libraryPath.'array.lib.php';
 require_once $libraryPath.'online.inc.php';
@@ -387,6 +388,12 @@ if (isset($this_script) && $this_script == 'sub_language') {
     //getting sub language info
     $sub_language = SubLanguageManager::get_all_information_of_language($_REQUEST['sub_language_id']);
 
+    // Validate folder names before using them in file paths
+    $parentFolderValid = !empty($parent_language['dokeos_folder']) &&
+        SubLanguageManager::isValidLanguageFolderName($parent_language['dokeos_folder']);
+    $subFolderValid = !empty($sub_language['dokeos_folder']) &&
+        SubLanguageManager::isValidLanguageFolderName($sub_language['dokeos_folder']);
+
     $english_language_array = $parent_language_array = $sub_language_array = [];
 
     foreach ($language_files_to_load as $language_file_item) {
@@ -408,10 +415,13 @@ if (isset($this_script) && $this_script == 'sub_language') {
         foreach ($lang_list_result as $item) {
             unset(${$item});
         }
-        $parent_file = $langpath.$parent_language['dokeos_folder'].'/'.$language_file_item.'.inc.php';
 
-        if (file_exists($parent_file) && is_file($parent_file)) {
-            include_once $parent_file;
+        if ($parentFolderValid) {
+            $parent_file = $langpath.$parent_language['dokeos_folder'].'/'.$language_file_item.'.inc.php';
+
+            if (file_exists($parent_file) && is_file($parent_file)) {
+                include_once $parent_file;
+            }
         }
         //  parent language array
         $parent_language_array[$language_file_item] = compact($lang_list_result);
@@ -421,9 +431,11 @@ if (isset($this_script) && $this_script == 'sub_language') {
             unset(${$item});
         }
 
-        $sub_file = $langpath.$sub_language['dokeos_folder'].'/'.$language_file_item.'.inc.php';
-        if (file_exists($sub_file) && is_file($sub_file)) {
-            include $sub_file;
+        if ($subFolderValid) {
+            $sub_file = $langpath.$sub_language['dokeos_folder'].'/'.$language_file_item.'.inc.php';
+            if (file_exists($sub_file) && is_file($sub_file)) {
+                include $sub_file;
+            }
         }
 
         //  sub language array
@@ -626,6 +638,7 @@ if (!empty($language_interface)) {
 if (!file_exists($file) || api_get_setting('server_type') === 'test') {
     $template = new Template();
     $template->assign('quiz_markers_rolls_js', ChamiloApi::getQuizMarkersRollsJS());
+    $template->assign('is_vrview_enabled', Display::isVrViewEnabled());
     // Force use of default to avoid problems
     $tpl = 'default/layout/main.js.tpl';
     $contents = $template->fetch($tpl);

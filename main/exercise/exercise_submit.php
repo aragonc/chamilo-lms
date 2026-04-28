@@ -129,11 +129,11 @@ $learnpath_item_view_id = isset($_REQUEST['learnpath_item_view_id']) ? (int) $_R
 $reminder = isset($_REQUEST['reminder']) ? (int) $_REQUEST['reminder'] : 0;
 $remind_question_id = isset($_REQUEST['remind_question_id']) ? (int) $_REQUEST['remind_question_id'] : 0;
 $exerciseId = isset($_REQUEST['exerciseId']) ? (int) $_REQUEST['exerciseId'] : 0;
-$formSent = isset($_REQUEST['formSent']) ? $_REQUEST['formSent'] : null;
-$exerciseResult = isset($_REQUEST['exerciseResult']) ? $_REQUEST['exerciseResult'] : null;
-$exerciseResultCoordinates = isset($_REQUEST['exerciseResultCoordinates']) ? $_REQUEST['exerciseResultCoordinates'] : null;
-$choice = isset($_REQUEST['choice']) ? $_REQUEST['choice'] : null;
-$choice = empty($choice) ? isset($_REQUEST['choice2']) ? $_REQUEST['choice2'] : null : null;
+$formSent = $_REQUEST['formSent'] ?? null;
+$exerciseResult = $_REQUEST['exerciseResult'] ?? null;
+$exerciseResultCoordinates = $_REQUEST['exerciseResultCoordinates'] ?? null;
+$choice = $_REQUEST['choice'] ?? null;
+$choice = empty($choice) ? $_REQUEST['choice2'] ?? null : null;
 $current_question = $currentQuestionFromUrl = isset($_REQUEST['num']) ? (int) $_REQUEST['num'] : null;
 $currentAnswer = isset($_REQUEST['num_answer']) ? (int) $_REQUEST['num_answer'] : null;
 $logInfo = [
@@ -1036,7 +1036,7 @@ if (false !== $quizKeepAlivePingInterval) {
 if (!in_array($origin, ['learnpath', 'embeddable', 'mobileapp', 'iframe'])) {
     //so we are not in learnpath tool
     SessionManager::addFlashSessionReadOnly();
-    Display::display_header(null, 'Exercises');
+    Display::display_header(null, 'Exercise');
 } else {
     Display::display_reduced_header();
     echo '<div style="height:10px">&nbsp;</div>';
@@ -1087,7 +1087,7 @@ if (!api_is_allowed_to_session_edit()) {
 }
 
 $exercise_timeover = false;
-$limit_time_exists = !empty($objExercise->start_time) || !empty($objExercise->end_time) ? true : false;
+$limit_time_exists = !empty($objExercise->start_time) || !empty($objExercise->end_time);
 if ($limit_time_exists) {
     $exercise_start_time = api_strtotime($objExercise->start_time, 'UTC');
     $exercise_end_time = api_strtotime($objExercise->end_time, 'UTC');
@@ -1734,6 +1734,8 @@ foreach ($questionList as $questionId) {
         $remind_highlight = ' remind_highlight ';
     }
 
+    $openDescription = api_get_configuration_value('quiz_question_description_open_by_default') ? true : false;
+
     // Showing the exercise description
     if (!empty($objExercise->description)) {
         if ($objExercise->type == ONE_PER_PAGE || ($objExercise->type != ONE_PER_PAGE && $i == 1)) {
@@ -1744,7 +1746,7 @@ foreach ($questionList as $questionId) {
                 [],
                 'description',
                 'exercise-collapse',
-                false,
+                $openDescription,
                 true
             );
         }

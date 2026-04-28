@@ -314,6 +314,8 @@ $averageScore = null;
 $posts = null;
 
 if ($skipData === false) {
+    $averageTimeSpentPerStudent = '00:00:00';
+
     if (!empty($students)) {
         // Students
         $studentIds = array_values($students);
@@ -324,7 +326,8 @@ if ($skipData === false) {
         // average assignments
         $numberAssignments = $countAssignments / $numberStudents;
         $avg_courses_per_student = $countCourses / $numberStudents;
-        $totalTimeSpent = Tracking::get_time_spent_on_the_platform($studentIds);
+        $totalTimeSpent = Tracking::get_time_spent_on_the_platform($studentIds, 'ever');
+        $averageTimeSpentPerStudent = api_time_to_hms($totalTimeSpent / $numberStudents);
         $posts = Tracking::count_student_messages($studentIds);
         $averageScore = Tracking::getAverageStudentScore($studentIds);
     }
@@ -333,7 +336,7 @@ if ($skipData === false) {
         //csv part
         $csv_content[] = [get_lang('Students')];
         $csv_content[] = [get_lang('InactivesStudents'), $nb_inactive_students];
-        $csv_content[] = [get_lang('AverageTimeSpentOnThePlatform'), $totalTimeSpent];
+        $csv_content[] = [get_lang('AverageTimeSpentOnThePlatform'), $averageTimeSpentPerStudent];
         $csv_content[] = [get_lang('AverageCoursePerStudent'), round($avg_courses_per_student, 3)];
         $csv_content[] = [
             get_lang('AverageProgressInLearnpath'),
@@ -378,9 +381,7 @@ if ($skipData === false) {
             ? ''
             : round($avg_courses_per_student, 3);
         $report['InactivesStudents'] = $nb_inactive_students;
-        $report['AverageTimeSpentOnThePlatform'] = is_null($totalTimeSpent)
-            ? '00:00:00'
-            : api_time_to_hms($totalTimeSpent);
+        $report['AverageTimeSpentOnThePlatform'] = $averageTimeSpentPerStudent;
         $report['AverageProgressInLearnpath'] = is_null($avgTotalProgress)
             ? ''
             : round($avgTotalProgress, 2).'%';

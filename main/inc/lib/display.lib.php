@@ -917,9 +917,10 @@ class Display
         $attribute_list = '';
         // Managing the additional attributes
         if (!empty($additional_attributes) && is_array($additional_attributes)) {
-            $attribute_list = '';
             foreach ($additional_attributes as $key => &$value) {
-                $attribute_list .= $key.'="'.$value.'" ';
+                $sanitized_key = htmlspecialchars($key, ENT_QUOTES, api_get_system_encoding());
+                $sanitized_value = htmlspecialchars($value, ENT_QUOTES, api_get_system_encoding());
+                $attribute_list .= $sanitized_key.'="'.$sanitized_value.'" ';
             }
         }
         //some tags don't have this </XXX>
@@ -945,7 +946,6 @@ class Display
     {
         if (!empty($url)) {
             $url = preg_replace('#&amp;#', '&', $url);
-            $url = htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
             $attributes['href'] = $url;
         }
 
@@ -1572,6 +1572,11 @@ class Display
             $row = Database::fetch_array($result, 'ASSOC');
             $latestDate = $row['access_date'];
         }
+        // Get a timestamp format copy, for use in c_lp_item_view below
+        $originalTimeZone = date_default_timezone_get();
+        date_default_timezone_set('UTC');
+        $latestTimestamp = strtotime($latestDate);
+        date_default_timezone_set($originalTimeZone);
 
         $sessionCondition = api_get_session_condition(
             $sessionId,
@@ -1596,6 +1601,7 @@ class Display
         $group_ids[] = 0; //add group 'everyone'
         $notifications = [];
         if ($tools) {
+            $latestLocalDate = $latestDate;
             foreach ($tools as $tool) {
                 $toolName = $tool['name'];
                 $toolName = Database::escape_string($toolName);
@@ -1603,6 +1609,13 @@ class Display
                 $toolCondition = " tool = '$toolName' AND ";
                 if ($toolName == 'student_publication' || $toolName == 'work') {
                     $toolCondition = " (tool = 'work' OR tool = 'student_publication') AND ";
+                }
+                if ($toolName == 'learnpath') {
+                    // Make sure c_lp_item_view is considered in the latestDate calculation for LPs
+                    $lpLatest = self::getLatestLpView($course_id, $user_id, $sessionId, $latestTimestamp);
+                    if (!empty($lpLatest)) {
+                        $latestLocalDate = $lpLatest;
+                    }
                 }
 
                 $toolName = addslashes($toolName);
@@ -1614,7 +1627,7 @@ class Display
                             lastedit_type NOT LIKE '%Deleted%' AND
                             lastedit_type NOT LIKE '%deleted%' AND
                             lastedit_type NOT LIKE '%DocumentInvisible%' AND
-                            lastedit_date > '$latestDate' AND
+                            lastedit_date > '$latestLocalDate' AND
                             lastedit_user_id != $user_id $sessionCondition AND
                             visibility != 2 AND
                             (to_user_id IN ('$user_id', '0') OR to_user_id IS NULL) AND
@@ -2867,6 +2880,21 @@ HTML;
         return $content;
     }
 
+    public static function isVrViewEnabled(): bool
+    {
+        $featuresConf = api_get_configuration_value('video_features');
+
+        if (!isset($featuresConf['features'])) {
+            return false;
+        }
+
+        if (in_array('vrview', $featuresConf['features'])) {
+            return true;
+        }
+
+        return false;
+    }
+
     public static function getFrameReadyBlock(
         string $frameName,
         string $itemType = '',
@@ -2874,6 +2902,8 @@ HTML;
     ): string {
         $webPublicPath = api_get_path(WEB_PUBLIC_PATH);
         $webJsPath = api_get_path(WEB_LIBRARY_JS_PATH);
+
+        $isVrViewEnabled = self::isVrViewEnabled();
 
         $videoFeatures = [
             'playpause',
@@ -2883,9 +2913,13 @@ HTML;
             'tracks',
             'volume',
             'fullscreen',
-            'vrview',
             'markersrolls',
         ];
+
+        if ($isVrViewEnabled) {
+            $videoFeatures[] = 'vrview';
+        }
+
         $features = api_get_configuration_value('video_features');
         $videoPluginsJS = [];
         $videoPluginCSS = [];
@@ -2944,6 +2978,16 @@ HTML;
             });';
         }
 
+        $strMediaElementAdditionalConf = '';
+        $strMediaElementJsDeps = '';
+        $strMediaElementCssDeps = '';
+
+        if ($isVrViewEnabled) {
+            $strMediaElementAdditionalConf = ', vrPath: "'.$webPublicPath.'assets/vrview/build/vrview.js"';
+            $strMediaElementJsDeps = '{type:"script", src: "'.$webJsPath.'mediaelement/plugins/vrview/vrview.js"},';
+            $strMediaElementCssDeps = '{type:"stylesheet", src: "'.$webJsPath.'mediaelement/plugins/vrview/vrview.css"},';
+        }
+
         $videoFeatures = implode("','", $videoFeatures);
         $frameReady = '
         $.frameReady(function() {
@@ -2955,8 +2999,8 @@ HTML;
                     features: [\''.$videoFeatures.'\'],
                     success: function(mediaElement, originalNode, instance) {
                         '.$videoContextMenyHiddenMejs.PHP_EOL.ChamiloApi::getQuizMarkersRollsJS().'
-                    },
-                    vrPath: "'.$webPublicPath.'assets/vrview/build/vrview.js"
+                    }
+                    '.$strMediaElementAdditionalConf.'
                 });
             });
         },
@@ -2970,7 +3014,7 @@ HTML;
                 {type:"script", src:"'.api_get_path(WEB_CODE_PATH).'glossary/glossary.js.php?'.api_get_cidreq().'"},
                 {type:"script", src: "'.$webPublicPath.'assets/mediaelement/build/mediaelement-and-player.min.js",
                     deps: [
-                    {type:"script", src: "'.$webJsPath.'mediaelement/plugins/vrview/vrview.js"},
+                    '.$strMediaElementJsDeps.'
                     {type:"script", src: "'.$webJsPath.'mediaelement/plugins/markersrolls/markersrolls.min.js"},
                     '.$videoPluginFiles.'
                 ]},
@@ -2985,7 +3029,7 @@ HTML;
                 {type:"script", src:"'.$webPublicPath.'assets/jquery-ui/jquery-ui.min.js"},
                 {type:"script", src: "'.$webPublicPath.'assets/mediaelement/build/mediaelement-and-player.min.js",
                     deps: [
-                    {type:"script", src: "'.$webJsPath.'mediaelement/plugins/vrview/vrview.js"},
+                    '.$strMediaElementJsDeps.'
                     {type:"script", src: "'.$webJsPath.'mediaelement/plugins/markersrolls/markersrolls.min.js"},
                     '.$videoPluginFiles.'
                 ]},
@@ -3002,7 +3046,7 @@ HTML;
             {type:"stylesheet", src:"'.$webPublicPath.'assets/jquery-ui/themes/smoothness/theme.css"},
             {type:"stylesheet", src:"'.$webPublicPath.'css/dialog.css"},
             {type:"stylesheet", src: "'.$webPublicPath.'assets/mediaelement/build/mediaelementplayer.min.css"},
-            {type:"stylesheet", src: "'.$webJsPath.'mediaelement/plugins/vrview/vrview.css"},
+            '.$strMediaElementCssDeps.'
         ], '.$jsConditionalFunction.');';
 
         return $frameReady;
@@ -3039,5 +3083,40 @@ HTML;
         );
 
         return "$header<br><small>$percentHtml</small>";
+    }
+
+    /**
+     * Get the latest view (later than given date) in any LP in this course/session
+     * as datetime format, or null.
+     *
+     * @param int $latestTimestamp The latest time for the tool in general, as obtained through track_e_access
+     *
+     * @return string|null The latest view if later than $latestTimestamp, or null otherwise
+     */
+    public static function getLatestLpView(int $courseId, int $userId, int $sessionId, int $latestTimestamp): ?string
+    {
+        // Control if the latest view in c_lp_view is more recent than in track_e_access
+        // Use case: a user skipped the course home page by following a direct link to a LP in an email
+        // $latestDate is in datetime format, while c_lp_item_view.start_time is in EPOCH
+        $t_lp_item_view = Database::get_course_table(TABLE_LP_ITEM_VIEW);
+        $t_lp_view = Database::get_course_table(TABLE_LP_VIEW);
+        $sql = "SELECT cliv.start_time FROM $t_lp_item_view cliv
+        INNER JOIN $t_lp_view clv ON cliv.lp_view_id = clv.id
+        WHERE
+        clv.c_id = $courseId AND
+        clv.user_id = $userId AND
+        clv.session_id = $sessionId AND
+        cliv.start_time > $latestTimestamp
+        ORDER BY cliv.start_time DESC
+        LIMIT 1";
+        $resultItems = Database::query($sql);
+        if (Database::num_rows($resultItems)) {
+            $rowItems = Database::fetch_assoc($resultItems);
+            $controlDate = $rowItems['start_time'];
+            // convert to date
+            return date('Y-m-d H:i:s', $controlDate);
+        }
+
+        return null;
     }
 }

@@ -13,13 +13,16 @@ $filter_user = isset($_REQUEST['filter_by_user']) ? (int) $_REQUEST['filter_by_u
 $courseId = isset($_REQUEST['course_id']) ? (int) $_REQUEST['course_id'] : 0;
 $exerciseId = isset($_REQUEST['exercise_id']) ? (int) $_REQUEST['exercise_id'] : 0;
 $statusId = isset($_REQUEST['status']) ? (int) $_REQUEST['status'] : 0;
+$questionTypeId = isset($_REQUEST['questionTypeId']) ? (int) $_REQUEST['questionTypeId'] : 0;
 $exportXls = isset($_REQUEST['export_xls']) && !empty($_REQUEST['export_xls']) ? (int) $_REQUEST['export_xls'] : 0;
 $action = $_REQUEST['a'] ?? null;
+$startDate = isset($_REQUEST['start_date']) ? $_REQUEST['start_date'] : '';
+$endDate = isset($_REQUEST['end_date']) ? $_REQUEST['end_date'] : '';
 
 api_block_anonymous_users();
 
 // Only teachers.
-if (false === api_is_teacher()) {
+if (false === api_is_teacher() && false === api_is_session_admin()) {
     api_not_allowed(true);
 }
 
@@ -59,7 +62,8 @@ if (!empty($_GET['path'])) {
 
 if (!empty($_REQUEST['export_report']) && $_REQUEST['export_report'] == '1') {
     if (api_is_platform_admin() || api_is_course_admin() ||
-        api_is_course_tutor() || api_is_session_general_coach()
+        api_is_course_tutor() || api_is_session_general_coach() ||
+        api_is_session_admin()
     ) {
         $loadExtraData = false;
         if (isset($_REQUEST['extra_data']) && $_REQUEST['extra_data'] == 1) {
@@ -166,6 +170,14 @@ $htmlHeadXtra[] = '<script>
             $selectExercise.selectpicker("refresh");
         }, "json");
     }
+</script>';
+
+$htmlHeadXtra[] = '<script>
+$(function() {
+    $(".datepicker").datepicker({
+        dateFormat: "yy-mm-dd"
+    });
+});
 </script>';
 
 if ($exportXls) {
@@ -284,6 +296,22 @@ $form->addSelect(
     ]
 );
 
+$userOptions = [];
+if (!empty($filter_user)) {
+    $userInfo = api_get_user_info($filter_user);
+    if (!empty($userInfo)) {
+        $userOptions[$filter_user] = $userInfo['complete_name_with_username'];
+    }
+}
+$form->addSelectAjax(
+    'filter_by_user',
+    get_lang('User'),
+    $userOptions,
+    [
+        'url' => api_get_path(WEB_AJAX_PATH).'user_manager.ajax.php?a=get_user_like',
+    ]
+);
+
 $status = [
     1 => get_lang('All'),
     2 => get_lang('Validated'),
@@ -291,8 +319,27 @@ $status = [
     4 => get_lang('Unclosed'),
     5 => get_lang('Ongoing'),
 ];
-
 $form->addSelect('status', get_lang('Status'), $status);
+
+$questionType = [
+    0 => get_lang('All'),
+    1 => get_lang('QuestionsWithNoAutomaticCorrection'),
+];
+$form->addSelect('questionTypeId', get_lang('QuestionType'), $questionType);
+
+$form->addElement(
+    'text',
+    'start_date',
+    get_lang('StartDate'),
+    ['id' => 'start_date', 'class' => 'datepicker', 'autocomplete' => 'off', 'style' => 'width:120px']
+);
+$form->addElement(
+    'text',
+    'end_date',
+    get_lang('EndDate'),
+    ['id' => 'end_date', 'class' => 'datepicker', 'autocomplete' => 'off', 'style' => 'width:120px']
+);
+
 $form->addButtonSearch(get_lang('Search'), 'pendingSubmit');
 $content = $form->returnForm();
 
@@ -305,7 +352,9 @@ if (empty($statusId)) {
 
 $url = api_get_path(WEB_AJAX_PATH).
     'model.ajax.php?a=get_exercise_pending_results&filter_by_user='.$filter_user.
-    '&course_id='.$courseId.'&exercise_id='.$exerciseId.'&status='.$statusId;
+    '&course_id='.$courseId.'&exercise_id='.$exerciseId.'&status='.$statusId.'&questionType='.$questionTypeId.
+    '&showAttemptsInSessions='.$showAttemptsInSessions.
+    '&start_date='.$startDate.'&end_date='.$endDate;
 $action_links = '';
 
 $officialCodeInList = api_get_setting('show_official_code_exercise_result_list');
@@ -365,16 +414,6 @@ $column_model = [
         'align' => 'left',
         'search' => 'false',
         'sortable' => 'false',
-        //'stype' => 'select',
-        //for the bottom bar
-        /*'searchoptions' => [
-            'defaultValue' => '',
-            'value' => ':'.get_lang('All').';1:'.get_lang('Validated').';0:'.get_lang('NotValidated'),
-        ],*/
-        //for the top bar
-        /*'editoptions' => [
-            'value' => ':'.get_lang('All').';1:'.get_lang('Validated').';0:'.get_lang('NotValidated'),
-        ],*/
     ],
     [
         'name' => 'qualificator_fullname',
@@ -422,8 +461,12 @@ function action_formatter(cellvalue, options, rowObject) {
     return "<span title=\""+tabLoginx[0]+rowObject[2]+tabLoginx[1]+"\">"+cellvalue+"</span>";
 }';
 
-$extra_params['autowidth'] = 'true';
-$extra_params['height'] = 'auto';
+$extra_params = [
+    'autowidth' => 'true',
+    'height' => 'auto',
+    'sortname' => 'exe_date',
+    'sortorder' => 'asc',
+];
 $gridJs = Display::grid_js(
     'results',
     $url,

@@ -999,7 +999,8 @@ class bbb
         $isAdminReport = false,
         $dateRange = [],
         $start = 0,
-        $limit = 0
+        $limit = 0,
+        $order = "ASC"
     ) {
         $em = Database::getManager();
         $manager = $this->isConferenceManager();
@@ -1061,7 +1062,7 @@ class bbb
             );
         }
 
-        $conditions['order'] = 'created_at ASC';
+        $conditions['order'] = 'created_at ' . $order;
 
         if ($limit) {
             $conditions['limit'] = "$start , $limit";
@@ -1544,9 +1545,14 @@ class bbb
 
         if ($hide == false) {
             if ($meetingInfo['has_video_m4v']) {
+                foreach ($recordInfo['playbackFormat'] as $format) {
+                    if ($format->type->__toString() == 'video') {
+                            $recordingUrl = $format->url->__toString();
+                    }
+                }
                 $links[] = Display::url(
                     Display::return_icon('save.png', get_lang('DownloadFile')),
-                    $recordInfo['playbackFormatUrl'].'/capture.m4v',
+                    $recordingUrl.'video-0.m4v',
                     ['target' => '_blank']
                 );
             } else {

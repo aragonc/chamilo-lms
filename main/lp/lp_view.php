@@ -249,7 +249,7 @@ $htmlHeadXtra[] = '<script>
 var sv_user = \''.api_get_user_id().'\';
 var sv_course = chamilo_courseCode;
 var sv_sco = \''.$lp_id.'\';
-</script>'; // FIXME fetch sco and userid from a more reliable source directly in sotrageapi.js
+</script>'; // FIXME fetch sco and userid from a more reliable source directly in storageapi.js
 $htmlHeadXtra[] = '<script type="text/javascript" src="js/storageapi.js"></script>';
 
 /**
@@ -334,6 +334,7 @@ if (!isset($src)) {
             break;
         case 3:
             // aicc
+            /*
             $lp->stop_previous_item(); // save status manually if asset
             $htmlHeadXtra[] = '<script src="'.$lp->get_js_lib().'" type="text/javascript" language="javascript"></script>';
             $preReqCheck = $lp->prerequisites_match($lp_item_id);
@@ -347,6 +348,7 @@ if (!isset($src)) {
             } else {
                 $src = 'blank.php';
             }
+            */
             break;
         case 4:
             break;
@@ -656,11 +658,18 @@ $template->assign(
     )
 );
 
+// Check if the 'Open in new window' button for IOs hosts must be hidden
+$iosHideOpenInNewWindow = false;
+if (api_get_configuration_value('lp_ios_hide_open_in_new_window_button') === true) {
+    $iosHideOpenInNewWindow = api_get_configuration_value('lp_ios_hide_open_in_new_window_button');
+}
+$template->assign('ios_hide_open_in_new_window', $iosHideOpenInNewWindow);
+
 $frameReady = Display::getFrameReadyBlock(
     '#content_id, #content_id_blank',
     $itemType,
     'function () {
-        var arr = ["link", "sco", "xapi", "quiz"];
+        var arr = ["link", "sco", "xapi", "quiz", "h5p"];
 
         return $.inArray(olms.lms_item_type, arr) !== -1;
     }'

@@ -65,10 +65,19 @@ if ($plugin->userIsConferenceManager($meeting)) {
         $tpl->assign('deleteMeetingForm', $plugin->getDeleteMeetingForm($meeting, $returnURL)->returnForm());
     }
 
-    if (false === $meeting->isGlobalMeeting() && false == $meeting->isCourseMeeting()) {
-        if ('true' === $plugin->get('enableParticipantRegistration') && $meeting->requiresRegistration()) {
+    $pluginEnableParticipantRegistration = 'true' === $plugin->get('enableParticipantRegistration');
+
+    if ($pluginEnableParticipantRegistration && $meeting->requiresRegistration()) {
+        if (false === $meeting->isGlobalMeeting()
+            && false == $meeting->isCourseMeeting()
+        ) {
             $tpl->assign('registerParticipantForm', $plugin->getRegisterParticipantForm($meeting)->returnForm());
             $tpl->assign('registrants', $meeting->getRegistrants());
+        }
+
+        if ('true' === $plugin->get('enablePresenter') && !$meeting->isCourseMeeting()) {
+            $tpl->assign('registerPresenterForm', $plugin->getRegisterPresenterForm($meeting)->returnForm());
+            $tpl->assign('presenters', $meeting->getPresenters());
         }
     }
 

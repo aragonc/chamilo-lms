@@ -155,6 +155,7 @@ function trimVariables()
         'keyword_username',
         'keyword_email',
         'keyword_officialcode',
+        'keyword_phone',
     ];
 
     foreach ($filterVariables as $variable) {
@@ -235,6 +236,7 @@ function prepare_user_sql_query($getCount)
         'keyword_username',
         'keyword_email',
         'keyword_officialcode',
+        'keyword_phone',
         'keyword_status',
         'keyword_active',
         'keyword_inactive',
@@ -246,7 +248,7 @@ function prepare_user_sql_query($getCount)
     foreach ($keywordList as $keyword) {
         $keywordListValues[$keyword] = null;
         if (isset($_GET[$keyword]) && !empty($_GET[$keyword])) {
-            $keywordListValues[$keyword] = $_GET[$keyword];
+            $keywordListValues[$keyword] = Security::remove_XSS($_GET[$keyword]);
             $atLeastOne = true;
         }
     }
@@ -264,7 +266,8 @@ function prepare_user_sql_query($getCount)
                     concat(u.lastname,' ',u.firstname) LIKE '$keywordFiltered' OR
                     u.username LIKE '$keywordFiltered' OR
                     u.official_code LIKE '$keywordFiltered' OR
-                    u.email LIKE '$keywordFiltered'
+                    u.email LIKE '$keywordFiltered' OR
+                    u.phone LIKE '$keywordFiltered'
                 )
         ";
     } elseif (isset($keywordListValues) && !empty($keywordListValues)) {
@@ -307,6 +310,9 @@ function prepare_user_sql_query($getCount)
 
         if (!empty($keywordListValues['keyword_officialcode'])) {
             $sql .= " AND u.official_code LIKE '".Database::escape_string("%".$keywordListValues['keyword_officialcode']."%")."' ";
+        }
+        if (!empty($keywordListValues['keyword_phone'])) {
+            $sql .= " AND u.phone LIKE '".Database::escape_string("%".$keywordListValues['keyword_phone']."%")."' ";
         }
 
         $sql .= " $keyword_admin $keyword_extra_value ";
@@ -463,10 +469,15 @@ function get_user_data($from, $number_of_items, $column, $direction)
             $user[0],
             USER_IMAGE_SIZE_SMALL
         );
+        $personName = htmlspecialchars(
+            api_get_person_name($user[2], $user[3]),
+            ENT_QUOTES,
+            'UTF-8'
+        );
         $photo = '<img
             src="'.$userPicture.'" width="22" height="22"
-            alt="'.api_get_person_name($user[2], $user[3]).'"
-            title="'.api_get_person_name($user[2], $user[3]).'" />';
+            alt="'.$personName.'"
+            title="'.$personName.'" />';
 
         if (1 == $user[7] && !empty($user['exp'])) {
             // check expiration date
@@ -476,22 +487,44 @@ function get_user_data($from, $number_of_items, $column, $direction)
                 $user[7] = '-1';
             }
         }
-
-        // forget about the expiration date field
-        $users[] = [
-            $user[0], // id
-            $photo,
-            $user[1],
-            $user[2],
-            $user[3],
-            $user[4], // username
-            $user[5], // email
-            $user[6],
-            $user[7], // active
-            api_get_local_time($user[8]),
-            api_get_local_time($user[9], null, null, true),
-            $user[0],
-        ];
+        if (api_get_configuration_value('admin_user_list_add_first_connexion_column')) {
+            $firstConnectionDate = Tracking::get_first_connection_date($user[0]);
+            if ($firstConnectionDate == '') {
+                $firstConnectionDate = get_lang('NoConnexion');
+            }
+            // forget about the expiration date field
+            $users[] = [
+                $user[0], // id
+                $photo,
+                $user[1],
+                $user[2],
+                $user[3],
+                $user[4], // username
+                $user[5], // email
+                $user[6],
+                $user[7], // active
+                api_get_local_time($user[8]),
+                api_get_local_time($user[9], null, null, true),
+                $firstConnectionDate,
+                $user[0],
+            ];
+        } else {
+            // forget about the expiration date field
+            $users[] = [
+                $user[0], // id
+                $photo,
+                $user[1],
+                $user[2],
+                $user[3],
+                $user[4], // username
+                $user[5], // email
+                $user[6],
+                $user[7], // active
+                api_get_local_time($user[8]),
+                api_get_local_time($user[9], null, null, true),
+                $user[0],
+            ];
+        }
     }
 
     return $users;
@@ -542,7 +575,7 @@ function modify_filter($user_id, $url_params, $row)
     $is_admin = in_array($user_id, $_admins_list);
     $statusname = api_get_status_langvars();
     $user_is_anonymous = false;
-    $current_user_status_label = $row['7'];
+    $current_user_status_label = $statusname[$row['7']];
 
     if ($current_user_status_label == $statusname[ANONYMOUS]) {
         $user_is_anonymous = true;
@@ -621,8 +654,12 @@ function modify_filter($user_id, $url_params, $row)
 
     if (api_is_platform_admin(true)) {
         $editProfileUrl = Display::getProfileEditionLink($user_id, true);
-        if (!$user_is_anonymous &&
-            api_global_admin_can_edit_admin($user_id, null, true)
+        if (!$user_is_anonymous
+            && api_global_admin_can_edit_admin(
+                $user_id,
+                null,
+                true !== api_get_configuration_value('disallow_session_admin_edit_users')
+            )
         ) {
             $result .= '<a href="'.$editProfileUrl.'">'.
                 Display::return_icon(
@@ -968,6 +1005,9 @@ if (isset($_GET['keyword'])) {
     $parameters['keyword_email'] = Security::remove_XSS($_GET['keyword_email']);
     $parameters['keyword_officialcode'] = Security::remove_XSS($_GET['keyword_officialcode']);
     $parameters['keyword_status'] = Security::remove_XSS($_GET['keyword_status']);
+    if (isset($_GET['keyword_phone'])) {
+        $parameters['keyword_phone'] = Security::remove_XSS($_GET['keyword_phone']);
+    }
     if (isset($_GET['keyword_active'])) {
         $parameters['keyword_active'] = Security::remove_XSS($_GET['keyword_active']);
     }
@@ -997,6 +1037,7 @@ $form->addText('keyword_lastname', get_lang('LastName'), false);
 $form->addText('keyword_username', get_lang('LoginName'), false);
 $form->addText('keyword_email', get_lang('Email'), false);
 $form->addText('keyword_officialcode', get_lang('OfficialCode'), false);
+$form->addText('keyword_phone', get_lang('Phone'), false);
 
 $classId = isset($_REQUEST['class_id']) && !empty($_REQUEST['class_id']) ? (int) $_REQUEST['class_id'] : 0;
 $options = [];
@@ -1083,14 +1124,20 @@ $table->set_header(7, get_lang('Profile'));
 $table->set_header(8, get_lang('Active'));
 $table->set_header(9, get_lang('RegistrationDate'));
 $table->set_header(10, get_lang('LatestLogin'));
-$table->set_header(11, get_lang('Action'), false);
+if (api_get_configuration_value('admin_user_list_add_first_connexion_column')) {
+    $table->set_header(11, get_lang('FirstLoginInPlatform'), false);
+    $table->set_header(12, get_lang('Action'), false);
+    $table->set_column_filter(12, 'modify_filter');
+} else {
+    $table->set_header(11, get_lang('Action'), false);
+    $table->set_column_filter(11, 'modify_filter');
+}
 
 $table->set_column_filter(3, 'user_filter');
 $table->set_column_filter(4, 'user_filter');
 $table->set_column_filter(6, 'email_filter');
 $table->set_column_filter(7, 'status_filter');
 $table->set_column_filter(8, [UserManager::class, 'getActiveFilterForTable']);
-$table->set_column_filter(11, 'modify_filter');
 
 // Hide email column if login is email, to avoid column with same data
 if (api_get_setting('login_is_email') === 'true') {

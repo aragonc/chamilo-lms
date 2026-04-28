@@ -8,6 +8,7 @@ use Chamilo\CoreBundle\Entity\Repository\SequenceResourceRepository;
 use Chamilo\CoreBundle\Entity\SequenceResource;
 use Chamilo\CourseBundle\Component\CourseCopy\CourseBuilder;
 use Chamilo\CourseBundle\Component\CourseCopy\CourseRestorer;
+use Chamilo\CourseBundle\Entity\CCourseDescription;
 use ChamiloSession as Session;
 use Doctrine\Common\Collections\Criteria;
 
@@ -93,7 +94,7 @@ class CourseManager
 
         // Create the course keys
         $keys = AddCourse::define_course_keys($params['wanted_code']);
-        $params['exemplary_content'] = isset($params['exemplary_content']) ? $params['exemplary_content'] : false;
+        $params['exemplary_content'] = $params['exemplary_content'] ?? false;
 
         if (count($keys)) {
             $params['code'] = $keys['currentCourseCode'];
@@ -2222,7 +2223,8 @@ class CourseManager
                 $userPicture = UserManager::getUserPicture($teacher['user_id'], USER_IMAGE_SIZE_SMALL);
                 $teachers['avatar'] = $userPicture;
             }
-            $teachers['url'] = $url.'&user_id='.$teacher['user_id'];
+            $userIdHash = UserManager::generateUserHash($teacher['user_id']);
+            $teachers['url'] = $url.'&hash='.$userIdHash;
             $listTeachers[] = $teachers;
         }
 
@@ -2255,7 +2257,8 @@ class CourseManager
                     $teacher['lastname']
                 );
                 if ($add_link_to_profile) {
-                    $url = api_get_path(WEB_AJAX_PATH).'user_manager.ajax.php?a=get_user_popup&user_id='.$teacher['user_id'];
+                    $userIdHash = UserManager::generateUserHash($teacher['user_id']);
+                    $url = api_get_path(WEB_AJAX_PATH).'user_manager.ajax.php?a=get_user_popup&hash='.$userIdHash;
                     $teacher_name = Display::url(
                         $teacher_name,
                         $url,
@@ -2337,7 +2340,9 @@ class CourseManager
                 $row['avatar'] = $loadAvatars
                     ? UserManager::getUserPicture($row['user_id'], USER_IMAGE_SIZE_SMALL)
                     : '';
-                $row['url'] = "$url&user_id={$row['user_id']}";
+                $userIdHash = UserManager::generateUserHash($row['user_id']);
+                $row['url'] = $url.'&hash='.$userIdHash;
+                $row['hash'] = $userIdHash;
 
                 $coaches[] = $row;
             }
@@ -2368,7 +2373,8 @@ class CourseManager
             foreach ($coachList as $coach_course) {
                 $coach_name = $coach_course['full_name'];
                 if ($add_link_to_profile) {
-                    $url = api_get_path(WEB_AJAX_PATH).'user_manager.ajax.php?a=get_user_popup&user_id='.$coach_course['user_id'].'&course_id='.$courseId.'&session_id='.$session_id;
+                    $userIdHash = UserManager::generateUserHash($coach_course['user_id']);
+                    $url = api_get_path(WEB_AJAX_PATH).'user_manager.ajax.php?a=get_user_popup&hash='.$userIdHash.'&course_id='.$courseId.'&session_id='.$session_id;
                     $coach_name = Display::url(
                         $coach_name,
                         $url,
@@ -2431,7 +2437,7 @@ class CourseManager
             return [];
         }
 
-        $session_id != 0 ? $session_condition = ' WHERE g.session_id IN(1,'.intval($session_id).')' : $session_condition = ' WHERE g.session_id = 0';
+        $session_id != 0 ? $session_condition = ' WHERE g.session_id = '.intval($session_id) : $session_condition = ' WHERE g.session_id = 0';
         if ($in_get_empty_group == 0) {
             // get only groups that are not empty
             $sql = "SELECT DISTINCT g.id, g.iid, g.name
@@ -2476,7 +2482,7 @@ class CourseManager
      * course from the groups in the real course if they are not subscribed in
      * that real course.
      */
-    public static function delete_course($code)
+    public static function delete_course($code, $from_ws = false)
     {
         $table_course = Database::get_main_table(TABLE_MAIN_COURSE);
         $table_course_user = Database::get_main_table(TABLE_MAIN_COURSE_USER);
@@ -2534,7 +2540,9 @@ class CourseManager
         }
 
         $count = 0;
-        if (api_is_multiple_url_enabled()) {
+        if ($from_ws) {
+            UrlManager::deleteRelationFromCourseWithAllUrls($courseId);
+        } elseif (api_is_multiple_url_enabled()) {
             $url_id = 1;
             if (api_get_current_access_url_id() != -1) {
                 $url_id = api_get_current_access_url_id();
@@ -3189,6 +3197,7 @@ class CourseManager
             $sql = "SELECT DISTINCT (c.code),
                         c.id as real_id,
                         c.category_code AS category,
+                        c.title as title,
                         s.id as session_id,
                         s.name as session_name
                     FROM ".Database::get_main_table(TABLE_MAIN_SESSION_COURSE_USER)." scu
@@ -3196,7 +3205,7 @@ class CourseManager
                     ON (scu.c_id = c.id)
                     INNER JOIN ".Database::get_main_table(TABLE_MAIN_SESSION)." s
                     ON (s.id = scu.session_id)
-                    WHERE user_id = $user_id ";
+                    WHERE user_id = $user_id OR id_coach = $user_id ";
             $r = Database::query($sql);
             while ($row = Database::fetch_array($r, 'ASSOC')) {
                 if (!empty($skipCourseList)) {
@@ -3434,24 +3443,24 @@ class CourseManager
     /**
      * Lists details of the course description.
      *
-     * @param array        The course description
-     * @param string    The encoding
-     * @param bool        If true is displayed if false is hidden
+     * @param array<int, CCourseDescription> $descriptions The course description
+     * @param string                         $charset      The encoding
+     * @param bool                           $action_show  If true is displayed if false is hidden
      *
      * @return string The course description in html
      */
     public static function get_details_course_description_html(
-        $descriptions,
-        $charset,
-        $action_show = true
-    ) {
+        array $descriptions,
+        string $charset,
+        bool $action_show = true
+    ): ?string {
         $data = null;
-        if (isset($descriptions) && count($descriptions) > 0) {
+        if (count($descriptions) > 0) {
             foreach ($descriptions as $description) {
                 $data .= '<div class="sectiontitle">';
                 if (api_is_allowed_to_edit() && $action_show) {
                     //delete
-                    $data .= '<a href="'.api_get_self().'?'.api_get_cidreq().'&action=delete&description_id='.$description->id.'" onclick="javascript:if(!confirm(\''.addslashes(api_htmlentities(
+                    $data .= '<a href="'.api_get_self().'?'.api_get_cidreq().'&action=delete&description_id='.$description->getIid().'" onclick="javascript:if(!confirm(\''.addslashes(api_htmlentities(
                         get_lang('ConfirmYourChoice'),
                                 ENT_QUOTES,
                         $charset
@@ -3463,7 +3472,7 @@ class CourseManager
                     );
                     $data .= '</a> ';
                     //edit
-                    $data .= '<a href="'.api_get_self().'?'.api_get_cidreq().'&description_id='.$description->id.'">';
+                    $data .= '<a href="'.api_get_self().'?'.api_get_cidreq().'&description_id='.$description->getIid().'">';
                     $data .= Display::return_icon(
                         'edit.png',
                         get_lang('Edit'),
@@ -3472,10 +3481,10 @@ class CourseManager
                     );
                     $data .= '</a> ';
                 }
-                $data .= $description->title;
+                $data .= Security::remove_XSS($description->getTitle());
                 $data .= '</div>';
                 $data .= '<div class="sectioncomment">';
-                $data .= Security::remove_XSS($description->content);
+                $data .= Security::remove_XSS($description->getContent());
                 $data .= '</div>';
             }
         } else {
@@ -7425,6 +7434,54 @@ class CourseManager
         }
 
         return $logo;
+    }
+
+    public static function searchCourse(string $searchTerm, ?int $sessionId = null): array
+    {
+        if (!empty($sessionId)) {
+            //if session is defined, lets find only courses of this session
+            return SessionManager::get_course_list_by_session_id(
+                $sessionId,
+                $searchTerm
+            );
+        }
+
+        //if session is not defined lets search all courses STARTING with $searchTerm
+        //TODO change this function to search not only courses STARTING with $searchTerm
+        if (api_is_platform_admin()) {
+            return CourseManager::get_courses_list(
+                0,
+                0,
+                'title',
+                'ASC',
+                -1,
+                $searchTerm,
+                null,
+                true
+            );
+        }
+
+        if (api_is_teacher()) {
+            $courseList = CourseManager::get_course_list_of_user_as_course_admin(api_get_user_id(), $searchTerm);
+            $category = api_get_configuration_value('course_category_code_to_use_as_model');
+
+            if (!empty($category)) {
+                $alreadyAdded = [];
+                if (!empty($courseList)) {
+                    $alreadyAdded = array_column($courseList, 'id');
+                }
+                $coursesInCategory = CourseCategory::getCoursesInCategory($category, $searchTerm);
+                foreach ($coursesInCategory as $course) {
+                    if (!in_array($course['id'], $alreadyAdded)) {
+                        $courseList[] = $course;
+                    }
+                }
+            }
+
+            return $courseList;
+        }
+
+        return [];
     }
 
     /**

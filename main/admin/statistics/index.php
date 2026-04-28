@@ -8,7 +8,7 @@
 $cidReset = true;
 
 require_once __DIR__.'/../../inc/global.inc.php';
-api_protect_admin_script();
+api_protect_admin_script(true);
 
 $interbreadcrumb[] = ['url' => '../index.php', 'name' => get_lang('PlatformAdmin')];
 
@@ -18,6 +18,72 @@ $validated = false;
 $sessionStatusAllowed = api_get_configuration_value('allow_session_status');
 $invoicingMonth = isset($_GET['invoicing_month']) ? (int) $_GET['invoicing_month'] : '';
 $invoicingYear = isset($_GET['invoicing_year']) ? (int) $_GET['invoicing_year'] : '';
+$tool_name = get_lang('Statistics');
+if (api_is_platform_admin()) {
+    $tools = [
+        get_lang('Courses') => [
+            'report=courses' => get_lang('CountCours'),
+            'report=tools' => get_lang('PlatformToolAccess'),
+            'report=courselastvisit' => get_lang('LastAccess'),
+            'report=coursebylanguage' => get_lang('CountCourseByLanguage'),
+        ],
+        get_lang('Users') => [
+            'report=users' => get_lang('CountUsers'),
+            'report=recentlogins' => get_lang('Logins'),
+            'report=logins&amp;type=month' => get_lang('Logins').' ('.get_lang('PeriodMonth').')',
+            'report=logins&amp;type=day' => get_lang('Logins').' ('.get_lang('PeriodDay').')',
+            'report=logins&amp;type=hour' => get_lang('Logins').' ('.get_lang('PeriodHour').')',
+            'report=pictures' => get_lang('CountUsers').' ('.get_lang('UserPicture').')',
+            'report=logins_by_date' => get_lang('LoginsByDate'),
+            'report=no_login_users' => get_lang('StatsUsersDidNotLoginInLastPeriods'),
+            'report=zombies' => get_lang('Zombies'),
+            'report=users_active' => get_lang('UserStats'),
+            'report=users_online' => get_lang('UsersOnline'),
+            'report=invoicing' => get_lang('InvoicingByAccessUrl'),
+            'report=duplicated_users' => get_lang('DuplicatedUsers'),
+            'report=duplicated_users_by_mail' => get_lang('DuplicatedUsersByMail'),
+        ],
+        get_lang('System') => [
+            'report=activities' => get_lang('ImportantActivities'),
+            'report=user_session' => get_lang('PortalUserSessionStats'),
+            'report=courses_usage' => get_lang('CoursesUsage'),
+            'report=quarterly_report' => get_lang('QuarterlyReport'),
+        ],
+        get_lang('Social') => [
+            'report=messagereceived' => get_lang('MessagesReceived'),
+            'report=messagesent' => get_lang('MessagesSent'),
+            'report=friends' => get_lang('CountFriends'),
+        ],
+        get_lang('Session') => [
+            'report=session_by_date' => get_lang('SessionsByDate'),
+        ],
+    ];
+
+    if ('true' === api_get_plugin_setting('lti_provider', 'enabled')) {
+        $tools[get_lang('Users')]['report=lti_tool_lp'] = get_lang('LearningPathLTI');
+    }
+} elseif (api_is_session_admin()) {
+    $tools = [
+        get_lang('Session') => [
+            'report=session_by_date' => get_lang('SessionsByDate'),
+        ],
+    ];
+}
+
+// Get list of allowed reports based on role
+$allowedReports = [];
+foreach ($tools as $section => $items) {
+    foreach ($items as $key => $label) {
+        if (preg_match('/report=([a-zA-Z0-9_]+)/', $key, $matches)) {
+            $allowedReports[] = $matches[1];
+        }
+    }
+}
+
+// Ensure current report is valid for this user, or default to first available
+if (!in_array($report, $allowedReports)) {
+    $report = reset($allowedReports);
+}
 
 if (
 in_array(
@@ -334,49 +400,6 @@ if (isset($_GET['export'])) {
     ob_start();
 }
 
-$tool_name = get_lang('Statistics');
-$tools = [
-    get_lang('Courses') => [
-        'report=courses' => get_lang('CountCours'),
-        'report=tools' => get_lang('PlatformToolAccess'),
-        'report=courselastvisit' => get_lang('LastAccess'),
-        'report=coursebylanguage' => get_lang('CountCourseByLanguage'),
-    ],
-    get_lang('Users') => [
-        'report=users' => get_lang('CountUsers'),
-        'report=recentlogins' => get_lang('Logins'),
-        'report=logins&amp;type=month' => get_lang('Logins').' ('.get_lang('PeriodMonth').')',
-        'report=logins&amp;type=day' => get_lang('Logins').' ('.get_lang('PeriodDay').')',
-        'report=logins&amp;type=hour' => get_lang('Logins').' ('.get_lang('PeriodHour').')',
-        'report=pictures' => get_lang('CountUsers').' ('.get_lang('UserPicture').')',
-        'report=logins_by_date' => get_lang('LoginsByDate'),
-        'report=no_login_users' => get_lang('StatsUsersDidNotLoginInLastPeriods'),
-        'report=zombies' => get_lang('Zombies'),
-        'report=users_active' => get_lang('UserStats'),
-        'report=users_online' => get_lang('UsersOnline'),
-        'report=invoicing' => get_lang('InvoicingByAccessUrl'),
-        'report=duplicated_users' => get_lang('DuplicatedUsers'),
-    ],
-    get_lang('System') => [
-        'report=activities' => get_lang('ImportantActivities'),
-        'report=user_session' => get_lang('PortalUserSessionStats'),
-        'report=courses_usage' => get_lang('CoursesUsage'),
-        'report=quarterly_report' => get_lang('QuarterlyReport'),
-    ],
-    get_lang('Social') => [
-        'report=messagereceived' => get_lang('MessagesReceived'),
-        'report=messagesent' => get_lang('MessagesSent'),
-        'report=friends' => get_lang('CountFriends'),
-    ],
-    get_lang('Session') => [
-        'report=session_by_date' => get_lang('SessionsByDate'),
-    ],
-];
-
-if ('true' === api_get_plugin_setting('lti_provider', 'enabled')) {
-    $tools[get_lang('Users')]['report=lti_tool_lp'] = get_lang('LearningPathLTI');
-}
-
 $course_categories = Statistics::getCourseCategories();
 $content = '';
 
@@ -580,8 +603,6 @@ switch ($report) {
                 $sessionCount++;
             }
 
-            $content .= Display::page_subheader2(get_lang('GeneralStats'));
-
             // Coach
             $sql = "SELECT count(DISTINCT(id_coach)) count FROM $tableSession
                     WHERE
@@ -634,6 +655,52 @@ switch ($report) {
                 }
             }
 
+            $content .= Display::page_subheader2(get_lang('UsersReportByCourseInSessions'));
+
+            $tableCourse = new HTML_Table(['class' => 'table table-responsive']);
+            $headers = [
+                get_lang('Course'),
+                get_lang('CountOfSessions'),
+                get_lang('UsersReport'),
+            ];
+
+            $row = 0;
+            $column = 0;
+            foreach ($headers as $header) {
+                $tableCourse->setHeaderContents($row, $column, $header);
+                $column++;
+            }
+            $row++;
+
+            if (!empty($courseSessions)) {
+                $dateStart = null;
+                $dateEnd = null;
+                if (isset($_REQUEST['range_start'])) {
+                    $dateStart = Security::remove_XSS($_REQUEST['range_start']);
+                }
+                if (isset($_REQUEST['range_end'])) {
+                    $dateEnd = Security::remove_XSS($_REQUEST['range_end']);
+                }
+                $conditions = "&date_start=$dateStart&date_end=$dateEnd";
+                arsort($courseSessions);
+                foreach ($courseSessions as $courseId => $count) {
+                    $courseInfo = api_get_course_info_by_id($courseId);
+                    $tableCourse->setCellContents($row, 0, $courseInfo['name']);
+                    $tableCourse->setCellContents($row, 1, $count);
+                    $exportLink = api_get_self().'?report=session_by_date&course_id='.$courseId.'&action=export_users'.$conditions;
+                    $urlExport = Display::url(
+                        Display::return_icon('excel.png', get_lang('UsersReport')),
+                        $exportLink
+                    );
+                    $tableCourse->setCellContents($row, 2, $urlExport);
+                    $row++;
+                }
+            }
+
+            $content .= $tableCourse->toHtml();
+
+            $content .= Display::page_subheader2(get_lang('GeneralStats'));
+
             $table = new HTML_Table(['class' => 'table table-responsive']);
             $row = 0;
             $table->setCellContents($row, 0, get_lang('Weeks'));
@@ -666,32 +733,6 @@ switch ($report) {
                 $content .= '<div class="col-md-4"><h4 class="page-header" id="canvas3_title"></h4><div id="canvas3_table"></div></div>';
             }
             $content .= '</div>';
-
-            $tableCourse = new HTML_Table(['class' => 'table table-responsive']);
-            $headers = [
-                get_lang('Course'),
-                get_lang('CountOfSessions'),
-            ];
-
-            $row = 0;
-            $column = 0;
-            foreach ($headers as $header) {
-                $tableCourse->setHeaderContents($row, $column, $header);
-                $column++;
-            }
-            $row++;
-
-            if (!empty($courseSessions)) {
-                arsort($courseSessions);
-                foreach ($courseSessions as $courseId => $count) {
-                    $courseInfo = api_get_course_info_by_id($courseId);
-                    $tableCourse->setCellContents($row, 0, $courseInfo['name']);
-                    $tableCourse->setCellContents($row, 1, $count);
-                    $row++;
-                }
-            }
-
-            $content .= $tableCourse->toHtml();
 
             $content .= '<div class="row">';
             $content .= '<div class="col-md-4"><canvas id="canvas1" style="margin-bottom: 20px"></canvas></div>';
@@ -752,6 +793,15 @@ switch ($report) {
         }
 
         $content .= $table->toHtml();
+
+        if (isset($_REQUEST['action']) && 'export_users' === $_REQUEST['action'] && isset($_REQUEST['course_id'])) {
+            $courseId = intval($_REQUEST['course_id']);
+            $startDate = isset($_REQUEST['date_start']) ? Database::escape_string($_REQUEST['date_start']) : null;
+            $endDate = isset($_REQUEST['date_end']) ? Database::escape_string($_REQUEST['date_end']) : null;
+
+            Statistics::exportUserReportByCourseSession($courseId, $startDate, $endDate);
+            exit;
+        }
 
         if (isset($_REQUEST['action']) && 'export' === $_REQUEST['action']) {
             $data = $table->toArray();
@@ -910,8 +960,16 @@ switch ($report) {
     case 'users_active':
         $content = '';
         if ($validated) {
-            $startDate = $values['daterange_start'];
-            $endDate = $values['daterange_end'];
+            // Validate date inputs strictly. Security::remove_XSS() (used for
+            // the display value above) does not protect against SQL injection.
+            $rawStartDate = isset($values['daterange_start']) ? $values['daterange_start'] : '';
+            $rawEndDate = isset($values['daterange_end']) ? $values['daterange_end'] : '';
+            $parsedStart = !empty($rawStartDate) ? DateTime::createFromFormat('Y-m-d', $rawStartDate) : false;
+            $parsedEnd = !empty($rawEndDate) ? DateTime::createFromFormat('Y-m-d', $rawEndDate) : false;
+            $startDate = (false !== $parsedStart && $parsedStart->format('Y-m-d') === $rawStartDate)
+                ? Database::escape_string($rawStartDate) : '';
+            $endDate = (false !== $parsedEnd && $parsedEnd->format('Y-m-d') === $rawEndDate)
+                ? Database::escape_string($rawEndDate) : '';
 
             $graph = '<div class="row">';
             $graph .= '<div class="col-md-4"><canvas id="canvas1" style="margin-bottom: 20px"></canvas></div>';
@@ -936,7 +994,6 @@ switch ($report) {
             $conditions = [];
             $extraConditions = '';
             if (!empty($startDate) && !empty($endDate)) {
-                // $extraConditions is already cleaned inside the function getUserListExtraConditions
                 $extraConditions .= " AND registration_date BETWEEN '$startDate' AND '$endDate' ";
             }
 
@@ -1500,7 +1557,7 @@ switch ($report) {
         foreach ($intervals as $minutes) {
             $sql = "SELECT count(distinct(user_id))
                 FROM $table WHERE
-                DATE_ADD(tms, INTERVAL '$minutes' MINUTE) > UTC_TIMESTAMP()";
+                tms > DATE_SUB(UTC_TIMESTAMP(), INTERVAL '$minutes' MINUTE)";
             $query = Database::query($sql);
             $counts[$minutes] = 0;
             if (Database::num_rows($query) > 0) {
@@ -1859,7 +1916,7 @@ switch ($report) {
         $additionalExtraFieldsInfo = TrackingCourseLog::getAdditionalProfileExtraFields();
 
         $frmFields = TrackingCourseLog::displayAdditionalProfileFields([], api_get_self());
-        $table = Statistics::returnDuplicatedUsersTable($additionalExtraFieldsInfo);
+        $table = Statistics::returnDuplicatedUsersTable('name', $additionalExtraFieldsInfo);
 
         if (isset($_GET['action_table'])) {
             $data = $table->toArray(true, true);
@@ -1877,6 +1934,37 @@ switch ($report) {
 
         $content .= Display::page_subheader2(get_lang('DuplicatedUsers'));
         $content .= Display::return_message(get_lang('ThisReportOnlyListsUsersThatHaveTheSameFirstnameAndLastname'));
+
+        $content .= $frmFields;
+        $content .= $table->return_table();
+        break;
+    case 'duplicated_users_by_mail':
+        $interbreadcrumb[] = [
+            'name' => $tool_name,
+            'url' => 'index.php',
+        ];
+
+        $additionalExtraFieldsInfo = TrackingCourseLog::getAdditionalProfileExtraFields();
+
+        $frmFields = TrackingCourseLog::displayAdditionalProfileFields([], api_get_self());
+        $table = Statistics::returnDuplicatedUsersTable('email', $additionalExtraFieldsInfo);
+
+        if (isset($_GET['action_table'])) {
+            $data = $table->toArray(true, true);
+
+            if ('export_excel' === $_GET['action_table']) {
+                Export::arrayToXls($data);
+            } elseif ('export_csv' === $_GET['action_table']) {
+                Export::arrayToCsv($data);
+            }
+
+            exit;
+        }
+
+        $htmlHeadXtra[] = '<script>'.UserManager::getScriptFunctionForActiveFilter().'</script>';
+
+        $content .= Display::page_subheader2(get_lang('DuplicatedUsersByMail'));
+        $content .= Display::return_message(get_lang('ThisReportOnlyListsUsersThatHaveTheSameEmail'));
 
         $content .= $frmFields;
         $content .= $table->return_table();

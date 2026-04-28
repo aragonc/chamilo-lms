@@ -58,7 +58,7 @@
                         <td>{{ row.course }}</td>
                         <td class="text-right">{{ row.score }}</td>
                         <td class="text-center">{{ row.date }}</td>
-
+                        {% if allow_export %}
                         <td class="text-right">
                             {% if allow_export %}
                             <a href="{{ row.pdf }}" target="_blank" class="btn btn-primary btn-block">
@@ -67,7 +67,7 @@
                             </a>
                             {% endif %}
                         </td>
-
+                        {% endif %}
                         <td class="text-right">
                             <a href="{{ row.link }}" target="_blank" class="btn btn-default btn-block">
                                 <em class="fa fa-external-link"></em> {{ 'Certificate'|get_lang }}

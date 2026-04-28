@@ -116,7 +116,7 @@ if (api_is_allowed_to_edit(null, true) ||
             Display::return_icon('pdf.png', get_lang('ExportToPDF'), '', ICON_SIZE_MEDIUM).'</a>';
         $actionsLeft .= '<a id="pdf_export" style="float:left;"  href="index.php?'.api_get_cidreq().'&action=attendance_sheet_export_to_xls&attendance_id='.$attendance_id.'&filter='.$default_filter.'&group_id='.$groupId.'">'.
             Display::return_icon('export_excel.png', get_lang('ExportToXls'), '', ICON_SIZE_MEDIUM).'</a>';
-        $actionsLeft .= '<a style="float:left;" title="QR"  href="index.php?'.api_get_cidreq().'&action=attendance_sheet_qrcode&attendance_id='.$attendance_id.'&filter='.$default_filter.'&group_id='.$groupId.'">'.
+        $actionsLeft .= '<a class="ajax" data-size="sm" style="float:left;" title="QR"  href="index.php?'.api_get_cidreq().'&action=attendance_sheet_qrcode&attendance_id='.$attendance_id.'&filter='.$default_filter.'&group_id='.$groupId.'">'.
             Display::return_icon('paint.png', get_lang('DownloadQr'), '', ICON_SIZE_MEDIUM).'</a>';
         $actionsRight = $form->returnForm();
         $toolbar = Display::toolbarAction('toolbar-attendance', [$actionsLeft, $actionsRight]);
@@ -210,6 +210,11 @@ if (api_is_allowed_to_edit(null, true) ||
             });
         </script>
 
+        <?php $addOfficialCode = api_get_configuration_value('attendance_add_official_code');
+        $headerOfficialCode = '';
+        if ($addOfficialCode) {
+            $headerOfficialCode = '<th width="100px">'.get_lang('OfficialCode').'</th>';
+        } ?>
         <form method="post" action="index.php?action=attendance_sheet_add&<?php echo api_get_cidreq().$param_filter; ?>&attendance_id=<?php echo $attendance_id; ?>" >
             <div class="attendance-sheet-content" style="width:100%;background-color:#E1E1E1;margin-top:20px;">
                 <div class="divTableWithFloatingHeader attendance-users-table" style="width:45%;float:left;margin:0px;padding:0px;">
@@ -218,6 +223,7 @@ if (api_is_allowed_to_edit(null, true) ||
                         <tr class="tableFloatingHeader" style="position: absolute; top: 0px; left: 0px; visibility: hidden; margin:0px;padding:0px" >
                             <th width="10px"><?php echo '#'; ?></th>
                             <th width="10px"><?php echo get_lang('Photo'); ?></th>
+                            <?php echo $headerOfficialCode; ?>
                             <th width="100px"><?php echo get_lang('LastName'); ?></th>
                             <th width="100px"><?php echo get_lang('FirstName'); ?></th>
                             <th width="100px"><?php echo get_lang('AttendancesFaults'); ?></th>
@@ -225,6 +231,7 @@ if (api_is_allowed_to_edit(null, true) ||
                         <tr class="tableFloatingHeaderOriginal" >
                             <th width="10px"><?php echo '#'; ?></th>
                             <th width="10px"><?php echo get_lang('Photo'); ?></th>
+                            <?php echo $headerOfficialCode; ?>
                             <th width="150px"><?php echo get_lang('LastName'); ?></th>
                             <th width="140px"><?php echo get_lang('FirstName'); ?></th>
                             <th width="100px"><?php echo get_lang('AttendancesFaults'); ?></th>
@@ -248,6 +255,9 @@ if (api_is_allowed_to_edit(null, true) ||
                             <tr class="<?php echo $class; ?>">
                                 <td><center><?php echo $i; ?></center></td>
                                 <td><?php echo $data['photo']; ?></td>
+                                <?php if ($addOfficialCode) {
+                                echo '<td>'.$data['official_code'].'</td>';
+                            } ?>
                                 <td><span title="<?php echo $username; ?>"><?php echo $data['lastname']; ?></span></td>
                                 <td><?php echo $data['firstname']; ?></td>
                                 <td>
@@ -286,7 +296,7 @@ if (api_is_allowed_to_edit(null, true) ||
                 if ($allowSignature) {
                     $iconFullScreen = Display::url(
                         Display::return_icon('view_fullscreen.png', get_lang('SeeForTablet'), [], ICON_SIZE_SMALL),
-                        api_get_self().'?'.api_get_cidreq().'&action=attendance_sheet_list&func=fullscreen&attendance_id='.$attendance_id.'&calendar_id='.$calendar['id']
+                        api_get_self().'?'.api_get_cidreq().'&action=attendance_sheet_list&func=fullscreen&attendance_id='.$attendance_id.'&calendar_id='.$calendar['id'].(!empty($groupId) ? '&group_id='.$groupId : '')
                     );
                     $isBlocked = 0;
                     $iconBlockName = 'eyes.png';
@@ -523,6 +533,9 @@ if (api_is_allowed_to_edit(null, true) ||
                     if ($isBlocked) {
                         continue;
                     }
+                    if (!empty($_REQUEST['filter']) && is_numeric($_REQUEST['filter']) && $_REQUEST['filter'] != $presence['calendar_id']) {
+                        continue;
+                    }
                     $signature = $attendance->getSignature($user_id, $presence['calendar_id']);
                     $signed = !empty($signature);
                 }
@@ -547,11 +560,13 @@ if (api_is_allowed_to_edit(null, true) ||
                                         </a>
                                     </span>';
                             } else {
-                                echo '<span class="list-data">
-                                        <a id="sign-'.$user_id.'-'.$presence['calendar_id'].'" class="btn btn-primary attendance-sign" href="javascript:void(0)">
-                                            <em class="fa fa-pencil"></em> '.get_lang('Sign').'
-                                        </a>
-                                    </span>';
+                                if ($presence['presence']) {
+                                    echo '<span class="list-data">
+                                            <a id="sign-'.$user_id.'-'.$presence['calendar_id'].'" class="btn btn-primary attendance-sign" href="javascript:void(0)">
+                                                <em class="fa fa-pencil"></em> '.get_lang('Sign').'
+                                            </a>
+                                        </span>';
+                                }
                             }
                         } ?>
 

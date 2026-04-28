@@ -126,15 +126,13 @@ $announcements_block = '';
 $useCookieValidation = api_get_setting('cookie_warning');
 
 if ($useCookieValidation === 'true') {
-    if (isset($_POST['acceptCookies'])) {
-        api_set_site_use_cookie_warning_cookie();
-    } elseif (!api_site_use_cookie_warning_cookie_exist()) {
+    if (!api_site_use_cookie_warning_cookie_exist()) {
         if (Template::isToolBarDisplayedForUser()) {
             $controller->tpl->assign('toolBarDisplayed', true);
         } else {
             $controller->tpl->assign('toolBarDisplayed', false);
         }
-        $controller->tpl->assign('displayCookieUsageWarning', true);
+        $controller->tpl->enableCookieUsageWarning();
     }
 }
 // When loading a chamilo page do not include the hot courses and news
@@ -197,9 +195,10 @@ $controller->tpl->assign('navigation_links', $controller->return_navigation_link
 $controller->tpl->assign('notice_block', $controller->return_notice());
 $controller->tpl->assign('help_block', $controller->return_help());
 $controller->tpl->assign('student_publication_block', $controller->studentPublicationBlock());
-if (api_is_platform_admin() || api_is_drh()) {
+if (!api_is_anonymous() && api_user_is_login()) {
     $controller->tpl->assign('skills_block', $controller->returnSkillLinks());
 }
+
 if (api_is_anonymous()) {
     $controller->tpl->setLoginBodyClass();
 }

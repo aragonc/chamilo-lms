@@ -318,14 +318,13 @@ class CoursesAndSessionsCatalog
     }
 
     /**
-     * @param string $categoryCode
-     * @param int    $randomValue
-     * @param array  $limit        will be used if $randomValue is not set.
-     *                             This array should contains 'start' and 'length' keys
+     * @param int   $randomValue
+     * @param array $limit       will be used if $randomValue is not set.
+     *                           This array should contain 'start' and 'length' keys
      *
      * @return array
      */
-    public static function getCoursesInCategory($categoryCode, $randomValue = null, $limit = [])
+    public static function getCoursesInCategory(string $categoryCode, $randomValue = null, $limit = [])
     {
         $tbl_course = Database::get_main_table(TABLE_MAIN_COURSE);
         $avoidCoursesCondition = self::getAvoidCourseCondition();
@@ -598,6 +597,7 @@ class CoursesAndSessionsCatalog
                             $where
                             $categoryFilter
                             $sqlInjectWhere
+                            $courseLanguageWhere
                             $avoidCoursesCondition
                             $showCoursesCondition
                             $visibilityCondition
@@ -1897,6 +1897,7 @@ class CoursesAndSessionsCatalog
                 }
             }
 
+            $userIdHash = UserManager::generateUserHash($coachId);
             $sessionsBlock = [
                 'id' => $session->getId(),
                 'name' => $session->getName() . ($session->getTimeInSession() > 0 ? (' - ' . $session->getTimeInSession() . ' Horas') : ''),
@@ -1905,7 +1906,7 @@ class CoursesAndSessionsCatalog
                 'nbr_users' => $session->getNbrUsers(),
                 'coach_id' => $coachId,
                 'coach_url' => $generalCoach
-                    ? api_get_path(WEB_AJAX_PATH).'user_manager.ajax.php?a=get_user_popup&user_id='.$coachId
+                    ? api_get_path(WEB_AJAX_PATH).'user_manager.ajax.php?a=get_user_popup&hash='.$userIdHash
                     : '',
                 'coach_name' => $coachName,
                 'coach_avatar' => UserManager::getUserPicture($coachId, USER_IMAGE_SIZE_SMALL),
@@ -2026,7 +2027,16 @@ class CoursesAndSessionsCatalog
         $pageTop = min($pageTotal, $pageCurrent + 3);
 
         if ($pageBottom > 1) {
-            $pageDiv .= self::getPageNumberItem(1, $pageLength);
+            $pageDiv .= self::getPageNumberItem(
+                1,
+                $pageLength,
+                   null,
+                '',
+                $categoryCode,
+                $action,
+                   $fields,
+                   $sortKeys
+            );
             if ($pageBottom > 2) {
                 $pageDiv .= self::getPageNumberItem(
                     $pageBottom - 1,
@@ -2163,7 +2173,8 @@ class CoursesAndSessionsCatalog
         $action = isset($action) ? Security::remove_XSS($action) : $requestAction;
         $searchTerm = isset($_REQUEST['search_term']) ? Security::remove_XSS($_REQUEST['search_term']) : '';
         $keyword = isset($_REQUEST['keyword']) ? Security::remove_XSS($_REQUEST['keyword']) : '';
-        $searchTag = $_REQUEST['search_tag'] ?? '';
+        $searchTag = isset($_REQUEST['search_tag']) ? Security::remove_XSS($_REQUEST['search_tag']) : '';
+        $languageSelect = isset($_REQUEST['course_language']) ? Security::remove_XSS($_REQUEST['course_language']) : '';
 
         if ($action === 'subscribe_user_with_password') {
             $action = 'subscribe';
@@ -2179,7 +2190,8 @@ class CoursesAndSessionsCatalog
             '&search_tag='.$searchTag.
             '&category_code='.$categoryCode.
             '&pageCurrent='.$pageCurrent.
-            '&pageLength='.$pageLength;
+            '&pageLength='.$pageLength.
+            '&course_language='.$languageSelect;
 
         if (!empty($extraFields)) {
             $params = [];
@@ -2246,6 +2258,10 @@ class CoursesAndSessionsCatalog
         bool $returnHtml = false
     ): ?string {
         $settings = api_get_configuration_value('course_catalog_settings');
+        $preFilterOnLanguage = false;
+        if (!empty($settings['pre_filter_on_language'])) {
+            $preFilterOnLanguage = true;
+        }
 
         $courseCatalogSettings = [
             'info_url' => 'course_description_popup',
@@ -2332,6 +2348,14 @@ class CoursesAndSessionsCatalog
 
         $sortKeys = isset($_REQUEST['sortKeys']) ? Security::remove_XSS($_REQUEST['sortKeys']) : '';
         $languageSelect = isset($_REQUEST['course_language']) ? Security::remove_XSS($_REQUEST['course_language']) : '';
+        if ($preFilterOnLanguage && empty($languageSelect)) {
+            $languageSelect = api_get_user_info()['language'];
+        }
+        // Check the language is active
+        $languagesList = SubLanguageManager::getAllLanguages(true);
+        if (empty($languagesList[$languageSelect])) {
+            $languageSelect = '';
+        }
         $defaults['sortKeys'] = $sortKeys;
         $defaults['search_term'] = $searchTerm;
         $defaults['category_code'] = $categoryCode;

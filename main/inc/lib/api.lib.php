@@ -20,7 +20,7 @@ use Symfony\Component\Finder\Finder;
  */
 
 // PHP version requirement.
-define('REQUIRED_PHP_VERSION', '7.1');
+define('REQUIRED_PHP_VERSION', '7.4');
 define('REQUIRED_MIN_MEMORY_LIMIT', '128');
 define('REQUIRED_MIN_UPLOAD_MAX_FILESIZE', '10');
 define('REQUIRED_MIN_POST_MAX_SIZE', '10');
@@ -153,6 +153,7 @@ define('TOOL_PORTFOLIO', 'portfolio');
 define('TOOL_PORTFOLIO_COMMENT', 'portfolio_comment');
 define('TOOL_PLAGIARISM', 'compilatio');
 define('TOOL_XAPI', 'xapi');
+define('TOOL_H5P', 'h5p');
 
 // CONSTANTS defining Chamilo interface sections
 define('SECTION_CAMPUS', 'mycampus');
@@ -234,8 +235,15 @@ define('LOG_CAREER_CREATE', 'career_created');
 define('LOG_CAREER_DELETE', 'career_deleted');
 define('LOG_USER_PERSONAL_DOC_DELETED', 'user_doc_deleted');
 define('LOG_WIKI_ACCESS', 'wiki_page_view');
+define('LOG_EXERCISE_CREATE', 'exe_created');
+define('LOG_EXERCISE_UPDATE', 'exe_updated');
+define('LOG_EXERCISE_DELETE', 'exe_deleted');
+define('LOG_LP_CREATE', 'lp_created');
+define('LOG_LP_UPDATE', 'lp_updated');
+define('LOG_LP_DELETE', 'lp_deleted');
 // All results from an exercise
 define('LOG_EXERCISE_RESULT_DELETE', 'exe_result_deleted');
+define('LOG_EXERCISE_RESULT_DELETE_INCOMPLETE', 'exe_incomplete_results_deleted');
 // Logs only the one attempt
 define('LOG_EXERCISE_ATTEMPT_DELETE', 'exe_attempt_deleted');
 define('LOG_LP_ATTEMPT_DELETE', 'lp_attempt_deleted');
@@ -537,6 +545,7 @@ define('HOT_SPOT_COMBINATION', 26);
 define('FILL_IN_BLANKS_COMBINATION', 27);
 define('MULTIPLE_ANSWER_DROPDOWN_COMBINATION', 28);
 define('MULTIPLE_ANSWER_DROPDOWN', 29);
+define('ANSWER_IN_OFFICE_DOC', 30);
 
 define('EXERCISE_CATEGORY_RANDOM_SHUFFLED', 1);
 define('EXERCISE_CATEGORY_RANDOM_ORDERED', 2);
@@ -584,6 +593,7 @@ define(
     MULTIPLE_ANSWER_TRUE_FALSE.':'.
     MULTIPLE_ANSWER_COMBINATION_TRUE_FALSE.':'.
     ORAL_EXPRESSION.':'.
+    ANSWER_IN_OFFICE_DOC.':'.
     GLOBAL_MULTIPLE_ANSWER.':'.
     MEDIA_QUESTION.':'.
     CALCULATED_ANSWER.':'.
@@ -697,6 +707,7 @@ define('RESOURCE_WORK', 'work');
 define('RESOURCE_SESSION_COURSE', 'session_course');
 define('RESOURCE_GRADEBOOK', 'gradebook');
 define('RESOURCE_XAPI_TOOL', 'xapi_tool');
+define('RESOURCE_H5P_TOOL', 'h5p_tool');
 define('ADD_THEMATIC_PLAN', 6);
 
 // Max online users to show per page (whoisonline)
@@ -909,7 +920,7 @@ function api_get_path($path = '', $configuration = [])
         // Initialization of a table that contains common-purpose paths.
         $paths[$root_web][REL_PATH] = $root_rel;
         $paths[$root_web][REL_COURSE_PATH] = $root_rel.$course_folder;
-        $paths[$root_web][REL_CODE_PATH] = $root_rel.$code_folder;
+        $paths[$root_web][REL_CODE_PATH] = $root_rel.preg_replace('#^/#', '', $code_folder);
         $paths[$root_web][REL_DEFAULT_COURSE_DOCUMENT_PATH] = $paths[$root_web][REL_PATH].'main/default_course_document/';
 
         $paths[$root_web][WEB_PATH] = $slashed_root_web;
@@ -933,7 +944,7 @@ function api_get_path($path = '', $configuration = [])
         $paths[$root_web][WEB_HOME_PATH] = $paths[$root_web][WEB_PATH].$paths[$root_web][REL_HOME_PATH];
 
         $paths[$root_web][SYS_PATH] = $root_sys;
-        $paths[$root_web][SYS_CODE_PATH] = $root_sys.$code_folder;
+        $paths[$root_web][SYS_CODE_PATH] = $root_sys.preg_replace('#^/#', '', $code_folder);
         $paths[$root_web][SYS_TEST_PATH] = $paths[$root_web][SYS_PATH].$paths[$root_web][SYS_TEST_PATH];
         $paths[$root_web][SYS_TEMPLATE_PATH] = $paths[$root_web][SYS_CODE_PATH].$paths[$root_web][SYS_TEMPLATE_PATH];
         $paths[$root_web][SYS_PUBLIC_PATH] = $paths[$root_web][SYS_PATH].$paths[$root_web][SYS_PUBLIC_PATH];
@@ -1441,7 +1452,7 @@ function api_protect_teacher_script()
 function api_block_anonymous_users($printHeaders = true)
 {
     $user = api_get_user_info();
-    if (!(isset($user['user_id']) && $user['user_id']) || api_is_anonymous($user['user_id'], true)) {
+    if (empty($user['user_id']) || api_is_anonymous($user['user_id'], true)) {
         api_not_allowed($printHeaders);
 
         return false;
@@ -1812,7 +1823,8 @@ function _api_format_user($user, $add_password = false, $loadAvatars = true)
     $result['profile_url'] = api_get_path(WEB_CODE_PATH).'social/profile.php?u='.$user_id;
 
     // Send message link
-    $sendMessage = api_get_path(WEB_AJAX_PATH).'user_manager.ajax.php?a=get_user_popup&user_id='.$user_id;
+    $userIdHash = UserManager::generateUserHash($user_id);
+    $sendMessage = api_get_path(WEB_AJAX_PATH).'user_manager.ajax.php?a=get_user_popup&hash='.$userIdHash;
     $result['complete_name_with_message_link'] = Display::url(
         $result['complete_name_with_username'],
         $sendMessage,
@@ -2948,7 +2960,7 @@ function api_get_session_visibility(
 
             $totalDuration = $firstAccess + $duration + $userDuration;
 
-            return $totalDuration > $currentTime ? SESSION_AVAILABLE : SESSION_VISIBLE_READ_ONLY;
+            return $totalDuration > $currentTime ? SESSION_AVAILABLE : $visibility;
         }
 
         return SESSION_AVAILABLE;
@@ -4041,11 +4053,9 @@ function api_not_allowed(
 
     global $this_section;
 
-    if (CustomPages::enabled() && !isset($user_id)) {
-        if (empty($user_id)) {
-            // Why the CustomPages::enabled() need to be to set the request_uri
-            $_SESSION['request_uri'] = $_SERVER['REQUEST_URI'];
-        }
+    if (CustomPages::enabled() && (empty($user_id) || api_is_anonymous())) {
+        // Why the CustomPages::enabled() need to be to set the request_uri
+        $_SESSION['request_uri'] = $_SERVER['REQUEST_URI'];
         CustomPages::display(CustomPages::INDEX_UNLOGGED);
     }
 
@@ -4300,7 +4310,7 @@ function convert_sql_date($last_post_datetime)
     list($year, $month, $day) = explode('-', $last_post_date);
     list($hour, $min, $sec) = explode(':', $last_post_time);
 
-    return mktime((int) $hour, (int) $min, (int) $sec, (int) $month, (int) $day, (int) $year);
+    return gmmktime((int) $hour, (int) $min, (int) $sec, (int) $month, (int) $day, (int) $year);
 }
 
 /**
@@ -4358,6 +4368,11 @@ function api_get_item_visibility(
         $groupCondition = " AND to_group_id = '$group_id' ";
     }
 
+    $lpVisibilityCondition = '';
+    if ($tool === 'learnpath') {
+        $lpVisibilityCondition = " AND lastedit_type != 'LearnpathSubscription' ";
+    }
+
     $sql = "SELECT visibility
             FROM $TABLE_ITEMPROPERTY
             WHERE
@@ -4365,7 +4380,7 @@ function api_get_item_visibility(
                 tool = '$tool' AND
                 ref = $id AND
                 (session_id = $session OR session_id = 0 OR session_id IS NULL)
-                $userCondition $typeCondition $groupCondition
+                $userCondition $typeCondition $groupCondition $lpVisibilityCondition
             ORDER BY session_id DESC, lastedit_date DESC
             LIMIT 1";
 
@@ -5011,7 +5026,7 @@ function api_get_item_property_info($course_id, $tool, $ref, $session_id = 0, $g
  *
  * @return array with all fields from c_item_property, empty array if not found or false if course could not be found
  */
-function api_get_last_item_property_info(int $courseId, string $tool, int $ref, int $sessionId = null, int $groupId = null): array
+function api_get_last_item_property_info(int $courseId, string $tool, int $ref, ?int $sessionId = null, ?int $groupId = null): array
 {
     $tool = Database::escape_string($tool);
     // Definition of tables.
@@ -7184,6 +7199,22 @@ function api_is_xml_http_request()
  */
 function api_getimagesize($path)
 {
+    $path = str_replace(
+        [
+            api_get_path(WEB_COURSE_PATH),
+            api_get_path(WEB_UPLOAD_PATH),
+            api_get_path(WEB_CODE_PATH),
+            api_get_path(WEB_PATH),
+        ],
+        [
+            api_get_path(SYS_COURSE_PATH),
+            api_get_path(SYS_UPLOAD_PATH),
+            api_get_path(SYS_CODE_PATH),
+            api_get_path(SYS_PATH),
+        ],
+        $path
+    );
+
     $image = new Image($path);
 
     return $image->get_image_size();
@@ -8976,6 +9007,10 @@ function api_can_login_as($loginAsUserId, $userId = null)
     $userInfo = api_get_user_info($loginAsUserId);
     $isDrh = function () use ($loginAsUserId) {
         if (api_is_drh()) {
+            if (true === api_get_configuration_value('disallow_hrm_login_as')) {
+                return false;
+            }
+
             if (api_drh_can_access_all_session_content()) {
                 $users = SessionManager::getAllUsersFromCoursesFromAllSessionFromStatus(
                     'drh_all',
@@ -9002,14 +9037,26 @@ function api_can_login_as($loginAsUserId, $userId = null)
         return false;
     };
 
-    $loginAsStatusForSessionAdmins = [STUDENT];
+    $allowSessionAdmin = function () use ($userInfo) {
+        if (!api_is_session_admin()) {
+            return false;
+        }
 
-    if (api_get_configuration_value('allow_session_admin_login_as_teacher')) {
-        $loginAsStatusForSessionAdmins[] = COURSEMANAGER;
-    }
+        if (true === api_get_configuration_value('disallow_session_admin_login_as')) {
+            return false;
+        }
+
+        $loginAsStatusForSessionAdmins = [STUDENT];
+
+        if (api_get_configuration_value('allow_session_admin_login_as_teacher')) {
+            $loginAsStatusForSessionAdmins[] = COURSEMANAGER;
+        }
+
+        return in_array($userInfo['status'], $loginAsStatusForSessionAdmins);
+    };
 
     return api_is_platform_admin() ||
-        (api_is_session_admin() && in_array($userInfo['status'], $loginAsStatusForSessionAdmins)) ||
+        $allowSessionAdmin() ||
         $isDrh();
 }
 
@@ -9179,21 +9226,21 @@ function api_get_configuration_value($variable)
     // Check if variable exists
     if (isset($_configuration[$variable])) {
         if (is_array($_configuration[$variable]) && api_is_multiple_url_enabled() && is_int(array_keys($_configuration[$variable])[0])) {
-            // It has been configured for at least one sub URL so we will not return the complete variable
+            // It has been configured for at least one sub URL, so we will not return the complete variable
             /*
-         * The idea is that if the first level key of the configuration variable is an int
-         * then it is a multiURL configuration and if it's a string then it's a configuration that is not multiURL.
-         * For example if in app/config/configuration.php you have set :
-         * $_configuration['ticket_project_user_roles'] = [
-         *     'permissions' => [
-         *         1 => [17] // project_id = 1, STUDENT_BOSS = 17
-         *     ]
-         * ];
-         * You do not want to enter in this bloc even if multiURL is activated because the option is configured globaly
-         * and you want to return the full array.
-         * The is_int is to consider only the option that are array and configured for multiURL
-         * which means there is an int as the first level key of the array.
-         */
+             * The idea is that if the first level key of the configuration variable is an int
+             * then it is a multiURL configuration and if it's a string then it's a configuration that is not multiURL.
+             * For example if in app/config/configuration.php you have set :
+             * $_configuration['ticket_project_user_roles'] = [
+             *     'permissions' => [
+             *         1 => [17] // project_id = 1, STUDENT_BOSS = 17
+             *     ]
+             * ];
+             * You do not want to enter this block even if multiURL is activated because the option is configured globally
+             * and you want to return the full array.
+             * The is_int is to consider only the option that are array and configured for multiURL
+             * which means there is an int as the first level key of the array.
+             */
             // Check if it exists for the sub portal
             if (array_key_exists($urlId, $_configuration[$variable])) {
                 return $_configuration[$variable][$urlId];
@@ -9463,7 +9510,10 @@ function api_site_use_cookie_warning_cookie_exist()
  * Given a number of seconds, format the time to show hours, minutes and seconds.
  *
  * @param int    $time         The time in seconds
- * @param string $originFormat Optional. PHP o JS
+ * @param string $originFormat Optional.
+ *                             PHP (used for scorm)
+ *                             JS (used in most cases and understood by excel)
+ *                             LANG (used to present unit in the user language)
  *
  * @return string (00h00'00")
  */
@@ -9482,6 +9532,8 @@ function api_format_time($time, $originFormat = 'php')
 
     if ($originFormat == 'js') {
         $formattedTime = trim(sprintf("%02d : %02d : %02d", $hours, $mins, $secs));
+    } elseif ($originFormat == 'lang') {
+        $formattedTime = trim(sprintf(get_lang('HoursMinutesSeconds'), $hours, $mins, $secs));
     } else {
         $formattedTime = trim(sprintf("%02d$h%02d'%02d\"", $hours, $mins, $secs));
     }
@@ -9589,10 +9641,10 @@ function api_mail_html(
     $mail->Mailer = api_get_mail_configuration_value('SMTP_MAILER');
     $mail->Host = api_get_mail_configuration_value('SMTP_HOST');
     $mail->Port = api_get_mail_configuration_value('SMTP_PORT');
-    $mail->CharSet = api_get_mail_configuration_value('SMTP_CHARSET') ? api_get_mail_configuration_value('SMTP_CHARSET') : 'UTF-8';
+    $mail->CharSet = api_get_mail_configuration_value('SMTP_CHARSET') ?: 'UTF-8';
     // Stay far below SMTP protocol 980 chars limit.
     $mail->WordWrap = 200;
-    $mail->SMTPOptions = api_get_mail_configuration_value('SMTPOptions') ?? [];
+    $mail->SMTPOptions = api_get_mail_configuration_value('SMTPOptions') ?: [];
 
     if (api_get_mail_configuration_value('SMTP_AUTH')) {
         $mail->SMTPAuth = 1;
@@ -9602,7 +9654,7 @@ function api_mail_html(
             $mail->SMTPSecure = api_get_mail_configuration_value('SMTP_SECURE');
         }
     }
-    $mail->SMTPDebug = api_get_mail_configuration_value('SMTP_DEBUG') ? api_get_mail_configuration_value('SMTP_DEBUG') : 0;
+    $mail->SMTPDebug = api_get_mail_configuration_value('SMTP_DEBUG') ?: 0;
 
     // 5 = low, 1 = high
     $mail->Priority = 3;
@@ -9691,6 +9743,22 @@ function api_mail_html(
     }
     if (isset($additionalParameters['logo'])) {
         $mailView->assign('logo', $additionalParameters['logo']);
+    } elseif (api_get_configuration_value('email_logo') == true) {
+        $logoSubPath = 'themes/'.api_get_visual_theme().'/images/email-logo.png';
+        $logoSysPath = api_get_path(SYS_PATH).'web/css/'.$logoSubPath;
+        if (file_exists($logoSysPath)) {
+            $logoWebPath = api_get_path(WEB_CSS_PATH).$logoSubPath;
+            $imgTag = \Display::img(
+                $logoWebPath,
+                api_get_setting('siteName'),
+                [
+                    'id' => 'header-logo',
+                    'class' => 'img-responsive',
+                ]
+            );
+            $logoTag = \Display::url($imgTag, api_get_path(WEB_PATH));
+            $mailView->assign('logo', $logoTag);
+        }
     }
     $mailView->assign('mail_header_style', api_get_configuration_value('mail_header_style'));
     $mailView->assign('mail_content_style', api_get_configuration_value('mail_content_style'));
@@ -9732,15 +9800,29 @@ function api_mail_html(
     if (is_array($recipient_email)) {
         foreach ($recipient_email as $dest) {
             if (api_valid_email($dest)) {
-                $mail->AddAddress($dest, $recipient_name);
+                if (UserManager::isEmailingAllowed($dest)) {
+                    // Do not send if user is not active = 1
+                    $mail->AddAddress($dest, $recipient_name);
+                }
+            } else {
+                // error_log('e-mail recipient '.$dest.' is not valid.');
+                return 0;
             }
         }
     } else {
         if (api_valid_email($recipient_email)) {
-            $mail->AddAddress($recipient_email, $recipient_name);
+            if (UserManager::isEmailingAllowed($recipient_email)) {
+                // Do not send if user is not active = 1
+                $mail->AddAddress($recipient_email, $recipient_name);
+            }
         } else {
+            // error_log('e-mail recipient '.$recipient_email.' is not valid.');
             return 0;
         }
+    }
+    if (empty($mail->getAllRecipientAddresses())) {
+        // error_log('No valid and active destination e-mail in api_mail_html() with address '.print_r($recipient_email, 1).'. Not sending.');
+        return 0;
     }
 
     if (is_array($extra_headers) && count($extra_headers) > 0) {
@@ -9782,6 +9864,9 @@ function api_mail_html(
         }
         $mail->DKIM_private_string = api_get_mail_configuration_value('DKIM_PRIVATE_KEY_STRING');
         $mail->DKIM_private = api_get_mail_configuration_value('DKIM_PRIVATE_KEY');
+        if (!empty(api_get_mail_configuration_value['DKIM_PASSPHRASE'])) {
+            $mail->DKIM_passphrase = api_get_mail_configuration_value['DKIM_PASSPHRASE'];
+        }
     }
 
 
@@ -10218,11 +10303,11 @@ function api_unserialize_content($type, $serialized, $ignoreErrors = false)
             $allowedClasses = [
                 learnpath::class,
                 learnpathItem::class,
-                aicc::class,
-                aiccBlock::class,
-                aiccItem::class,
-                aiccObjective::class,
-                aiccResource::class,
+                //aicc::class,
+                //aiccBlock::class,
+                //aiccItem::class,
+                //aiccObjective::class,
+                //aiccResource::class,
                 scorm::class,
                 scormItem::class,
                 scormMetadata::class,
@@ -10290,8 +10375,6 @@ function api_unserialize_content($type, $serialized, $ignoreErrors = false)
  */
 function api_set_noreply_and_from_address_to_mailer(PHPMailer $mailer, array $sender, array $replyToAddress = [])
 {
-    $platformEmail = $GLOBALS['platform_email'];
-
     $noReplyAddress = api_get_setting('noreply_email_address');
     $avoidReplyToAddress = false;
 
@@ -10323,8 +10406,8 @@ function api_set_noreply_and_from_address_to_mailer(PHPMailer $mailer, array $se
 
     //If the SMTP configuration only accept one sender
     if (
-        isset($platformEmail['SMTP_UNIQUE_SENDER']) &&
-        $platformEmail['SMTP_UNIQUE_SENDER']
+        !empty(api_get_mail_configuration_value('SMTP_UNIQUE_SENDER')) &&
+        api_get_mail_configuration_value('SMTP_UNIQUE_SENDER')
     ) {
         $senderName = $notification->getDefaultPlatformSenderName();
         $senderEmail = $notification->getDefaultPlatformSenderEmail();
@@ -10539,7 +10622,7 @@ function api_protect_webservices()
 {
     if (api_get_configuration_value('disable_webservices')) {
         echo "Webservices are disabled. \n";
-        echo "To enable, add \$_configuration['disable_webservices'] = true; in configuration.php";
+        echo "To enable, add \$_configuration['disable_webservices'] = false; in configuration.php";
         exit;
     }
 }
@@ -10611,4 +10694,461 @@ function api_flush_settings_cache(int $url_id): bool
     }
 
     return true;
+}
+
+/**
+ * Decrypt sent data with encoded secret defined in app/config/configuration.php
+ * in the variable $_configuration['ldap_admin_password_salt'].
+ *
+ * @param $encryptedText The text to be decrypted
+ */
+function api_decrypt_ldap_password(string $encryptedText): string
+{
+    if (!empty(api_get_configuration_value('ldap_admin_password_salt'))) {
+        $secret = api_get_configuration_value('ldap_admin_password_salt');
+    } else {
+        return false;
+    }
+
+    return api_decrypt_hash($encryptedText, $secret);
+}
+
+/**
+ * Decrypt sent hash encoded with secret.
+ *
+ * @param $encryptedText The hash text to be decrypted
+ * @param $secret        The secret used to encoded the hash
+ *
+ * @return string The decrypted text or false
+ */
+function api_decrypt_hash(string $encryptedHash, string $secret): string
+{
+    $iv = base64_decode(substr($encryptedHash, 0, 16), true);
+    $data = base64_decode(substr($encryptedHash, 16), true);
+    $tag = substr($data, strlen($data) - 16);
+    $data = substr($data, 0, strlen($data) - 16);
+
+    try {
+        return openssl_decrypt(
+        $data,
+        'aes-256-gcm',
+        $secret,
+        OPENSSL_RAW_DATA,
+        $iv,
+        $tag
+      );
+    } catch (\Exception $e) {
+        return false;
+    }
+}
+
+/**
+ * Encrypt sent data with secret.
+ *
+ * @param $data   The text to be encrypted
+ * @param $secret The secret to use encode data
+ *
+ * @return string The encrypted text or false
+ */
+function api_encrypt_hash($data, $secret)
+{
+    $iv = random_bytes(12);
+    $tag = '';
+
+    $encrypted = openssl_encrypt(
+    $data,
+    'aes-256-gcm',
+    $secret,
+    OPENSSL_RAW_DATA,
+    $iv,
+    $tag,
+    '',
+    16
+  );
+
+    return base64_encode($iv).base64_encode($encrypted.$tag);
+}
+
+/**
+ * Replace a specific term by another in all course-related text elements in the database.
+ * Does not rename directories or replace content of files on disk. Check tests/scripts/replace_course_code.php if
+ * you are looking for this.
+ * The replacement can replace bits in larger strings, requiring the search string to be very specific to avoid
+ * excess replacements.
+ *
+ * @return array The number of changes executed in each table
+ */
+function api_replace_terms_in_content(string $search, string $replace): array
+{
+    $replacements = [
+        Database::get_course_table(TABLE_QUIZ_TEST) => [
+            'iid' => ['title', 'description', 'sound'],
+        ],
+        Database::get_course_table(TABLE_QUIZ_QUESTION) => [
+            'iid' => ['question', 'description'],
+        ],
+        Database::get_course_table(TABLE_QUIZ_ANSWER) => [
+            'iid' => ['answer', 'comment'],
+        ],
+        Database::get_course_table(TABLE_ANNOUNCEMENT) => [
+            'iid' => ['title', 'content'],
+        ],
+        Database::get_course_table(TABLE_ANNOUNCEMENT_ATTACHMENT) => [
+            'iid' => ['path', 'comment'],
+        ],
+        Database::get_course_table(TABLE_ATTENDANCE) => [
+            'iid' => ['name', 'description', 'attendance_qualify_title'],
+        ],
+        Database::get_course_table(TABLE_BLOGS) => [
+            'iid' => ['blog_name', 'blog_subtitle'],
+        ],
+        Database::get_course_table(TABLE_BLOGS_ATTACHMENT) => [
+            'iid' => ['path', 'comment'],
+        ],
+        Database::get_course_table(TABLE_BLOGS_COMMENTS) => [
+            'iid' => ['title', 'comment'],
+        ],
+        Database::get_course_table(TABLE_BLOGS_POSTS) => [
+            'iid' => ['title', 'full_text'],
+        ],
+        Database::get_course_table(TABLE_BLOGS_TASKS) => [
+            'iid' => ['title', 'description'],
+        ],
+        Database::get_course_table(TABLE_AGENDA) => [
+            'iid' => ['title', 'content', 'comment'],
+        ],
+        Database::get_course_table(TABLE_AGENDA_ATTACHMENT) => [
+            'iid' => ['path', 'comment', 'filename'],
+        ],
+        Database::get_course_table(TABLE_COURSE_DESCRIPTION) => [
+            'iid' => ['title', 'content'],
+        ],
+        Database::get_course_table(TABLE_DOCUMENT) => [
+            'iid' => ['path', 'comment'],
+        ],
+        Database::get_course_table(TABLE_DROPBOX_FEEDBACK) => [
+            'iid' => ['feedback'],
+        ],
+        Database::get_course_table(TABLE_DROPBOX_FILE) => [
+            'iid' => ['title', 'description'],
+        ],
+        Database::get_course_table(TABLE_DROPBOX_POST) => [
+            'iid' => ['feedback'],
+        ],
+        Database::get_course_table(TABLE_FORUM_ATTACHMENT) => [
+            'iid' => ['path', 'comment', 'filename'],
+        ],
+        Database::get_course_table(TABLE_FORUM_CATEGORY) => [
+            'iid' => ['cat_title', 'cat_comment'],
+        ],
+        Database::get_course_table(TABLE_FORUM) => [
+            'iid' => ['forum_title', 'forum_comment', 'forum_image'],
+        ],
+        Database::get_course_table(TABLE_FORUM_POST) => [
+            'iid' => ['post_title', 'post_text', 'poster_name'],
+        ],
+        Database::get_course_table(TABLE_FORUM_THREAD) => [
+            'iid' => ['thread_title', 'thread_poster_name', 'thread_title_qualify'],
+        ],
+        Database::get_course_table(TABLE_GLOSSARY) => [
+            'iid' => ['name', 'description'],
+        ],
+        Database::get_course_table(TABLE_GROUP_CATEGORY) => [
+            'iid' => ['title', 'description'],
+        ],
+        Database::get_course_table(TABLE_GROUP) => [
+            'iid' => ['name', 'description', 'secret_directory'],
+        ],
+        Database::get_course_table(TABLE_LINK) => [
+            'iid' => ['description'],
+        ],
+        Database::get_course_table(TABLE_LINK_CATEGORY) => [
+            'iid' => ['category_title', 'description'],
+        ],
+        Database::get_course_table(TABLE_LP_MAIN) => [
+            'iid' => ['name', 'ref', 'description', 'path', 'content_license', 'preview_image', 'theme'],
+        ],
+        Database::get_course_table(TABLE_LP_CATEGORY) => [
+            'iid' => ['name'],
+        ],
+        Database::get_course_table(TABLE_LP_ITEM) => [
+            'iid' => ['prerequisite', 'description', 'title', 'parameters', 'launch_data', 'terms'],
+        ],
+        Database::get_course_table(TABLE_LP_ITEM_VIEW) => [
+            'iid' => ['suspend_data', 'lesson_location'],
+        ],
+        Database::get_course_table(TABLE_NOTEBOOK) => [
+            'iid' => ['title', 'description'],
+        ],
+        Database::get_course_table(TABLE_ONLINE_LINK) => [
+            'iid' => ['name'],
+        ],
+        Database::get_course_table(TABLE_QUIZ_QUESTION_CATEGORY) => [
+            'iid' => ['title', 'description'],
+        ],
+        Database::get_course_table(TABLE_ROLE) => [
+            'iid' => ['role_name', 'role_comment'],
+        ],
+        Database::get_course_table(TABLE_STUDENT_PUBLICATION) => [
+            'iid' => ['title', 'title_correction', 'description'],
+        ],
+        Database::get_course_table(TABLE_STUDENT_PUBLICATION_ASSIGNMENT_COMMENT) => [
+            'iid' => ['comment', 'file'],
+        ],
+        Database::get_course_table(TABLE_SURVEY) => [
+            'iid' => ['title', 'subtitle', 'surveythanks', 'invite_mail', 'reminder_mail', 'mail_subject', 'access_condition', 'form_fields'],
+        ],
+        Database::get_course_table(TABLE_SURVEY_QUESTION_GROUP) => [
+            'iid' => ['name', 'description'],
+        ],
+        Database::get_course_table(TABLE_SURVEY_QUESTION) => [
+            'iid' => ['survey_question', 'survey_question_comment'],
+        ],
+        Database::get_course_table(TABLE_SURVEY_QUESTION_OPTION) => [
+            'iid' => ['option_text'],
+        ],
+        Database::get_course_table(TABLE_THEMATIC) => [
+            'iid' => ['content', 'title'],
+        ],
+        Database::get_course_table(TABLE_THEMATIC_ADVANCE) => [
+            'iid' => ['content'],
+        ],
+        Database::get_course_table(TABLE_THEMATIC_PLAN) => [
+            'iid' => ['description'],
+        ],
+        Database::get_course_table(TABLE_TOOL_LIST) => [
+            'iid' => ['description'],
+        ],
+        Database::get_course_table(TABLE_TOOL_INTRO) => [
+            'iid' => ['intro_text'],
+        ],
+        Database::get_course_table(TABLE_USER_INFO_DEF) => [
+            'iid' => ['comment'],
+        ],
+        Database::get_course_table(TABLE_WIKI) => [
+            'iid' => ['title', 'content', 'comment', 'progress', 'linksto'],
+        ],
+        Database::get_course_table(TABLE_WIKI_CONF) => [
+            'iid' => ['feedback1', 'feedback2', 'feedback3'],
+        ],
+        Database::get_course_table(TABLE_WIKI_DISCUSS) => [
+            'iid' => ['comment'],
+        ],
+        Database::get_main_table(TABLE_CAREER) => [
+            'id' => ['name', 'description'],
+        ],
+        Database::get_main_table(TABLE_MAIN_CHAT) => [
+            'id' => ['message'],
+        ],
+        Database::get_main_table(TABLE_MAIN_CLASS) => [
+            'id' => ['name'],
+        ],
+        Database::get_main_table(TABLE_MAIN_COURSE_REQUEST) => [
+            'id' => ['description', 'title', 'objetives', 'target_audience'],
+        ],
+        'course_type' => [
+            'id' => ['description'],
+        ],
+        Database::get_main_table(TABLE_EVENT_EMAIL_TEMPLATE) => [
+            'id' => ['message', 'subject', 'event_type_name'],
+        ],
+        Database::get_main_table(TABLE_GRADE_MODEL) => [
+            'id' => ['name', 'description'],
+        ],
+        Database::get_main_table(TABLE_MAIN_GRADEBOOK_CATEGORY) => [
+            'id' => ['name', 'description'],
+        ],
+        Database::get_main_table(TABLE_MAIN_GRADEBOOK_CERTIFICATE) => [
+            'id' => ['path_certificate'],
+        ],
+        Database::get_main_table(TABLE_MAIN_GRADEBOOK_EVALUATION) => [
+            'id' => ['description', 'name'],
+        ],
+        Database::get_main_table(TABLE_MAIN_GRADEBOOK_LINKEVAL_LOG) => [
+            'id' => ['name', 'description'],
+        ],
+        Database::get_main_table(TABLE_MAIN_LEGAL) => [
+            'id' => ['content', 'changes'],
+        ],
+        Database::get_main_table(TABLE_MESSAGE) => [
+            'id' => ['content'],
+        ],
+        Database::get_main_table(TABLE_MESSAGE_ATTACHMENT) => [
+            'id' => ['path', 'comment', 'filename'],
+        ],
+        Database::get_main_table(TABLE_NOTIFICATION) => [
+            'id' => ['content'],
+        ],
+        Database::get_main_table(TABLE_PERSONAL_AGENDA) => [
+            'id' => ['title', 'text'],
+        ],
+        Database::get_main_table(TABLE_PROMOTION) => [
+            'id' => ['description'],
+        ],
+        'room' => [
+            'id' => ['description'],
+        ],
+        'sequence_condition' => [
+            'id' => ['description'],
+        ],
+        'sequence_method' => [
+            'id' => ['description', 'formula'],
+        ],
+        'sequence_rule' => [
+            'id' => ['description'],
+        ],
+        'sequence_type_entity' => [
+            'id' => ['description'],
+        ],
+        'sequence_variable' => [
+            'id' => ['description'],
+        ],
+        Database::get_main_table(TABLE_MAIN_SESSION) => [
+            'id' => ['description'],
+        ],
+        Database::get_main_table(TABLE_MAIN_SHARED_SURVEY) => [
+            'survey_id' => ['subtitle', 'surveythanks', 'intro'],
+        ],
+        Database::get_main_table(TABLE_MAIN_SHARED_SURVEY_QUESTION) => [
+            'question_id' => ['survey_question', 'survey_question_comment'],
+        ],
+        Database::get_main_table(TABLE_MAIN_SHARED_SURVEY_QUESTION_OPTION) => [
+            'question_option_id' => ['option_text'],
+        ],
+        Database::get_main_table(TABLE_MAIN_SKILL) => [
+            'id' => ['name', 'description', 'criteria'],
+        ],
+        Database::get_main_table(TABLE_MAIN_SKILL_PROFILE) => [
+            'id' => ['description'],
+        ],
+        Database::get_main_table(TABLE_MAIN_SKILL_REL_USER) => [
+            'id' => ['argumentation'],
+        ],
+        'skill_rel_user_comment' => [
+            'id' => ['feedback_text'],
+        ],
+        Database::get_main_table(TABLE_MAIN_SYSTEM_ANNOUNCEMENTS) => [
+            'id' => ['content'],
+        ],
+        Database::get_main_table(TABLE_MAIN_SYSTEM_CALENDAR) => [
+            'id' => ['content'],
+        ],
+        Database::get_main_table(TABLE_MAIN_SYSTEM_TEMPLATE) => [
+            'id' => ['comment', 'content'],
+        ],
+        Database::get_main_table(TABLE_MAIN_TEMPLATES) => [
+            'id' => ['description', 'image'],
+        ],
+        Database::get_main_table(TABLE_TICKET_CATEGORY) => [
+            'id' => ['description'],
+        ],
+        Database::get_main_table(TABLE_TICKET_MESSAGE) => [
+            'id' => ['message'],
+        ],
+        Database::get_main_table(TABLE_TICKET_MESSAGE_ATTACHMENTS) => [
+            'id' => ['filename', 'path'],
+        ],
+        Database::get_main_table(TABLE_TICKET_PRIORITY) => [
+            'id' => ['description'],
+        ],
+        Database::get_main_table(TABLE_TICKET_PROJECT) => [
+            'id' => ['description'],
+        ],
+        Database::get_main_table(TABLE_TICKET_STATUS) => [
+            'id' => ['description'],
+        ],
+        Database::get_main_table(TABLE_TICKET_TICKET) => [
+            'id' => ['message'],
+        ],
+        Database::get_main_table(TABLE_STATISTIC_TRACK_E_ATTEMPT) => [
+            'id' => ['answer', 'teacher_comment', 'filename'],
+        ],
+        Database::get_main_table(TABLE_STATISTIC_TRACK_E_ATTEMPT_RECORDING) => [
+            'id' => ['teacher_comment'],
+        ],
+        Database::get_main_table(TABLE_STATISTIC_TRACK_E_DEFAULT) => [
+            'default_id' => ['default_value'],
+        ],
+        Database::get_main_table(TABLE_STATISTIC_TRACK_E_EXERCISES) => [
+            'exe_id' => ['data_tracking', 'questions_to_check'],
+        ],
+        Database::get_main_table(TABLE_STATISTIC_TRACK_E_ITEM_PROPERTY) => [
+            'id' => ['content'],
+        ],
+        'track_e_open' => [
+            'open_id' => ['open_remote_host', 'open_agent', 'open_referer'],
+        ],
+        Database::get_main_table(TABLE_TRACK_STORED_VALUES) => [
+            'id' => ['sv_value'],
+        ],
+        Database::get_main_table(TABLE_TRACK_STORED_VALUES_STACK) => [
+            'id' => ['sv_value'],
+        ],
+        Database::get_main_table(TABLE_MAIN_USER_API_KEY) => [
+            'id' => ['description'],
+        ],
+        Database::get_main_table(TABLE_USERGROUP) => [
+            'id' => ['name', 'description', 'picture', 'url'],
+        ],
+        Database::get_main_table(TABLE_MAIN_BLOCK) => [
+            'id' => ['name', 'description', 'path'],
+        ],
+    ];
+
+    if (api_get_configuration_value('attendance_allow_comments')) {
+        $replacements['c_attendance_result_comment'] = [
+            'iid' => ['comment'],
+        ];
+    }
+
+    if (api_get_configuration_value('exercise_text_when_finished_failure')) {
+        $replacements[Database::get_course_table(TABLE_QUIZ_TEST)]['iid'][] = 'text_when_finished_failure';
+    }
+
+    $changes = array_map(
+        fn ($table) => 0,
+        $replacements
+    );
+
+    foreach ($replacements as $table => $replacement) {
+        foreach ($replacement as $idColumn => $columns) {
+            $keys = array_map(fn ($column) => "$column LIKE %?%", $columns);
+            $values = array_fill(0, count($columns), $search);
+
+            $result = Database::select(
+                [$idColumn, ...$columns],
+                $table,
+                [
+                    'where' => [
+                        implode(' OR ', $keys) => $values,
+                    ],
+                    'order' => "$idColumn ASC",
+                ]
+            );
+
+            foreach ($result as $row) {
+                $attributes = array_combine(
+                    $columns,
+                    array_map(
+                        fn ($column) => preg_replace('#'.$search.'#', $replace, $row[$column]),
+                        $columns
+                    )
+                );
+
+                try {
+                    Database::update(
+                        $table,
+                        $attributes,
+                        ["$idColumn = ?" => $row[$idColumn]]
+                    );
+                } catch (Exception $e) {
+                    Database::handleError($e);
+                }
+
+                $changes[$table]++;
+            }
+        }
+    }
+
+    return $changes;
 }

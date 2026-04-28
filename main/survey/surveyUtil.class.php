@@ -630,7 +630,7 @@ class SurveyUtil
     {
         $em = Database::getManager();
         $qb = $em->createQueryBuilder();
-        $lpItemsArray = $qb->select('sa.lpItemId, li.title, l.name')
+        $qb->select('sa.lpItemId, li.title, l.name')
             ->distinct()
             ->from('ChamiloCourseBundle:CSurveyAnswer', 'sa')
             ->innerJoin(
@@ -646,12 +646,16 @@ class SurveyUtil
                 'l.iid = li.lpId'
             )
             ->where('sa.cId = :cId')
-            ->andWhere('sa.sessionId = :sessionId')
             ->andWhere('sa.surveyId = :surveyId')
             ->setParameter('cId', $courseId)
-            ->setParameter('sessionId', $sessionId)
-            ->setParameter('surveyId', $surveyId)
-            ->getQuery()
+            ->setParameter('surveyId', $surveyId);
+
+        if (api_get_configuration_value('show_surveys_base_in_sessions')) {
+            $qb->andWhere('sa.sessionId = :sessionId')
+               ->setParameter('sessionId', $sessionId);
+        }
+
+        $lpItemsArray = $qb->getQuery()
             ->getArrayResult();
 
         $options = [];
@@ -901,7 +905,11 @@ class SurveyUtil
                         $row['option_id'] = $parts[0];
                     }
 
-                    $data[$row['option_id']] = $row;
+                    if (!isset($data[$row['option_id']])) {
+                        $data[$row['option_id']] = $row;
+                    } else {
+                        $data[$row['option_id']]['total'] = $data[$row['option_id']]['total'] + $row['total'];
+                    }
                 }
 
                 foreach ($options as $option) {
@@ -1596,13 +1604,15 @@ class SurveyUtil
                 } else {
                     foreach ($possible_option as $option_id => $value) {
                         if ($questions[$question_id]['type'] === 'multiplechoiceother') {
-                            foreach ($answers_of_user[$question_id] as $key => $newValue) {
-                                $parts = ch_multiplechoiceother::decodeOptionValue($key);
-                                if (isset($parts[0])) {
-                                    $data = $answers_of_user[$question_id][$key];
-                                    unset($answers_of_user[$question_id][$key]);
-                                    $newKey = $parts[0];
-                                    $answers_of_user[$question_id][$newKey] = $data;
+                            if (isset($answers_of_user[$question_id])) {
+                                foreach ($answers_of_user[$question_id] as $key => $newValue) {
+                                    $parts = ch_multiplechoiceother::decodeOptionValue($key);
+                                    if (isset($parts[0])) {
+                                        $data = $answers_of_user[$question_id][$key];
+                                        unset($answers_of_user[$question_id][$key]);
+                                        $newKey = $parts[0];
+                                        $answers_of_user[$question_id][$newKey] = $data;
+                                    }
                                 }
                             }
                         }
@@ -1736,7 +1746,11 @@ class SurveyUtil
                     )
                     .';';
                 } else {
-                    for ($ii = 0; $ii < $row['number_of_options']; $ii++) {
+                    $numberOfOptions = $row['number_of_options'];
+                    if ($row['type'] == 'multiplechoiceother') {
+                        $numberOfOptions++;
+                    }
+                    for ($ii = 0; $ii < $numberOfOptions; $ii++) {
                         $return .= str_replace(
                             "\r\n",
                             '  ',
@@ -1791,6 +1805,8 @@ class SurveyUtil
         $result = Database::query($sql);
         $possible_answers = [];
         $possible_answers_type = [];
+        $current_question_type = '';
+        $current_question_id = null;
         while ($row = Database::fetch_array($result)) {
             // We show the options if
             // 1. there is no question filter and the export button has not been clicked
@@ -1803,15 +1819,29 @@ class SurveyUtil
                 in_array($row['question_id'], $_POST['questions_filter'.$suffixLpItem])
             )
             ) {
+                if ($current_question_id != $row['question_id']) {
+                    if ($current_question_type == 'multiplechoiceother') {
+                        $return .= api_html_entity_decode(strip_tags(get_lang('Comment')), ENT_QUOTES).';';
+                    }
+                }
+
+                $current_question_type = $row['type'];
+                $current_question_id = $row['question_id'];
+
                 $row['option_text'] = str_replace(["\r", "\n"], ['', ''], $row['option_text']);
                 if (!$compact) {
                     $return .= api_html_entity_decode(strip_tags($row['option_text']), ENT_QUOTES).';';
+
                     $possible_answers[$row['question_id']][$row['question_option_id']] = $row['question_option_id'];
                 } else {
                     $possible_answers[$row['question_id']][$row['question_option_id']] = $row['option_text'];
                 }
                 $possible_answers_type[$row['question_id']] = $row['type'];
             }
+        }
+
+        if ($current_question_type == 'multiplechoiceother') {
+            $return .= api_html_entity_decode(strip_tags(get_lang('Comment')), ENT_QUOTES).';';
         }
 
         $return .= "\n";
@@ -1852,7 +1882,8 @@ class SurveyUtil
                     $answers_of_user,
                     $old_user,
                     !$survey_data['anonymous'],
-                    $compact
+                    $compact,
+                    $possible_answers_type
                 );
                 $answers_of_user = [];
             }
@@ -1876,7 +1907,8 @@ class SurveyUtil
             $answers_of_user,
             $old_user,
             true,
-            $compact
+            $compact,
+            $possible_answers_type
         );
 
         return $return;
@@ -1904,7 +1936,8 @@ class SurveyUtil
         $answers_of_user,
         $user,
         $display_extra_user_fields = false,
-        $compact = false
+        $compact = false,
+        $questionTypes = true
     ) {
         $return = '';
         if (0 == $survey_data['anonymous']) {
@@ -1942,6 +1975,7 @@ class SurveyUtil
         if (is_array($possible_options)) {
             foreach ($possible_options as $question_id => $possible_option) {
                 if (is_array($possible_option) && count($possible_option) > 0) {
+                    $otherPaddingNeeded = ($questionTypes[$question_id] == 'multiplechoiceother' ? true : false);
                     foreach ($possible_option as $option_id => &$value) {
                         // For each option of this question, look if it matches the user's answer
                         $my_answer_of_user = !isset($answers_of_user[$question_id]) || isset($answers_of_user[$question_id]) && $answers_of_user[$question_id] == null ? [] : $answers_of_user[$question_id];
@@ -1990,11 +2024,29 @@ class SurveyUtil
                                     $return .= 'v;';
                                 }
                             }
+                        } elseif (isset($key[0]) && strpos($key[0], '@:@') !== false) {
+                            list($idAnswer, $other) = explode('@:@', $key[0]);
+
+                            if ($idAnswer == $option_id) {
+                                $return .= (
+                                    strlen($other) > 0
+                                    ? 'v;"'.str_replace('"', '""', api_html_entity_decode(strip_tags($other), ENT_QUOTES)).'";'
+                                    : 'v;'
+                                    );
+                            } else {
+                                if (!$compact) {
+                                    $return .= ';';
+                                    $otherPaddingNeeded = false;
+                                }
+                            }
                         } else {
-                            if (!$compact) {
+                            if (!$compact || $questionTypes[$question_id] == 'multipleresponse') {
                                 $return .= ';';
                             }
                         }
+                    }
+                    if ($otherPaddingNeeded == true) {
+                        $return .= ';';
                     }
                 }
             }
@@ -2026,11 +2078,11 @@ class SurveyUtil
             return false;
         }
 
-        $spreadsheet = new PHPExcel();
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $spreadsheet->setActiveSheetIndex(0);
         $worksheet = $spreadsheet->getActiveSheet();
         $line = 1;
-        $column = 1; // Skip the first column (row titles)
+        $column = 2; // Skip the first column (row titles); was column 1 (0-indexed B) in PHPExcel
 
         // Show extra fields blank space (enough for extra fields on next line)
         // Show user fields section with a big th colspan that spans over all fields
@@ -2103,7 +2155,11 @@ class SurveyUtil
                     );
                     $column++;
                 } else {
-                    for ($ii = 0; $ii < $row['number_of_options']; $ii++) {
+                    $numberOfOptions = $row['number_of_options'];
+                    if ($row['type'] == 'multiplechoiceother') {
+                        $numberOfOptions++;
+                    }
+                    for ($ii = 0; $ii < $numberOfOptions; $ii++) {
                         $worksheet->setCellValueByColumnAndRow(
                             $column,
                             $line,
@@ -2119,7 +2175,7 @@ class SurveyUtil
         }
 
         $line++;
-        $column = 1;
+        $column = 2;
         // Show extra field values
         if ($display_extra_user_fields && !$survey_data['anonymous']) {
             // Show the fields names for user fields
@@ -2158,6 +2214,8 @@ class SurveyUtil
         $result = Database::query($sql);
         $possible_answers = [];
         $possible_answers_type = [];
+        $current_question_type = '';
+        $current_question_id = null;
         while ($row = Database::fetch_array($result)) {
             // We show the options if
             // 1. there is no question filter and the export button has not been clicked
@@ -2166,6 +2224,23 @@ class SurveyUtil
                 (isset($_POST['questions_filter'.$suffixLpItem]) && is_array($_POST['questions_filter'.$suffixLpItem]) &&
                 in_array($row['question_id'], $_POST['questions_filter'.$suffixLpItem]))
             ) {
+                if ($current_question_id != $row['question_id']) {
+                    if ($current_question_type == 'multiplechoiceother') {
+                        $worksheet->setCellValueByColumnAndRow(
+                            $column,
+                            $line,
+                            api_html_entity_decode(
+                                strip_tags(get_lang('Comment')),
+                                ENT_QUOTES
+                            )
+                        );
+                        $column++;
+                    }
+                }
+
+                $current_question_type = $row['type'];
+                $current_question_id = $row['question_id'];
+
                 $worksheet->setCellValueByColumnAndRow(
                     $column,
                     $line,
@@ -2180,6 +2255,17 @@ class SurveyUtil
             }
         }
 
+        if ($current_question_type == 'multiplechoiceother') {
+            $worksheet->setCellValueByColumnAndRow(
+                $column,
+                $line,
+                api_html_entity_decode(
+                    strip_tags(get_lang('Comment')),
+                    ENT_QUOTES
+                )
+            );
+        }
+
         // To select the answers by Lp item
         $lpItemCondition = '';
         if (api_get_configuration_value('allow_survey_tool_in_lp')) {
@@ -2188,7 +2274,7 @@ class SurveyUtil
 
         // Getting all the answers of the users
         $line++;
-        $column = 0;
+        $column = 1;
         $old_user = '';
         $answers_of_user = [];
         $sql = "SELECT * FROM $table_survey_answer
@@ -2207,7 +2293,8 @@ class SurveyUtil
                     $possible_answers,
                     $answers_of_user,
                     $old_user,
-                    !$survey_data['anonymous']
+                    !$survey_data['anonymous'],
+                    $possible_answers_type
                 );
                 foreach ($return as $elem) {
                     $worksheet->setCellValueByColumnAndRow($column, $line, $elem);
@@ -2215,7 +2302,7 @@ class SurveyUtil
                 }
                 $answers_of_user = [];
                 $line++;
-                $column = 0;
+                $column = 1;
             }
             if ($possible_answers_type[$row['question_id']] === 'open' ||
                 $possible_answers_type[$row['question_id']] === 'comment'
@@ -2234,7 +2321,8 @@ class SurveyUtil
             $possible_answers,
             $answers_of_user,
             $old_user,
-            true
+            true,
+            $possible_answers_type
         );
 
         // this is to display the last user
@@ -2244,7 +2332,7 @@ class SurveyUtil
         }
 
         $file = api_get_path(SYS_ARCHIVE_PATH).api_replace_dangerous_char($filename);
-        $writer = new PHPExcel_Writer_Excel2007($spreadsheet);
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
         $writer->save($file);
 
         if ($returnFile) {
@@ -2271,7 +2359,8 @@ class SurveyUtil
         $possible_options,
         $answers_of_user,
         $user,
-        $display_extra_user_fields = false
+        $display_extra_user_fields = false,
+        $questionTypes = true
     ) {
         $return = [];
         if ($survey_data['anonymous'] == 0) {
@@ -2307,6 +2396,7 @@ class SurveyUtil
 
         if (is_array($possible_options)) {
             foreach ($possible_options as $question_id => &$possible_option) {
+                $otherPaddingNeeded = ($questionTypes[$question_id] == 'multiplechoiceother' ? true : false);
                 if (is_array($possible_option) && count($possible_option) > 0) {
                     foreach ($possible_option as $option_id => &$value) {
                         $my_answers_of_user = isset($answers_of_user[$question_id])
@@ -2324,9 +2414,25 @@ class SurveyUtil
                             } else {
                                 $return[] = 'v';
                             }
+                        } elseif (isset($key[0]) && strpos($key[0], '@:@') !== false) {
+                            list($idAnswer, $other) = explode('@:@', $key[0]);
+                            if ($idAnswer == $option_id) {
+                                if (strlen($other) > 0) {
+                                    $return[] = 'v';
+                                    $return[] = api_html_entity_decode(strip_tags($other), ENT_QUOTES);
+                                    $otherPaddingNeeded = false;
+                                } else {
+                                    $return[] = 'v';
+                                }
+                            } else {
+                                $return[] = '';
+                            }
                         } else {
                             $return[] = '';
                         }
+                    }
+                    if ($otherPaddingNeeded == true) {
+                        $return[] = '';
                     }
                 }
             }
@@ -3331,6 +3437,25 @@ class SurveyUtil
         $formToString = $form->returnForm();
 
         echo '<div id="dialog-confirm">'.$formToString.'</div>';
+
+        $form = new FormValidator(
+            'copy-survey',
+            'post',
+            null,
+            null,
+            ['class' => 'form-vertical']
+        );
+        $form->addElement(
+            'text',
+            'survey_code',
+            get_lang('SurveyCode'),
+            ['size' => 20, 'maxlength' => 20]
+        );
+
+        $formToString = $form->returnForm();
+
+        echo '<div id="dialog-copy-confirm">'.$formToString.'</div>';
+
         $table->display();
     }
 
@@ -3408,8 +3533,9 @@ class SurveyUtil
     /**
      * This function changes the modify column of the sortable table.
      *
-     * @param int  $survey_id the id of the survey
+     * @param int  $survey_id  the id of the survey
      * @param bool $drh
+     * @param bool $surveyCode
      *
      * @return string html code that are the actions that can be performed on any survey
      *
@@ -3417,7 +3543,7 @@ class SurveyUtil
      *
      * @version January 2007
      */
-    public static function modify_filter($survey_id, $drh = false)
+    public static function modify_filter($survey_id, $drh = false, $surveyCode = "")
     {
         /** @var CSurvey $survey */
         $survey = Database::getManager()->find('ChamiloCourseBundle:CSurvey', $survey_id);
@@ -3485,7 +3611,8 @@ class SurveyUtil
                 $actions[] = Display::url(
                     Display::return_icon('copy.png', get_lang('DuplicateSurvey')),
                     $codePath.'survey/survey_list.php?'
-                    .http_build_query($params + ['action' => 'copy_survey', 'survey_id' => $survey_id])
+                    .http_build_query($params + ['action' => 'copy_survey', 'survey_id' => $survey_id]),
+                    ['survey_id' => $survey_id, 'class' => 'copy_survey_popup']
                 );
 
                 $actions[] = Display::url(

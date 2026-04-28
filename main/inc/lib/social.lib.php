@@ -497,6 +497,24 @@ class SocialManager extends UserManager
         return $list;
     }
 
+    public static function hasInvitationByUser(int $receiverId, int $senderId): bool
+    {
+        $result = Database::select(
+            'count(1) as count',
+            Database::get_main_table(TABLE_MESSAGE),
+            [
+                'where' => [
+                    'user_sender_id = ?' => $senderId,
+                    'AND user_receiver_id = ?' => $receiverId,
+                    'AND msg_status = ?' => MESSAGE_STATUS_INVITATION_PENDING,
+                ],
+            ],
+            'first'
+        );
+
+        return $result['count'] > 0;
+    }
+
     /**
      * Get count invitation sent by user.
      *
@@ -1220,9 +1238,10 @@ class SocialManager extends UserManager
                     'new-message.png',
                     $sendMessageText
                 );
+                $userIdHash = UserManager::generateUserHash($user_id);
                 $sendMessageUrl = api_get_path(WEB_AJAX_PATH).'user_manager.ajax.php?'.http_build_query([
                     'a' => 'get_user_popup',
-                    'user_id' => $user_id,
+                    'hash' => $userIdHash,
                 ]);
 
                 $links .= '<li>';
@@ -1890,7 +1909,7 @@ class SocialManager extends UserManager
 
         $formattedList .= '</div>';
         $formattedList .= '<div class="mediapost-form row">';
-        $formattedList .= '<form class="form-horizontal" id="form_comment_'.$messageId.'" name="post_comment" method="POST">
+        $formattedList .= '<form class="form-horizontal" id="form_comment_'.$messageId.'" name="post_comment" method="POST" data-sec-token="'.Security::get_existing_token('wall').'">
                 <div class="col-sm-9">
                 <label for="comment" class="hide">'.get_lang('SocialWriteNewComment').'</label>
                 <input type="hidden" name = "messageId" value="'.$messageId.'" />
@@ -1901,6 +1920,7 @@ class SocialManager extends UserManager
                     <em class="fa fa-pencil"></em> '.get_lang('Post').'
                 </a>
                 </div>
+                <input type="hidden" name="wall_sec_token" value="'.Security::get_existing_token('wall').'">
                 </form>';
         $formattedList .= '</div>';
 
@@ -1963,14 +1983,16 @@ class SocialManager extends UserManager
 
         $isOwnWall = $currentUserId == $userIdLoop || $currentUserId == $receiverId;
         if ($isOwnWall) {
-            $comment .= Display::url(
-                    Display::returnFontAwesomeIcon('trash', '', true),
-                'javascript:void(0)',
+            $comment .= Display::button(
+                '',
+                Display::returnFontAwesomeIcon('trash', '', true),
                 [
                     'id' => 'message_'.$message['id'],
                     'title' => get_lang('SocialMessageDelete'),
-                    'onclick' => 'deleteComment('.$message['id'].')',
-                    'class' => 'btn btn-default',
+                    'type' => 'button',
+                    'class' => 'btn btn-default btn-delete-social-comment',
+                    'data-id' => $message['id'],
+                    'data-sectoken' => Security::get_existing_token('social'),
                 ]
             );
         }
@@ -2090,18 +2112,62 @@ class SocialManager extends UserManager
     }
 
     /**
+     * Check if a URL is safe to fetch server-side (not targeting internal resources).
+     *
+     * Blocks private/reserved IP ranges, non-HTTP schemes, and unresolvable hosts
+     * to prevent SSRF attacks (CWE-918).
+     */
+    public static function isUrlSafe(string $url): bool
+    {
+        $parsed = parse_url($url);
+
+        // Allow only http and https schemes
+        if (!isset($parsed['scheme']) || !in_array($parsed['scheme'], ['http', 'https'], true)) {
+            return false;
+        }
+
+        $host = $parsed['host'] ?? '';
+        if (empty($host)) {
+            return false;
+        }
+
+        // Resolve hostname to IP
+        $ip = gethostbyname($host);
+        if ($ip === $host) {
+            // DNS resolution failed
+            return false;
+        }
+
+        // Block private and reserved IP ranges
+        if (false === filter_var(
+            $ip,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+        )) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * verify if Url Exist - Using Curl.
      */
     public static function verifyUrl(string $uri): bool
     {
+        if (!self::isUrlSafe($uri)) {
+            return false;
+        }
+
         $client = new Client();
 
         try {
             $response = $client->request('GET', $uri, [
-                'timeout' => 15,
+                'timeout' => 10,
                 'verify' => false,
+                'allow_redirects' => ['max' => 3],
                 'headers' => [
-                    'User-Agent' => $_SERVER['HTTP_USER_AGENT'],
+                    'User-Agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Chamilo',
                 ],
             ]);
 
@@ -2406,7 +2472,6 @@ class SocialManager extends UserManager
     public static function displayWallForm(string $urlForm): string
     {
         $form = self::getWallForm($urlForm);
-        $form->protect();
 
         return Display::panel($form->returnForm(), get_lang('SocialWall'));
     }
@@ -3017,41 +3082,20 @@ class SocialManager extends UserManager
         }
 
         $htmlHeadXtra[] = '<script>
-            function deleteMessage(id)
-            {
-                $.ajax({
-                    url: "'.$socialAjaxUrl.'?a=delete_message" + "&id=" + id,
-                    success: function (result) {
-                        if (result) {
-                            $("#message_" + id).parent().parent().parent().parent().html(result);
-                        }
-                    }
-                });
-            }
-
-            function deleteComment(id)
-            {
-                $.ajax({
-                    url: "'.$socialAjaxUrl.'?a=delete_message" + "&id=" + id,
-                    success: function (result) {
-                        if (result) {
-                            $("#message_" + id).parent().parent().parent().html(result);
-                        }
-                    }
-                });
-            }
-
             function submitComment(messageId)
             {
-                var data = $("#form_comment_"+messageId).serializeArray();
+                var $form = $("#form_comment_"+messageId);
+                var data = $form.serializeArray();
                 $.ajax({
                     type : "POST",
-                    url: "'.$socialAjaxUrl.'?a=send_comment" + "&id=" + messageId,
+                    url: "'.$socialAjaxUrl.'?a=send_comment" + "&id=" + messageId + "&wall_sec_token=" + $form.data("sec-token"),
                     data: data,
                     success: function (result) {
                         if (result) {
+                            $(".mediapost-form form").data({ "sec-token": result.secToken });
+
                             $("#post_" + messageId + " textarea").val("");
-                            $("#post_" + messageId + " .sub-mediapost").prepend(result);
+                            $("#post_" + messageId + " .sub-mediapost").prepend(result.postHTML);
                             $("#post_" + messageId + " .sub-mediapost").append(
                                 $(\'<div id=result_\' + messageId +\'>'.addslashes(get_lang('Saved')).'</div>\')
                             );
@@ -3069,33 +3113,39 @@ class SocialManager extends UserManager
             $(function() {
                 timeAgo();
 
-                /*$(".delete_message").on("click", function() {
-                    var id = $(this).attr("id");
-                    id = id.split("_")[1];
-                    $.ajax({
-                        url: "'.$socialAjaxUrl.'?a=delete_message" + "&id=" + id,
-                        success: function (result) {
+                $("body").on("click", ".btn-delete-social-message", function () {
+                    var id = $(this).data("id");
+                    var secToken = $(this).data("sectoken");
+
+                    $.getJSON(
+                        "'.$socialAjaxUrl.'",
+                        { a: "delete_message", id: id, social_sec_token: secToken },
+                        function (result) {
                             if (result) {
-                                $("#message_" + id).parent().parent().parent().parent().html(result);
+                                $("#message_" + id).parent().parent().parent().parent().html(result.message);
+
+                                $(".btn-delete-social-message").data("sectoken", result.secToken);
                             }
                         }
-                    });
+                    );
                 });
 
+                $("body").on("click", ".btn-delete-social-comment", function () {
+                    var id = $(this).data("id");
+                    var secToken = $(this).data("sectoken");
 
-                $(".delete_comment").on("click", function() {
-                    var id = $(this).attr("id");
-                    id = id.split("_")[1];
-                    $.ajax({
-                        url: "'.$socialAjaxUrl.'?a=delete_message" + "&id=" + id,
-                        success: function (result) {
+                    $.getJSON(
+                        "'.$socialAjaxUrl.'",
+                        { a: "delete_message", id: id, social_sec_token: secToken },
+                        function (result) {
                             if (result) {
-                                $("#message_" + id).parent().parent().parent().html(result);
+                                $("#message_" + id).parent().parent().parent().html(result.message);
+
+                                $(".btn-delete-social-comment").data("sectoken", result.secToken);
                             }
                         }
-                    });
+                    );
                 });
-                */
             });
 
             function timeAgo() {
@@ -3412,6 +3462,7 @@ class SocialManager extends UserManager
         $form->addHtml('</div></div>');
         $form->addHtml('</div>');
         $form->addHidden('url_content', '');
+        $form->protect();
 
         return $form;
     }
@@ -3467,14 +3518,16 @@ class SocialManager extends UserManager
         );
 
         if ($canEdit) {
-            $htmlDelete = Display::url(
+            $htmlDelete = Display::button(
+                '',
                 Display::returnFontAwesomeIcon('trash', '', true),
-                'javascript:void(0)',
                 [
                     'id' => 'message_'.$message['id'],
                     'title' => get_lang('SocialMessageDelete'),
-                    'onclick' => 'deleteMessage('.$message['id'].')',
-                    'class' => 'btn btn-default',
+                    'type' => 'button',
+                    'class' => 'btn btn-default btn-delete-social-message',
+                    'data-id' => $message['id'],
+                    'data-sectoken' => Security::get_existing_token('social'),
                 ]
             );
 

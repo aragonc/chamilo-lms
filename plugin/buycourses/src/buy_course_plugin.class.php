@@ -108,6 +108,7 @@ class BuyCoursesPlugin extends Plugin
                 'commissions_enable' => 'boolean',
                 'unregistered_users_enable' => 'boolean',
                 'hide_free_text' => 'boolean',
+                'hide_shopping_cart_from_course_catalogue' => 'boolean',
                 'invoicing_enable' => 'boolean',
                 'tax_enable' => 'boolean',
                 'use_currency_symbol' => 'boolean',
@@ -565,9 +566,13 @@ class BuyCoursesPlugin extends Plugin
         $return = [];
         $paypal = $this->get('paypal_enable') === 'true';
         $transfer = $this->get('transfer_enable') === 'true';
+        $stripe = $this->get('stripe_enable') === 'true';
+        $culqi = $this->get('culqi_enable') === 'true';
+        $cecabank = $this->get('cecabank_enable') === 'true';
+        $tpv_redsys = $this->get('tpv_redsys_enable') === 'true';
         $hideFree = $this->get('hide_free_text') === 'true';
 
-        if ($paypal || $transfer) {
+        if ($paypal || $transfer || $stripe || $culqi || $cecabank || $tpv_redsys) {
             $item = $this->getItemByProduct($productId, $productType);
             $html = '<div class="buycourses-price">';
             if ($item) {
@@ -602,8 +607,12 @@ class BuyCoursesPlugin extends Plugin
         $productId = $productId;
         $productType = $productType;
         $url = api_get_path(WEB_PLUGIN_PATH).'buycourses/src/process.php?i='.$productId.'&t='.$productType;
+        $buyButton = Display::returnFontAwesomeIcon('shopping-cart');
+        if ($this->get('hide_shopping_cart_from_course_catalogue') === 'true') {
+            $buyButton = Display::returnFontAwesomeIcon('check').PHP_EOL.get_lang('Subscribe');
+        }
         $html = '<a class="btn btn-success btn-sm" title="'.$this->get_lang('Buy').'" href="'.$url.'">'.
-            Display::returnFontAwesomeIcon('shopping-cart').'</a>';
+            $buyButton.'</a>';
 
         return $html;
     }
@@ -1759,7 +1768,7 @@ class BuyCoursesPlugin extends Plugin
      *
      * @return bool
      */
-    public function updateSaleReference(int $saleId, int $saleReference)
+    public function updateSaleReference(int $saleId, string $saleReference)
     {
         $saleTable = Database::get_main_table(self::TABLE_SALE);
 
@@ -3314,7 +3323,7 @@ class BuyCoursesPlugin extends Plugin
                         $status,
                     ],
                 ],
-                'ORDER' => 'ss.service_id ASC',
+                'ORDER' => $defaultOrder,
             ];
         }
 

@@ -37,6 +37,8 @@ if (isset($_REQUEST['load_ajax'])) {
             }
             $user_id = (int) $_REQUEST['user_id'];
             $new_course_list = SessionManager::get_course_list_by_session_id($new_session_id);
+            $coursesInOldSession = SessionManager::get_course_list_by_session_id($origin_session_id);
+            $countCoursesInOldSession = count($coursesInOldSession);
 
             $course_founded = false;
             foreach ($new_course_list as $course_item) {
@@ -55,17 +57,20 @@ if (isset($_REQUEST['load_ajax'])) {
             // Check if the same course exist in the session destination
             if ($course_founded) {
                 $result = SessionManager::get_users_by_session($new_session_id);
+                $subscribedToNew = false;
                 if (empty($result) || !in_array($user_id, array_keys($result))) {
                     if ($debug) {
                         echo 'User added to the session';
                     }
                     // Registering user to the new session
-                    SessionManager::subscribeUsersToSession(
-                        $new_session_id,
-                        [$user_id],
-                        false,
-                        false
-                    );
+                    if ($update_database) {
+                        $subscribedToNew = SessionManager::subscribeUsersToSession(
+                            $new_session_id,
+                            [$user_id],
+                            false,
+                            false
+                        );
+                    }
                 }
 
                 $course_info = api_get_course_info($origin_course_code);
@@ -78,6 +83,11 @@ if (isset($_REQUEST['load_ajax'])) {
                     $update_database,
                     $debug
                 );
+                // If there is only one course in the old session, remove the user from the old session (otherwise leads to confusion)
+                if ($update_database && $subscribedToNew && $countCoursesInOldSession === 1) {
+                    SessionManager::unsubscribe_user_from_session($origin_session_id, $user_id);
+                    echo get_lang('UserUnsubscribedFromOldSessionAsThereWasOnlyOneCourse');
+                }
             } else {
                 echo get_lang('CourseDoesNotExistInThisSession');
             }
@@ -225,9 +235,9 @@ if (!empty($user_list)) {
             }
         }
 
-        foreach ($course_list_registered as &$course) {
+        foreach ($course_list_registered as $i => $course) {
             $courseInfo = api_get_course_info_by_id($course['real_id']);
-            $course['name'] = $courseInfo['name'];
+            $course_list_registered[$i]['name'] = $courseInfo['name'];
         }
 
         $course_list = $course_list_registered;
@@ -247,8 +257,8 @@ if (!empty($user_list)) {
             echo '<tr>';
             foreach ($course_list as $course) {
                 echo '<td>';
-                if (isset($course['id_session']) && !empty($course['id_session'])) {
-                    echo '<b>'.get_lang('SessionName').'</b> '.$my_session_list[$course['id_session']].'<br />';
+                if (isset($course['session_id']) && !empty($course['session_id'])) {
+                    echo '<b>'.get_lang('SessionName').'</b> '.$my_session_list[$course['session_id']].'<br />';
                 }
                 echo $course['name'];
                 echo ' ('.$course['code'].') ';
@@ -262,10 +272,10 @@ if (!empty($user_list)) {
 
             foreach ($course_list as $course) {
                 $course_code = $course['code'];
-                if (empty($course['id_session'])) {
+                if (empty($course['session_id'])) {
                     $session_id = 0;
                 } else {
-                    $session_id = $course['id_session'];
+                    $session_id = $course['session_id'];
                 }
                 echo '<td>';
                 echo get_lang('MoveTo');

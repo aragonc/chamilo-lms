@@ -499,7 +499,7 @@ class GroupManager
             // to_group_id is related to c_group_info.iid
             $itemPropertyTable = Database::get_course_table(TABLE_ITEM_PROPERTY);
             $sql = "DELETE FROM $itemPropertyTable
-                    WHERE c_id = $course_id AND to_group_id = $groupIid ";
+                    WHERE to_group_id = $groupIid ";
             Database::query($sql);
 
             // delete the groups
@@ -1427,9 +1427,16 @@ class GroupManager
             return false;
         }
         $session_id = api_get_session_id();
+        $studentStatus = 5;
+        if (isset($session_id) && $session_id != 0) {
+            $studentStatus = 0;
+        }
         $complete_user_list = CourseManager::get_user_list_from_course_code(
             $_course['code'],
-            $session_id
+            $session_id,
+            null,
+            null,
+            $studentStatus
         );
         $groupIid = $groupInfo['iid'];
         $category = self::get_category_from_group($groupIid);
@@ -1448,6 +1455,7 @@ class GroupManager
         }
 
         $usersToAdd = [];
+        shuffle($complete_user_list);
         foreach ($complete_user_list as $userInfo) {
             $isSubscribed = self::is_subscribed($userInfo['user_id'], $groupInfo);
             if ($isSubscribed) {
@@ -2447,7 +2455,10 @@ class GroupManager
                     Display::return_icon('user.png', get_lang('GroupMembers'), '', ICON_SIZE_SMALL).'</a>&nbsp;';
 
                 $edit_actions .= '<a href="'.$url.'group_overview.php?action=export&type=xls&'.api_get_cidreq(true, false).'&id='.$this_group['id'].'" title="'.get_lang('ExportUsers').'">'.
-                    Display::return_icon('export_excel.png', get_lang('Export'), '', ICON_SIZE_SMALL).'</a>&nbsp;';
+                    Display::return_icon('export_group_excel.png', get_lang('Export'), '', ICON_SIZE_SMALL).'</a>&nbsp;';
+
+                $edit_actions .= '<a href="'.$url.'group_overview.php?action=export_users&'.api_get_cidreq(true, false).'&id='.$this_group['id'].'" title="'.get_lang('ExportUsers').'">'.
+                    Display::return_icon('export_users_csv.png', get_lang('ExportUsers'), '', ICON_SIZE_SMALL).'</a>&nbsp;';
 
                 if ($surveyGroupExists) {
                     $edit_actions .= Display::url(
@@ -2478,15 +2489,17 @@ class GroupManager
             }
         }
 
+        $hasCheckbox = api_is_allowed_to_edit(false, true) && count($group_list) > 1;
+        $defaultSortColumn = $hasCheckbox ? 1 : 0;
         $table = new SortableTableFromArrayConfig(
             $group_data,
-            1,
+            $defaultSortColumn,
             20,
             'group_category_'.$category_id
         );
         $table->set_additional_parameters(['category' => $category_id]);
         $column = 0;
-        if (api_is_allowed_to_edit(false, true) && count($group_list) > 1) {
+        if ($hasCheckbox) {
             $table->set_header($column++, '', false);
         }
         $table->set_header($column++, get_lang('Groups'));
@@ -2753,6 +2766,40 @@ class GroupManager
         }
 
         return $result;
+    }
+
+    /**
+     * Export all students from a group to an array.
+     * This function works only in a context of a course.
+     *
+     * @param int $groupId
+     *
+     * @return array
+     */
+    public static function exportStudentsToArray($groupId = null)
+    {
+        if (empty($groupId)) {
+            return false;
+        }
+        $data = [];
+        $data[] = [
+            'OfficialCode',
+            'Lastname',
+            'Firsname',
+            'Email',
+        ];
+        $users = self::getStudents($groupId);
+        $count = 1;
+        foreach ($users as $user) {
+            $user = api_get_user_info($user['user_id']);
+            $data[$count][] = $user['official_code'];
+            $data[$count][] = $user['lastname'];
+            $data[$count][] = $user['firstname'];
+            $data[$count][] = $user['email'];
+            $count++;
+        }
+
+        return $data;
     }
 
     /**

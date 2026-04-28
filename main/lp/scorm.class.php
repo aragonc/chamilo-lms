@@ -432,6 +432,11 @@ class scorm extends learnpath
                 'visible',
                 $userId
             );
+            Event::addEvent(
+                LOG_LP_CREATE,
+                LOG_LP_ID,
+                $this->lp_id.' - '.$myname
+            );
 
             // Now insert all elements from inside that learning path.
             // Make sure we also get the href and sco/asset from the resources.
@@ -720,7 +725,6 @@ class scorm extends learnpath
 
         if ($updateDirContents && $lpToCheck) {
             $originalPath = str_replace('/.', '', $lpToCheck->path);
-            $originalPath = dirname($originalPath);
             if ($originalPath != $newDir) {
                 Display::addFlash(Display::return_message(get_lang('FileError')));
 
@@ -767,6 +771,7 @@ class scorm extends learnpath
             }
 
             $zipFile->extract(
+                PCLZIP_OPT_REPLACE_NEWER,
                 PCLZIP_CB_PRE_EXTRACT,
                 $callBack
             );

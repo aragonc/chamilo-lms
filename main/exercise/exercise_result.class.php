@@ -77,6 +77,7 @@ class ExerciseResult
                     lastname,
                     official_code,
                     ce.title as extitle,
+                    ce.pass_percentage as expasspercentage,
                     te.exe_result as exresult ,
                     te.exe_weighting as exweight,
                     te.exe_date as exdate,
@@ -113,6 +114,7 @@ class ExerciseResult
                         lastname,
                         official_code,
                         ce.title as extitle,
+                        ce.pass_percentage as expasspercentage,
                         te.exe_result as exresult,
                         te.exe_weighting as exweight,
                         te.exe_date as exdate,
@@ -229,6 +231,9 @@ class ExerciseResult
                     $return[$i]['username'] = $results[$i]['username'];
                 }
                 $return[$i]['title'] = $result['extitle'];
+                $return[$i]['minimun'] = $result['expasspercentage']
+                    ? float_format($result['expasspercentage'] / 100 * $result['exweight'])
+                    : 0;
                 $return[$i]['start_date'] = api_get_local_time($result['exstart']);
                 $return[$i]['end_date'] = api_get_local_time($result['exdate']);
                 $return[$i]['duration'] = $result['duration'];
@@ -269,6 +274,7 @@ class ExerciseResult
                             $return[$i]['username'] = $student['username'];
                         }
                         $return[$i]['title'] = null;
+                        $return[$i]['minimun'] = null;
                         $return[$i]['start_date'] = null;
                         $return[$i]['end_date'] = null;
                         $return[$i]['duration'] = null;
@@ -368,6 +374,7 @@ class ExerciseResult
         $data .= get_lang('StartDate').';';
         $data .= get_lang('EndDate').';';
         $data .= get_lang('Duration').' ('.get_lang('MinMinutes').') ;';
+        $data .= get_lang('WeightNecessary').';';
         $data .= get_lang('Score').';';
         $data .= get_lang('Total').';';
         $data .= get_lang('Status').';';
@@ -417,6 +424,7 @@ class ExerciseResult
             $data .= str_replace("\r\n", '  ', $row['start_date']).';';
             $data .= str_replace("\r\n", '  ', $row['end_date']).';';
             $data .= str_replace("\r\n", '  ', $duration).';';
+            $data .= str_replace("\r\n", '  ', $row['minimun']).';';
             $data .= str_replace("\r\n", '  ', $row['result']).';';
             $data .= str_replace("\r\n", '  ', $row['max']).';';
             $data .= str_replace("\r\n", '  ', $row['status']).';';
@@ -483,12 +491,12 @@ class ExerciseResult
             $filename = 'exercise_results_user_'.$user_id.'_'.$now.'.xlsx';
         }
 
-        $spreadsheet = new PHPExcel();
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $spreadsheet->setActiveSheetIndex(0);
         $worksheet = $spreadsheet->getActiveSheet();
 
-        $line = 1; // Skip first line
-        $column = 0; //skip the first column (row titles)
+        $line = 1;
+        $column = 1;
 
         // check if exists column 'user'
         $with_column_user = false;
@@ -560,6 +568,8 @@ class ExerciseResult
         $column++;
         $worksheet->setCellValueByColumnAndRow($column, $line, get_lang('Duration').' ('.get_lang('MinMinutes').')');
         $column++;
+        $worksheet->setCellValueByColumnAndRow($column, $line, get_lang('WeightNecessary'));
+        $column++;
         $worksheet->setCellValueByColumnAndRow($column, $line, get_lang('Score'));
         $column++;
         $worksheet->setCellValueByColumnAndRow($column, $line, get_lang('Total'));
@@ -574,7 +584,7 @@ class ExerciseResult
         $line++;
 
         foreach ($this->results as $row) {
-            $column = 0;
+            $column = 1;
             if ($with_column_user) {
                 if (api_is_western_name_order()) {
                     $worksheet->setCellValueByColumnAndRow(
@@ -711,6 +721,8 @@ class ExerciseResult
             $duration = !empty($row['duration']) ? round($row['duration'] / 60) : 0;
             $worksheet->setCellValueByColumnAndRow($column, $line, $duration);
             $column++;
+            $worksheet->setCellValueByColumnAndRow($column, $line, $row['minimun']);
+            $column++;
             $worksheet->setCellValueByColumnAndRow($column, $line, $row['result']);
             $column++;
             $worksheet->setCellValueByColumnAndRow($column, $line, $row['max']);
@@ -726,7 +738,7 @@ class ExerciseResult
         }
 
         $file = api_get_path(SYS_ARCHIVE_PATH).api_replace_dangerous_char($filename);
-        $writer = new PHPExcel_Writer_Excel2007($spreadsheet);
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
         $writer->save($file);
         DocumentManager::file_send_for_download($file, true, $filename);
 

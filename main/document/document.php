@@ -1785,10 +1785,12 @@ if ($isAllowedToEdit ||
                 .'&id='.$current_folder_id.'&certificate=true'
         );
     } else {
-        $actionsLeft .= Display::url(
-            Display::return_icon('upload_file.png', get_lang('UplUploadDocument'), '', ICON_SIZE_MEDIUM),
-            api_get_path(WEB_CODE_PATH).'document/upload.php?'.api_get_cidreq().'&id='.$current_folder_id
-        );
+        if (!(api_get_configuration_value('session_hide_document_upload') === true && (isset($sessionId) && $sessionId != 0))) {
+            $actionsLeft .= Display::url(
+                Display::return_icon('upload_file.png', get_lang('UplUploadDocument'), '', ICON_SIZE_MEDIUM),
+                api_get_path(WEB_CODE_PATH).'document/upload.php?'.api_get_cidreq().'&id='.$current_folder_id
+            );
+        }
     }
 
     // Create directory
@@ -2185,13 +2187,19 @@ if ($isAllowedToEdit ||
     $table->set_column_filter(
         $column - 1,
         function ($value) {
-            return DocumentManager::build_edit_icons(
-                $value['document_data'],
-                $value['key'],
-                $value['is_template'],
-                $value['readonly'],
-                $value['is_visible']
-            );
+            if (is_array($value['document_data'])) {
+                // If the document is not visible by the user, the document_data is an empty string so we cannot call
+                // the method.
+                return DocumentManager::build_edit_icons(
+                    $value['document_data'],
+                    $value['key'],
+                    $value['is_template'],
+                    $value['readonly'],
+                    $value['is_visible']
+                );
+            } else {
+                return '';
+            }
         }
     );
 }

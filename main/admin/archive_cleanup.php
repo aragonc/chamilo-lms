@@ -47,13 +47,22 @@ if ($form->validate()) {
 
     $archive_path = api_get_path(SYS_ARCHIVE_PATH);
     $htaccess = <<<TEXT
-order deny,allow
-deny from all
-# pChart generated files should be allowed
-<FilesMatch "^[0-9a-f]+$">
-    order allow,deny
-    allow from all
-</FilesMatch>
+<IfModule mod_authz_core.c>
+    Require all denied
+    # pChart generated files should be allowed
+    <FilesMatch "^[0-9a-f]+$">
+        require all granted
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+    # pChart generated files should be allowed
+    <FilesMatch "^[0-9a-f]+$">
+        order allow,deny
+        allow from all
+    </FilesMatch>
+</IfModule>
 php_flag engine off
 TEXT;
 

@@ -3,6 +3,7 @@
 /* For licensing terms, see /license.txt */
 
 use ChamiloSession as Session;
+use enshrined\svgSanitize\Sanitizer;
 
 /**
  *  Class DocumentManager
@@ -360,7 +361,7 @@ class DocumentManager
         $fixLinksHttpToHttps = false,
         $extraHeaders = []
     ) {
-        session_write_close(); //we do not need write access to session anymore
+        session_write_close(); //we do not need to write access to session anymore
         if (!is_file($full_file_name)) {
             return false;
         }
@@ -383,7 +384,7 @@ class DocumentManager
             // Force the browser to save the file instead of opening it
             if (isset($sendFileHeaders) &&
                 !empty($sendFileHeaders)) {
-                header("X-Sendfile: $filename");
+                header("X-Sendfile: $full_file_name");
             }
 
             header('Content-type: application/octet-stream');
@@ -427,6 +428,7 @@ class DocumentManager
 
             switch ($contentType) {
                 case 'text/html':
+                    $enableMathJaxScript = api_get_setting('enabled_mathjax') && api_get_configuration_value('mathjax_enable_script_header_in_all_HTML_document');
                     if (isset($lpFixedEncoding) && $lpFixedEncoding === 'true') {
                         $contentType .= '; charset=UTF-8';
                     } else {
@@ -480,15 +482,31 @@ class DocumentManager
                     ['https%3A%2F%2F', 'https://'],
                     $content
                 );
+                if ($enableMathJaxScript === true) {
+                    $content = self::includeMathJaxScript($content);
+                }
                 echo $content;
             } else {
-                if (function_exists('ob_end_clean') && ob_get_length()) {
-                    // Use ob_end_clean() to avoid weird buffering situations
-                    // where file is sent broken/incomplete for download
-                    ob_end_clean();
+                if ('image/svg+xml' === $contentType) {
+                    $svgContent = file_get_contents($full_file_name);
+
+                    echo (new Sanitizer())->sanitize($svgContent);
+
+                    return true;
                 }
 
-                readfile($full_file_name);
+                if (isset($enableMathJaxScript) && $enableMathJaxScript === true) {
+                    $content = file_get_contents($full_file_name);
+                    $content = self::includeMathJaxScript($content);
+                    echo $content;
+                } else {
+                    if (function_exists('ob_end_clean') && ob_get_length()) {
+                        // Use ob_end_clean() to avoid weird buffering situations
+                        // where file is sent broken/incomplete for download
+                        ob_end_clean();
+                    }
+                    readfile($full_file_name);
+                }
             }
 
             return true;
@@ -1644,7 +1662,9 @@ class DocumentManager
             $session_id &&
             SessionManager::isSessionFollowedByDrh($session_id, $userId);
 
-        $hasAccess = api_is_allowed_in_course() || api_is_platform_admin() || $drhAccessContent;
+        $sessionAdminAccessContent = api_get_configuration_value('session_admins_access_all_content');
+
+        $hasAccess = api_is_allowed_in_course() || api_is_platform_admin() || $drhAccessContent || $sessionAdminAccessContent;
 
         if (false === $hasAccess) {
             return false;
@@ -1815,6 +1835,17 @@ class DocumentManager
 
         // 4. Checking document visibility (i'm repeating the code in order to be more clear when reading ) - jm
         if ($user_in_course) {
+            if (true === api_get_configuration_value('document_enable_accessible_from_date')) {
+                $extraFieldValue = new ExtraFieldValue('document');
+                $extraValue = $extraFieldValue->get_values_by_handler_and_field_variable($doc_id, 'accessible_from');
+                if (!empty($extraValue) && isset($extraValue['value'])) {
+                    $now = new DateTime();
+                    $accessibleDate = new DateTime($extraValue['value']);
+                    if ($now < $accessibleDate) {
+                        return false;
+                    }
+                }
+            }
             // 4.1 Checking document visibility for a Course
             if ($session_id == 0) {
                 $item_info = api_get_item_property_info(
@@ -3185,27 +3216,27 @@ class DocumentManager
                 fclose($handle);
                 break;
             case 'application/pdf':
-                exec("pdftotext $doc_path -", $output, $ret_val);
+                exec("pdftotext ".escapeshellarg($doc_path)." -", $output, $ret_val);
                 break;
             case 'application/postscript':
                 $temp_file = tempnam(sys_get_temp_dir(), 'chamilo');
-                exec("ps2pdf $doc_path $temp_file", $output, $ret_val);
+                exec("ps2pdf ".escapeshellarg($doc_path)." ".escapeshellarg($temp_file), $output, $ret_val);
                 if ($ret_val !== 0) { // shell fail, probably 127 (command not found)
                     return false;
                 }
-                exec("pdftotext $temp_file -", $output, $ret_val);
+                exec("pdftotext ".escapeshellarg($temp_file)." -", $output, $ret_val);
                 unlink($temp_file);
                 break;
             case 'application/msword':
-                exec("catdoc $doc_path", $output, $ret_val);
+                exec("catdoc ".escapeshellarg($doc_path), $output, $ret_val);
                 break;
             case 'text/html':
-                exec("html2text $doc_path", $output, $ret_val);
+                exec("html2text ".escapeshellarg($doc_path), $output, $ret_val);
                 break;
             case 'text/rtf':
                 // Note: correct handling of code pages in unrtf
                 // on debian lenny unrtf v0.19.2 can not, but unrtf v0.20.5 can
-                exec("unrtf --text $doc_path", $output, $ret_val);
+                exec("unrtf --text ".escapeshellarg($doc_path), $output, $ret_val);
                 if ($ret_val == 127) { // command not found
                     return false;
                 }
@@ -3223,10 +3254,10 @@ class DocumentManager
                 }
                 break;
             case 'application/vnd.ms-powerpoint':
-                exec("catppt $doc_path", $output, $ret_val);
+                exec("catppt ".escapeshellarg($doc_path), $output, $ret_val);
                 break;
             case 'application/vnd.ms-excel':
-                exec("xls2csv -c\" \" $doc_path", $output, $ret_val);
+                exec("xls2csv -c\" \" ".escapeshellarg($doc_path), $output, $ret_val);
                 break;
         }
 
@@ -3282,16 +3313,27 @@ class DocumentManager
         }
 
         $sql = "SELECT SUM(size)
-                FROM $TABLE_ITEMPROPERTY AS props
-                INNER JOIN $TABLE_DOCUMENT AS docs
-                ON (docs.id = props.ref AND props.c_id = docs.c_id)
-                WHERE
-                    props.c_id = $course_id AND
-                    docs.c_id = $course_id AND
-                    props.tool = '".TOOL_DOCUMENT."' AND
-                    props.visibility <> 2
-                    $group_condition
-                    $session_condition
+                FROM (
+                    SELECT ref, size
+                    FROM $TABLE_ITEMPROPERTY AS props
+                    INNER JOIN $TABLE_DOCUMENT AS docs
+                    ON (docs.id = props.ref AND props.c_id = docs.c_id)
+                    WHERE
+                        props.c_id = $course_id AND
+                        docs.c_id = $course_id AND
+                        props.tool = '".TOOL_DOCUMENT."' AND
+                        props.ref not in (
+                            SELECT ref
+                            FROM $TABLE_ITEMPROPERTY as cip
+                            WHERE
+                                cip.c_id = $course_id AND
+                                cip.tool = '".TOOL_DOCUMENT."' AND
+                                cip.visibility = 2
+                        )
+                        $group_condition
+                        $session_condition
+                    GROUP BY props.ref
+                    ) AS table1
                 ";
         $result = Database::query($sql);
 
@@ -3749,14 +3791,18 @@ class DocumentManager
         $return = '';
         if (!empty($documents)) {
             foreach ($documents as $key => $resource) {
-                if (isset($resource['id']) && is_int($resource['id'])) {
+                if (isset($resource['id']) && isset($resource['files'])) {
                     $mainFolderResource = [
                         'id' => $resource['id'],
                         'title' => $key,
                     ];
+                    $close = false;
 
                     if ($folderId === false) {
-                        $return .= self::parseFolder($folderId, $mainFolderResource, $lp_id);
+                        $parsedFolder = self::parseFolder($folderId, $mainFolderResource, $lp_id);
+                        $close = (bool) $parsedFolder;
+
+                        $return .= $parsedFolder;
                     }
 
                     if (isset($resource['files'])) {
@@ -3769,12 +3815,15 @@ class DocumentManager
                             $target,
                             $add_move_button,
                             $overwrite_url,
-                            null,
+                            false,
                             $addAudioPreview
                         );
                     }
-                    $return .= '</div>';
-                    $return .= '</ul>';
+
+                    if ($close) {
+                        $return .= '</div>';
+                        $return .= '</ul>';
+                    }
                 } else {
                     if ($resource['filetype'] === 'folder') {
                         $return .= self::parseFolder($folderId, $resource, $lp_id);
@@ -5463,7 +5512,13 @@ class DocumentManager
                 } else {
                     // For a "PDF Download" of the file.
                     $pdfPreview = null;
-                    if ($ext != 'pdf' && !in_array($ext, $webODFList)) {
+
+                    if (OnlyofficePlugin::create()->isEnabled() &&
+                        OnlyofficePlugin::isExtensionAllowed($document_data['file_extension']) &&
+                        method_exists('OnlyofficeTools', 'getPathToView')
+                    ) {
+                        $url = OnlyofficeTools::getPathToView($document_data['id']);
+                    } elseif ($ext != 'pdf' && !in_array($ext, $webODFList)) {
                         $url = $basePageUrl.'showinframes.php?'.$courseParams.'&id='.$document_data['id'];
                     } else {
                         $pdfPreview = Display::url(
@@ -5840,6 +5895,11 @@ class DocumentManager
             $html = $form->returnForm();
 
             $modify_icons[] = $html;
+        }
+
+        // Specific case to remove action icons for students on files in the Chat conversation history inside a group -refs BT#21165
+        if (strpos($document_data['path'], 'chat_files') !== false && $document_data['filetype'] === 'file' && api_is_student()) {
+            $modify_icons = [];
         }
 
         return implode(PHP_EOL, $modify_icons);
@@ -6606,7 +6666,15 @@ class DocumentManager
                     docs.path LIKE '$path/%' AND
                     props.c_id = $course_id AND
                     props.tool = '$tool_document' AND
-                    $visibility_rule
+                    $visibility_rule AND
+                    props.ref not in (
+                        SELECT ref
+                        FROM $table_itemproperty as cip
+                        WHERE
+                            cip.c_id = $course_id AND
+                            cip.tool = '$tool_document' AND
+                            cip.visibility = 2
+                    )
                     $session_condition
                 GROUP BY ref
             ) as table1";
@@ -7050,6 +7118,101 @@ class DocumentManager
     }
 
     /**
+     * Retrieves all documents in a course by their parent folder ID.
+     *
+     * @param array    $courseInfo      Information about the course.
+     * @param int      $parentId        The ID of the parent folder.
+     * @param int      $toGroupId       (Optional) The ID of the group to filter by. Default is 0.
+     * @param int|null $toUserId        (Optional) The ID of the user to filter by. Default is null.
+     * @param bool     $canSeeInvisible (Optional) Whether to include invisible documents. Default is false.
+     * @param bool     $search          (Optional) Whether to perform a search or fetch all documents. Default is true.
+     * @param int      $sessionId       (Optional) The session ID to filter by. Default is 0.
+     *
+     * @return array List of documents that match the criteria.
+     */
+    public static function getAllDocumentsByParentId(
+        $courseInfo,
+        $parentId,
+        $toGroupId = 0,
+        $toUserId = null,
+        $canSeeInvisible = false,
+        $search = true,
+        $sessionId = 0
+    ) {
+        if (empty($courseInfo)) {
+            return [];
+        }
+
+        $tblDocument = Database::get_course_table(TABLE_DOCUMENT);
+
+        $parentId = (int) $parentId;
+
+        $sql = "SELECT path, filetype
+            FROM $tblDocument
+            WHERE id = $parentId
+              AND c_id = {$courseInfo['real_id']}";
+
+        $result = Database::query($sql);
+
+        if ($result === false || Database::num_rows($result) == 0) {
+            return [];
+        }
+
+        $parentRow = Database::fetch_array($result, 'ASSOC');
+        $parentPath = $parentRow['path'];
+        $filetype = $parentRow['filetype'];
+
+        if ($filetype !== 'folder') {
+            return [];
+        }
+
+        return self::getAllDocumentData(
+            $courseInfo,
+            $parentPath,
+            $toGroupId,
+            $toUserId,
+            $canSeeInvisible,
+            $search,
+            $sessionId
+        );
+    }
+
+    public static function autoResizeImageIfNeeded(int $size, string $tmpName): int
+    {
+        $resizeMax = api_get_configuration_value('wysiwyg_image_auto_resize_max');
+
+        if (is_array($resizeMax)) {
+            if ($size > ($resizeMax['mb'] * 1024 * 1024)) {
+                throw new Exception(get_lang('UplFileTooBig'));
+            }
+
+            $temp = new Image($tmpName);
+            $pictureInfo = $temp->get_image_info();
+
+            $thumbSize = 0;
+
+            if ($pictureInfo['width'] > $pictureInfo['height']) {
+                if ($pictureInfo['width'] > $resizeMax['w']) {
+                    $thumbSize = $resizeMax['w'];
+                }
+            } else {
+                if ($pictureInfo['height'] > $resizeMax['h']) {
+                    $thumbSize = $resizeMax['h'];
+                }
+            }
+
+            if ($thumbSize) {
+                $temp->resize($thumbSize);
+                $temp->send_image($tmpName);
+
+                return filesize($tmpName);
+            }
+        }
+
+        return $size;
+    }
+
+    /**
      * Parse file information into a link.
      *
      * @param array  $userInfo        Current user info
@@ -7202,7 +7365,7 @@ class DocumentManager
         //hide some folders
         if (in_array(
             $path,
-            ['shared_folder', 'chat_files', 'HotPotatoes_files', 'css', 'certificates']
+            ['/shared_folder', '/chat_files', '/HotPotatoes_files', '/css', '/certificates']
         )) {
             return null;
         } elseif (preg_match('/_groupdocs/', $path)) {
@@ -7216,7 +7379,7 @@ class DocumentManager
         // if in LP, hidden folder are displayed in grey
         $folder_class_hidden = '';
         if ($lp_id) {
-            if (isset($resource['visible']) && $resource['visible'] == 0) {
+            if (isset($resource['visibility']) && $resource['visibility'] == 0) {
                 $folder_class_hidden = ' doc_folder_hidden'; // in base.css
             }
         }
@@ -7309,7 +7472,7 @@ class DocumentManager
             return Display::url($iconEn, "edit_document.php?$courseParams&id=$document_id");
         }
 
-        if (in_array($path, self::get_system_folders())) {
+        if (in_array($path, self::get_system_folders()) || $documentData['filetype'] === 'folder' && strpos($path, 'chat_files') !== false) {
             return $iconDis;
         }
 
@@ -7370,7 +7533,7 @@ class DocumentManager
         $sessionId = api_get_session_id();
         $courseParams = api_get_cidreq();
 
-        if ($isCertificateMode || in_array($path, self::get_system_folders())) {
+        if ($isCertificateMode || in_array($path, self::get_system_folders()) || $documentData['filetype'] === 'folder' && strpos($path, 'chat_files') !== false) {
             return $iconDis;
         }
 
@@ -7465,7 +7628,7 @@ class DocumentManager
             return $iconDis;
         }
 
-        if (in_array($path, self::get_system_folders())) {
+        if (in_array($path, self::get_system_folders()) || $documentData['filetype'] === 'folder' && strpos($path, 'chat_files') !== false) {
             return $iconDis;
         }
 
@@ -7510,5 +7673,28 @@ class DocumentManager
         }
 
         return $btn;
+    }
+
+    /**
+     * Include MathJax script in document.
+     *
+     * @param string file content $content
+     *
+     * @return string file content
+     */
+    private static function includeMathJaxScript($content)
+    {
+        $scriptTag = '<script src="'.api_get_path(WEB_PUBLIC_PATH).'assets/MathJax/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>';
+        // Find position of </body> tag
+        $pos = strpos($content, '</body>');
+        // If </body> tag found, insert the script tag before it
+        if ($pos !== false) {
+            $content = substr_replace($content, $scriptTag, $pos, 0);
+        } else {
+            // If </body> tag not found, just append the script tag at the end
+            $content .= $scriptTag;
+        }
+
+        return $content;
     }
 }

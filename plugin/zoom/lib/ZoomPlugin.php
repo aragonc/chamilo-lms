@@ -19,6 +19,7 @@ use Chamilo\PluginBundle\Zoom\API\WebinarSettings;
 use Chamilo\PluginBundle\Zoom\Meeting;
 use Chamilo\PluginBundle\Zoom\MeetingActivity;
 use Chamilo\PluginBundle\Zoom\MeetingRepository;
+use Chamilo\PluginBundle\Zoom\Presenter;
 use Chamilo\PluginBundle\Zoom\Recording;
 use Chamilo\PluginBundle\Zoom\RecordingRepository;
 use Chamilo\PluginBundle\Zoom\Registrant;
@@ -59,7 +60,7 @@ class ZoomPlugin extends Plugin
     public function __construct()
     {
         parent::__construct(
-            '0.5',
+            '0.6',
             'Sébastien Ducoulombier, Julio Montoya, Angel Fernando Quiroz Campos',
             [
                 'tool_enable' => 'boolean',
@@ -71,6 +72,7 @@ class ZoomPlugin extends Plugin
                 self::SETTING_CLIENT_SECRET => 'text',
                 self::SETTING_SECRET_TOKEN => 'text',
                 'enableParticipantRegistration' => 'boolean',
+                'enablePresenter' => 'boolean',
                 'enableCloudRecording' => [
                     'type' => 'select',
                     'options' => [
@@ -481,52 +483,53 @@ class ZoomPlugin extends Plugin
     /**
      * @param Meeting $meeting
      * @param string  $returnURL
-     *
-     * @return false
      */
-    public function deleteMeeting($meeting, $returnURL)
+    public function deleteMeeting($meeting, $returnURL): bool
     {
         if (null === $meeting) {
             return false;
         }
 
-        $em = Database::getManager();
+        // No need to delete a instant meeting.
+        if (\Chamilo\PluginBundle\Zoom\API\Meeting::TYPE_INSTANT == $meeting->getMeetingInfoGet()->type) {
+            return false;
+        }
+
         try {
-            // No need to delete a instant meeting.
-            if (\Chamilo\PluginBundle\Zoom\API\Meeting::TYPE_INSTANT != $meeting->getMeetingInfoGet()->type) {
-                $meeting->getMeetingInfoGet()->delete();
-            }
-
-            $em->remove($meeting);
-            $em->flush();
-
-            Display::addFlash(
-                Display::return_message($this->get_lang('MeetingDeleted'), 'confirm')
-            );
-            api_location($returnURL);
+            $meeting->getMeetingInfoGet()->delete();
         } catch (Exception $exception) {
             $this->handleException($exception);
         }
+
+        $em = Database::getManager();
+        $em->remove($meeting);
+        $em->flush();
+
+        Display::addFlash(
+            Display::return_message($this->get_lang('MeetingDeleted'), 'confirm')
+        );
+        api_location($returnURL);
+
+        return true;
     }
 
     public function deleteWebinar(Webinar $webinar, string $returnURL)
     {
-        $em = Database::getManager();
-
         try {
             $webinar->getWebinarSchema()->delete();
-
-            $em->remove($webinar);
-            $em->flush();
-
-            Display::addFlash(
-                Display::return_message($this->get_lang('WebinarDeleted'), 'success')
-            );
-
-            api_location($returnURL);
         } catch (Exception $exception) {
             $this->handleException($exception);
         }
+
+        $em = Database::getManager();
+        $em->remove($webinar);
+        $em->flush();
+
+        Display::addFlash(
+            Display::return_message($this->get_lang('WebinarDeleted'), 'success')
+        );
+
+        api_location($returnURL);
     }
 
     /**
@@ -618,6 +621,60 @@ class ZoomPlugin extends Plugin
             $registeredUserIds[] = $registrant->getUser()->getId();
         }
         $userIdSelect->setSelected($registeredUserIds);
+
+        return $form;
+    }
+
+    public function getRegisterPresenterForm(Meeting $meeting): FormValidator
+    {
+        $form = new FormValidator('register_presenter', 'post', $_SERVER['REQUEST_URI']);
+
+        $presenterIdSelect = $form->addSelect('presenterIds', $this->get_lang('RegisteredPresenters'));
+        $presenterIdSelect->setMultiple(true);
+
+        $form->addButtonSend($this->get_lang('UpdateRegisteredUserList'));
+
+        $users = $meeting->getRegistrableUsers();
+
+        foreach ($users as $user) {
+            $presenterIdSelect->addOption(
+                api_get_person_name($user->getFirstname(), $user->getLastname()),
+                $user->getId()
+            );
+        }
+
+        if ($form->validate()) {
+            $selectedPresenterIds = $form->getSubmitValue('presenterIds') ?: [];
+            $selectedPresenters = [];
+
+            foreach ($users as $user) {
+                if (in_array($user->getId(), $selectedPresenterIds)) {
+                    $selectedPresenters[] = $user;
+                }
+            }
+
+            try {
+                $this->updatePresenterList($meeting, $selectedPresenters);
+
+                Display::addFlash(
+                    Display::return_message($this->get_lang('RegisteredUserListWasUpdated'), 'confirm')
+                );
+            } catch (Exception $exception) {
+                Display::addFlash(
+                    Display::return_message($exception->getMessage(), 'error')
+                );
+            }
+        }
+
+        $registeredPresenterIds = [];
+
+        foreach ($meeting->getPresenters() as $registrant) {
+            if ($registrant instanceof Presenter) {
+                $registeredPresenterIds[] = $registrant->getUser()->getId();
+            }
+        }
+
+        $presenterIdSelect->setSelected($registeredPresenterIds);
 
         return $form;
     }
@@ -1249,6 +1306,16 @@ class ZoomPlugin extends Plugin
             return true;
         }
 
+        $currentUser = api_get_user_entity(api_get_user_id());
+
+        if ('true' === $this->get('enableParticipantRegistration')
+            && 'true' === $this->get('enablePresenter')
+            && $currentUser
+            && $meeting->hasUserAsPresenter($currentUser)
+        ) {
+            return true;
+        }
+
         return $meeting->isUserMeeting() && $meeting->getUser()->getId() == api_get_user_id();
     }
 
@@ -1559,6 +1626,29 @@ class ZoomPlugin extends Plugin
     }
 
     /**
+     * @param array<User> $users
+     *
+     * @throws OptimisticLockException
+     * @throws \Doctrine\ORM\ORMException
+     */
+    public function registerPresenters(Meeting $meeting, array $users): array
+    {
+        $failedUsers = [];
+
+        foreach ($users as $user) {
+            try {
+                $this->registerUser($meeting, $user, false, true);
+            } catch (Exception $exception) {
+                $failedUsers[$user->getId()] = $exception->getMessage();
+            }
+        }
+
+        Database::getManager()->flush();
+
+        return $failedUsers;
+    }
+
+    /**
      * Removes registrants from a meeting.
      *
      * @param Registrant[] $registrants
@@ -1625,13 +1715,55 @@ class ZoomPlugin extends Plugin
         $this->unregister($meeting, $registrantsToRemove);
     }
 
+    private function updatePresenterList($meeting, $users)
+    {
+        /** @var array<Registrant> $presenters */
+        $presenters = $meeting->getPresenters();
+
+        $presenterToAdd = [];
+
+        foreach ($users as $user) {
+            $foundPresenter = false;
+
+            foreach ($presenters as $presenter) {
+                if ($presenter->getUser() === $user) {
+                    $foundPresenter = true;
+
+                    break;
+                }
+            }
+
+            if (!$foundPresenter) {
+                $presenterToAdd[] = $user;
+            }
+        }
+
+        $registrantsToRemove = [];
+
+        foreach ($presenters as $registrant) {
+            $found = false;
+            foreach ($users as $user) {
+                if ($registrant->getUser() === $user) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                $registrantsToRemove[] = $registrant;
+            }
+        }
+
+        $this->registerPresenters($meeting, $presenterToAdd);
+        $this->unregister($meeting, $registrantsToRemove);
+    }
+
     /**
      * @throws Exception
      * @throws OptimisticLockException
      *
      * @return Registrant
      */
-    private function registerUser(Meeting $meeting, User $user, $andFlush = true)
+    private function registerUser(Meeting $meeting, User $user, $andFlush = true, bool $isPresenter = false)
     {
         if (empty($user->getEmail())) {
             throw new Exception($this->get_lang('CannotRegisterWithoutEmailAddress'));
@@ -1651,7 +1783,13 @@ class ZoomPlugin extends Plugin
             );
         }
 
-        $registrantEntity = (new Registrant())
+        $registrantEntity = new Registrant();
+
+        if ($isPresenter) {
+            $registrantEntity = new Presenter();
+        }
+
+        $registrantEntity
             ->setMeeting($meeting)
             ->setUser($user)
             ->setMeetingRegistrant($meetingRegistrant)
