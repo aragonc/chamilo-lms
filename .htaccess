@@ -93,6 +93,7 @@ RewriteRule ^support$ plugin/school/src/support/list.php [L]
 RewriteRule ^support/view$ plugin/school/src/support/view.php [L,QSA]
 RewriteRule ^support/settings$ plugin/school/src/support/settings.php [L]
 RewriteRule ^course/quizzes$ plugin/school/src/courses/quizzes.php [L,QSA]
+RewriteRule ^course/quiz$ plugin/school/src/courses/quiz_overview.php [L,QSA]
 
 # END School Plugin
 
