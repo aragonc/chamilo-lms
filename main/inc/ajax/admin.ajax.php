@@ -227,12 +227,15 @@ function check_system_version()
             }
         }
 
-        if (version_compare($system_version, $version, '<')) {
+        $localMajor = explode('.', $system_version)[0];
+        $remoteMajor = !empty($version) ? explode('.', $version)[0] : $localMajor;
+
+        if ($localMajor === $remoteMajor && version_compare($system_version, $version, '<')) {
             $output = '<span style="color:red">'.get_lang('YourVersionNotUpToDate').'<br />
                        '.get_lang('LatestVersionIs').' <b>Chamilo '.$version.'</b>.  <br />
                        '.get_lang('YourVersionIs').' <b>Chamilo '.$system_version.'</b>.  <br />'.str_replace('http://www.chamilo.org', '<a href="http://www.chamilo.org">http://www.chamilo.org</a>', get_lang('PleaseVisitOurWebsite')).'</span>';
         } else {
-            $output = '<span style="color:green">'.get_lang('VersionUpToDate').': Chamilo '.$version.'</span>';
+            $output = '<span style="color:green">'.get_lang('VersionUpToDate').': Chamilo '.$system_version.'</span>';
         }
 
         return $output;
