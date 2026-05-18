@@ -4119,6 +4119,31 @@ function api_not_allowed(
             api_set_firstpage_parameter($courseCode);
         }
 
+        if ('true' === api_get_plugin_setting('school', 'tool_enable')) {
+            $currentUrl = $_SERVER['REQUEST_URI'];
+            $_SESSION['school_plugin_redirect'] = $currentUrl;
+            $loginUrl = api_get_path(WEB_PATH).'login';
+
+            echo '<!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta http-equiv="refresh" content="0;url='.htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8').'">
+                <script type="text/javascript">
+                    if (window.top !== window.self) {
+                        window.top.location.href = "'.htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8').'";
+                    } else {
+                        window.location.href = "'.htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8').'";
+                    }
+                </script>
+            </head>
+            <body>
+                <p>Sesion expirada. Redirigiendo...</p>
+            </body>
+            </html>';
+            exit;
+        }
+
         // If the user has no user ID, then his session has expired
         $form = api_get_not_allowed_login_form();
 
