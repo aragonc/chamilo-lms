@@ -302,7 +302,7 @@ $isDrhOfCourse = CourseManager::isUserSubscribedInCourseAsDrh(
     api_get_course_info()
 );
 
-if (api_is_drh() && !api_is_platform_admin()) {
+if (api_is_drh() && !api_is_platform_admin() && !api_is_petroperu_admin()) {
     if (!empty($studentId)) {
         if (!api_drh_can_access_all_session_content()) {
             if (!($isDrhOfCourse)) {
