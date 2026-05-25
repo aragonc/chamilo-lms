@@ -13,9 +13,10 @@ require_once __DIR__.'/../inc/global.inc.php';
 
 // Setting the section (for the tabs).
 $this_section = SECTION_PLATFORM_ADMIN;
+$isPetroperuAdmin = api_is_petroperu_admin();
 
 // Access restrictions.
-api_protect_admin_script(true);
+api_protect_admin_script(true, $isPetroperuAdmin);
 
 $nameTools = get_lang('PlatformAdmin');
 
@@ -159,6 +160,14 @@ if (api_is_platform_admin()) {
             'label' => get_lang('UserLinkingRequests'),
         ];
     }
+} elseif ($isPetroperuAdmin) {
+    $items = [
+        [
+            'class' => 'item-user-list',
+            'url' => 'user_list.php',
+            'label' => get_lang('UserList'),
+        ],
+    ];
 } else {
     $items = [
         [
@@ -564,125 +573,127 @@ if (api_is_platform_admin(true)) {
     $blocks['platform'] = $blockPlatform;
 }
 
-/* Sessions */
-$blocks['sessions']['icon'] = Display::return_icon(
-    'session.png',
-    get_lang('Sessions'),
-    [],
-    ICON_SIZE_MEDIUM,
-    false
-);
-$blocks['sessions']['label'] = api_ucfirst(get_lang('Sessions'));
-$blocks['sessions']['class'] = 'block-admin-sessions';
+if (!$isPetroperuAdmin) {
+    /* Sessions */
+    $blocks['sessions']['icon'] = Display::return_icon(
+        'session.png',
+        get_lang('Sessions'),
+        [],
+        ICON_SIZE_MEDIUM,
+        false
+    );
+    $blocks['sessions']['label'] = api_ucfirst(get_lang('Sessions'));
+    $blocks['sessions']['class'] = 'block-admin-sessions';
 
-$sessionsBlockExtraFile = "{$adminExtraContentDir}block-admin-sessions_extra.html";
+    $sessionsBlockExtraFile = "{$adminExtraContentDir}block-admin-sessions_extra.html";
 
-if (file_exists($sessionsBlockExtraFile)) {
-    $blocks['sessions']['extraContent'] = file_get_contents($sessionsBlockExtraFile);
+    if (file_exists($sessionsBlockExtraFile)) {
+        $blocks['sessions']['extraContent'] = file_get_contents($sessionsBlockExtraFile);
+    }
+
+    if (api_is_platform_admin()) {
+        $blocks['sessions']['editable'] = true;
+    }
+    $sessionPath = api_get_path(WEB_CODE_PATH).'session/';
+
+    $search_form = ' <form method="GET" class="form-inline" action="'.$sessionPath.'session_list.php">
+                        <div class="form-group">
+                            <input class="form-control"
+                            type="text"
+                            name="keyword"
+                            value=""
+                            aria-label="'.get_lang('Search').'">
+                            <button class="btn btn-default" type="submit">
+                                <em class="fa fa-search"></em> '.get_lang('Search').'
+                            </button>
+                        </div>
+                    </form>';
+    $blocks['sessions']['search_form'] = $search_form;
+    $items = [];
+    $items[] = [
+        'class' => 'item-session-list',
+        'url' => $sessionPath.'session_list.php',
+        'label' => get_lang('ListSession'),
+    ];
+    $items[] = [
+        'class' => 'item-session-add',
+        'url' => $sessionPath.'session_add.php',
+        'label' => get_lang('AddSession'),
+    ];
+    $items[] = [
+        'class' => 'item-session-category',
+        'url' => $sessionPath.'session_category_list.php',
+        'label' => get_lang('ListSessionCategory'),
+    ];
+    $items[] = [
+        'class' => 'item-session-import',
+        'url' => $sessionPath.'session_import.php',
+        'label' => get_lang('ImportSessionListXMLCSV'),
+    ];
+    $items[] = [
+        'class' => 'item-session-import-hr',
+        'url' => $sessionPath.'session_import_drh.php',
+        'label' => get_lang('ImportSessionDrhList'),
+    ];
+    if (isset($extAuthSource) && isset($extAuthSource['ldap']) && count($extAuthSource['ldap']) > 0) {
+        $items[] = [
+            'class' => 'item-session-subscription-ldap-import',
+            'url' => 'ldap_import_students_to_session.php',
+            'label' => get_lang('ImportLDAPUsersIntoSession'),
+        ];
+    }
+    $items[] = [
+        'class' => 'item-session-export',
+        'url' => $sessionPath.'session_export.php',
+        'label' => get_lang('ExportSessionListXMLCSV'),
+    ];
+
+    $items[] = [
+        'class' => 'item-session-course-copy',
+        'url' => '../coursecopy/copy_course_session.php',
+        'label' => get_lang('CopyFromCourseInSessionToAnotherSession'),
+    ];
+
+    $allowCareer = api_get_configuration_value('allow_session_admin_read_careers');
+
+    if (api_is_platform_admin() || ($allowCareer && api_is_session_admin())) {
+        $items[] = [
+            'class' => 'item-session-user-move-stats',
+            'url' => 'user_move_stats.php',
+            'label' => get_lang('MoveUserStats'),
+        ];
+
+        $items[] = [
+            'class' => 'item-session-user-move',
+            'url' => '../coursecopy/move_users_from_course_to_session.php',
+            'label' => get_lang('MoveUsersFromCourseToSession'),
+        ];
+
+        $items[] = [
+            'class' => 'item-career-dashboard',
+            'url' => 'career_dashboard.php',
+            'label' => get_lang('CareersAndPromotions'),
+        ];
+        $items[] = [
+            'class' => 'item-session-field',
+            'url' => 'extra_fields.php?type=session',
+            'label' => get_lang('ManageSessionFields'),
+        ];
+        $items[] = [
+            'class' => 'item-resource-sequence',
+            'url' => 'resource_sequence.php',
+            'label' => get_lang('ResourcesSequencing'),
+        ];
+        $items[] = [
+            'class' => 'item-export-exercise-results',
+            'url' => 'export_exercise_results.php',
+            'label' => get_lang('ExportExerciseAllResults'),
+        ];
+    }
+
+    $blocks['sessions']['items'] = $items;
+    $blocks['sessions']['extra'] = null;
 }
-
-if (api_is_platform_admin()) {
-    $blocks['sessions']['editable'] = true;
-}
-$sessionPath = api_get_path(WEB_CODE_PATH).'session/';
-
-$search_form = ' <form method="GET" class="form-inline" action="'.$sessionPath.'session_list.php">
-                    <div class="form-group">
-                        <input class="form-control"
-                        type="text"
-                        name="keyword"
-                        value=""
-                        aria-label="'.get_lang('Search').'">
-                        <button class="btn btn-default" type="submit">
-                            <em class="fa fa-search"></em> '.get_lang('Search').'
-                        </button>
-                    </div>
-                </form>';
-$blocks['sessions']['search_form'] = $search_form;
-$items = [];
-$items[] = [
-    'class' => 'item-session-list',
-    'url' => $sessionPath.'session_list.php',
-    'label' => get_lang('ListSession'),
-];
-$items[] = [
-    'class' => 'item-session-add',
-    'url' => $sessionPath.'session_add.php',
-    'label' => get_lang('AddSession'),
-];
-$items[] = [
-    'class' => 'item-session-category',
-    'url' => $sessionPath.'session_category_list.php',
-    'label' => get_lang('ListSessionCategory'),
-];
-$items[] = [
-    'class' => 'item-session-import',
-    'url' => $sessionPath.'session_import.php',
-    'label' => get_lang('ImportSessionListXMLCSV'),
-];
-$items[] = [
-    'class' => 'item-session-import-hr',
-    'url' => $sessionPath.'session_import_drh.php',
-    'label' => get_lang('ImportSessionDrhList'),
-];
-if (isset($extAuthSource) && isset($extAuthSource['ldap']) && count($extAuthSource['ldap']) > 0) {
-    $items[] = [
-        'class' => 'item-session-subscription-ldap-import',
-        'url' => 'ldap_import_students_to_session.php',
-        'label' => get_lang('ImportLDAPUsersIntoSession'),
-    ];
-}
-$items[] = [
-    'class' => 'item-session-export',
-    'url' => $sessionPath.'session_export.php',
-    'label' => get_lang('ExportSessionListXMLCSV'),
-];
-
-$items[] = [
-    'class' => 'item-session-course-copy',
-    'url' => '../coursecopy/copy_course_session.php',
-    'label' => get_lang('CopyFromCourseInSessionToAnotherSession'),
-];
-
-$allowCareer = api_get_configuration_value('allow_session_admin_read_careers');
-
-if (api_is_platform_admin() || ($allowCareer && api_is_session_admin())) {
-    $items[] = [
-        'class' => 'item-session-user-move-stats',
-        'url' => 'user_move_stats.php',
-        'label' => get_lang('MoveUserStats'),
-    ];
-
-    $items[] = [
-        'class' => 'item-session-user-move',
-        'url' => '../coursecopy/move_users_from_course_to_session.php',
-        'label' => get_lang('MoveUsersFromCourseToSession'),
-    ];
-
-    $items[] = [
-        'class' => 'item-career-dashboard',
-        'url' => 'career_dashboard.php',
-        'label' => get_lang('CareersAndPromotions'),
-    ];
-    $items[] = [
-        'class' => 'item-session-field',
-        'url' => 'extra_fields.php?type=session',
-        'label' => get_lang('ManageSessionFields'),
-    ];
-    $items[] = [
-        'class' => 'item-resource-sequence',
-        'url' => 'resource_sequence.php',
-        'label' => get_lang('ResourcesSequencing'),
-    ];
-    $items[] = [
-        'class' => 'item-export-exercise-results',
-        'url' => 'export_exercise_results.php',
-        'label' => get_lang('ExportExerciseAllResults'),
-    ];
-}
-
-$blocks['sessions']['items'] = $items;
-$blocks['sessions']['extra'] = null;
 
 /* Settings */
 if (api_is_platform_admin()) {

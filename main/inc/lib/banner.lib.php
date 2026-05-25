@@ -148,7 +148,7 @@ function get_tabs($courseId = null)
     // End Custom Tabs
 
     // Platform administration
-    if (api_is_platform_admin(true)) {
+    if (api_is_platform_admin(true) || api_is_petroperu_admin()) {
         $navigation['platform_admin']['url'] = api_get_path(WEB_CODE_PATH).'admin/';
         $navigation['platform_admin']['title'] = get_lang('PlatformAdmin');
         $navigation['platform_admin']['key'] = 'admin';
@@ -486,7 +486,7 @@ function return_navigation_array()
         buildParentCourseCategoriesMenu($navigation);
 
         // Administration
-        if (api_is_platform_admin(true)) {
+        if (api_is_platform_admin(true) || api_is_petroperu_admin()) {
             if (api_get_setting('show_tabs', 'platform_administration') == 'true') {
                 $navigation['platform_admin'] = $possible_tabs['platform_admin'];
             } else {

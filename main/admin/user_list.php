@@ -11,13 +11,15 @@ use ChamiloSession as Session;
 $cidReset = true;
 require_once __DIR__.'/../inc/global.inc.php';
 
+$isPetroperuAdmin = api_is_petroperu_admin();
+
 api_protect_session_admin_list_users();
 
 $urlId = api_get_current_access_url_id();
 $action = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
 
 // Login as can be used by different roles
-if (isset($_GET['user_id']) && $action === 'login_as') {
+if (!$isPetroperuAdmin && isset($_GET['user_id']) && $action === 'login_as') {
     $check = Security::check_token('get');
     if ($check && api_can_login_as($_GET['user_id'])) {
         $result = UserManager::loginAsUser($_GET['user_id']);
@@ -45,7 +47,7 @@ if (isset($_GET['user_id']) && $action === 'login_as') {
     Security::clear_token();
 }
 
-api_protect_admin_script(true);
+api_protect_admin_script(true, $isPetroperuAdmin);
 trimVariables();
 
 $url = api_get_path(WEB_AJAX_PATH).'course.ajax.php?a=get_user_courses';
@@ -555,6 +557,10 @@ function user_filter($name, $params, $row)
 {
     $name = cut($name, 26);
 
+    if (api_is_petroperu_admin()) {
+        return $name;
+    }
+
     return '<a href="'.api_get_path(WEB_CODE_PATH).'admin/user_information.php?user_id='.$row[0].'">'.$name.'</a>';
 }
 
@@ -571,6 +577,21 @@ function user_filter($name, $params, $row)
  */
 function modify_filter($user_id, $url_params, $row)
 {
+    if (api_is_petroperu_admin()) {
+        $statusname = api_get_status_langvars();
+        $current_user_status_label = $statusname[$row['7']];
+
+        if ($current_user_status_label != $statusname[STUDENT]) {
+            return '<div style="width:32px">'.
+                Display::return_icon('statistics_na.png', get_lang('Reporting')).
+                '</div>';
+        }
+
+        return '<div style="width:32px"><a href="../mySpace/myStudents.php?student='.$user_id.'">'.
+            Display::return_icon('statistics.png', get_lang('Reporting')).
+            '</a></div>';
+    }
+
     $_admins_list = Session::read('admin_list', []);
     $is_admin = in_array($user_id, $_admins_list);
     $statusname = api_get_status_langvars();
@@ -854,6 +875,10 @@ if (isset($_GET['keyword']) || isset($_GET['keyword_firstname'])) {
 $message = '';
 
 if (!empty($action)) {
+    if ($isPetroperuAdmin) {
+        api_not_allowed(true);
+    }
+
     $check = Security::check_token('get');
     if ($check) {
         switch ($action) {
@@ -1151,8 +1176,10 @@ if (api_is_platform_admin() &&
 ) {
     $actionsList['delete'] = get_lang('DeleteFromPlatform');
 }
-$actionsList['disable'] = get_lang('Disable');
-$actionsList['enable'] = get_lang('Enable');
+if (!$isPetroperuAdmin) {
+    $actionsList['disable'] = get_lang('Disable');
+    $actionsList['enable'] = get_lang('Enable');
+}
 $table->set_form_actions($actionsList);
 
 $table_result = $table->return_table();

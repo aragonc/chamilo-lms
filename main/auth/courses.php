@@ -298,7 +298,6 @@ switch ($action) {
             );
 
             if ($allowProikos && true === $subscribe) {
-                //$proikosPlugin->contratingCompaniesQuotaSessionDetModel()->useQuota($userQuotaBySessionId['data']['id'], $userId);
                 $quotaUsed = $proikosPlugin
                     ->contratingCompaniesQuotaSessionDetModel()
                     ->useQuota(
@@ -307,8 +306,18 @@ switch ($action) {
                     );
 
                 if (!$quotaUsed) {
-                    // Ya estaba consumido, opcional: log o mensaje
-                    error_log("Quota already used. user=$userId quota_id=".$userQuotaBySessionId['data']['id']);
+                    // Slot tomado por condición de carrera — buscar el siguiente cupo disponible
+                    $fallbackQuota = $proikosPlugin
+                        ->contratingCompaniesQuotaSessionDetModel()
+                        ->getQuotaBySessionId($sessionId, $userId);
+
+                    if ($fallbackQuota['success']) {
+                        $proikosPlugin
+                            ->contratingCompaniesQuotaSessionDetModel()
+                            ->useQuota($fallbackQuota['data']['id'], $userId);
+                    } else {
+                        error_log("No available quota slot after race condition. user=$userId session=$sessionId");
+                    }
                 }
             }
 
