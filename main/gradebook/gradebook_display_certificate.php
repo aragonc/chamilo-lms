@@ -350,6 +350,22 @@ $actions .= Display::url(
     $url.'&action=delete_all_certificates'
 );
 
+// Descarga masiva en HTML paginado (impresión desde el navegador, sin generar
+// PDF en el servidor). Se muestra siempre que haya certificados.
+if (count($certificate_list) > 0) {
+    $actions .= Display::url(
+        Display::return_icon('file_html.png', get_lang('Download').' '.get_lang('Certificates').' (HTML)', [], ICON_SIZE_MEDIUM),
+        api_get_path(WEB_PLUGIN_PATH)
+        .'easycertificate/src/view_certificates_all.php?'.api_get_cidreq().'&'
+        .http_build_query([
+            'course_code' => api_get_course_id(),
+            'session_id' => api_get_session_id(),
+            'cat_id' => $categoryId,
+        ]),
+        ['target' => '_blank']
+    );
+}
+
 $hideCertificateExport = api_get_setting('hide_certificate_export_link');
 
 if (count($certificate_list) > 0 && $hideCertificateExport !== 'true') {
