@@ -2140,7 +2140,9 @@ class Category implements GradebookItem
         $category_id,
         $user_id,
         $sendNotification = false,
-        $skipGenerationIfExists = false
+        $skipGenerationIfExists = false,
+        $customDate = null,
+        $sendCertificateEmail = true
     ) {
         $user_id = (int) $user_id;
         $category_id = (int) $category_id;
@@ -2261,7 +2263,12 @@ class Category implements GradebookItem
         $currentDate = new DateTime();
         $expeditionDay = api_get_utc_datetime();
 
-        if ($typeExpiration['date_issue_mode'] == '1' || $typeExpiration['date_issue_mode'] == '2') {
+        if (!empty($customDate)) {
+            // Fecha personalizada definida por el docente: prima sobre el modo
+            // de emisión y sirve de base para calcular la expiración.
+            $expeditionDay = api_get_utc_datetime($customDate);
+            $currentDate = new DateTime($customDate);
+        } elseif ($typeExpiration['date_issue_mode'] == '1' || $typeExpiration['date_issue_mode'] == '2') {
             $expeditionDay = $sessionInfo['access_start_date_to_local_time'];
             //$expeditionDay = api_format_date($expeditionDay, DATE_FORMAT_LONG_NO_DAY);
             $currentDate = new DateTime($expeditionDay);
@@ -2270,7 +2277,9 @@ class Category implements GradebookItem
         $currentDate->modify("+$numberDaysExpiration days");
         $expirationDate = $currentDate->format('Y-m-d H:i:s');
 
+        $certificateJustCreated = false;
         if (empty($my_certificate)) {
+            $certificateJustCreated = true;
             GradebookUtils::registerUserInfoAboutCertificate(
                 $category_id,
                 $user_id,
@@ -2362,41 +2371,45 @@ class Category implements GradebookItem
                 );
             }
 
-            // Send Message Certificate
-            $userInfo = api_get_user_info($user_id);
-            $view = new Template('', false, false, false, false, false, false);
-            $view->assign('course_name', Security::remove_XSS($sessionInfo['name']));
-            $view->assign('complete_name', Security::remove_XSS( $userInfo['complete_name']));
-            $view->assign('url_certificate', $url);
-            $template = $view->get_template('mail/send_certificate.tpl');
-            $emailBody = $view->fetch($template);
-            $emailSubject = "¡Certificado disponible! Has finalizado con éxito el curso " . Security::remove_XSS($sessionInfo['name']);
+            // Send Message Certificate: solo cuando el certificado se acaba de
+            // crear (y el envío no fue desactivado desde el modal), para no
+            // reenviar el correo ni pagar el costo SMTP en cada regeneración.
+            if ($certificateJustCreated && $sendCertificateEmail) {
+                $userInfo = api_get_user_info($user_id);
+                $view = new Template('', false, false, false, false, false, false);
+                $view->assign('course_name', Security::remove_XSS($sessionInfo['name']));
+                $view->assign('complete_name', Security::remove_XSS( $userInfo['complete_name']));
+                $view->assign('url_certificate', $url);
+                $template = $view->get_template('mail/send_certificate.tpl');
+                $emailBody = $view->fetch($template);
+                $emailSubject = "¡Certificado disponible! Has finalizado con éxito el curso " . Security::remove_XSS($sessionInfo['name']);
 
-            $sender_name = api_get_person_name(
-                api_get_setting('administratorName'),
-                api_get_setting('administratorSurname'),
-                null,
-                PERSON_NAME_EMAIL_ADDRESS
-            );
-            $email_admin = api_get_setting('emailAdministrator');
-            $recipient_name = api_get_person_name(
-                $userInfo['firstname'],
-                $userInfo['lastname'],
-                null,
-                PERSON_NAME_EMAIL_ADDRESS
-            );
+                $sender_name = api_get_person_name(
+                    api_get_setting('administratorName'),
+                    api_get_setting('administratorSurname'),
+                    null,
+                    PERSON_NAME_EMAIL_ADDRESS
+                );
+                $email_admin = api_get_setting('emailAdministrator');
+                $recipient_name = api_get_person_name(
+                    $userInfo['firstname'],
+                    $userInfo['lastname'],
+                    null,
+                    PERSON_NAME_EMAIL_ADDRESS
+                );
 
-            api_mail_html(
-                $recipient_name,
-                $userInfo['email'],
-                $emailSubject,
-                $emailBody,
-                $sender_name,
-                $email_admin,
-                null,
-                null,
-                null
-            );
+                api_mail_html(
+                    $recipient_name,
+                    $userInfo['email'],
+                    $emailSubject,
+                    $emailBody,
+                    $sender_name,
+                    $email_admin,
+                    null,
+                    null,
+                    null
+                );
+            }
 
             return $html;
         }

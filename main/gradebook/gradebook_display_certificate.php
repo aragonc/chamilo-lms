@@ -149,6 +149,19 @@ switch ($action) {
         $plugin = ProikosPlugin::create();
         $session_id = api_get_session_id();
 
+        // Fecha personalizada opcional (formato local 'Y-m-d H:i:s') enviada
+        // desde el modal; si no llega o es inválida se usa el comportamiento actual.
+        $customDate = null;
+        if (!empty($_GET['custom_date'])) {
+            $dateCheck = DateTime::createFromFormat('Y-m-d H:i:s', $_GET['custom_date']);
+            if (false !== $dateCheck) {
+                $customDate = $dateCheck->format('Y-m-d H:i:s');
+            }
+        }
+
+        // Envío de correo de notificación: activado salvo que el modal mande send_mail=0
+        $sendCertificateEmail = !(isset($_GET['send_mail']) && $_GET['send_mail'] === '0');
+
         $userList = CourseManager::get_user_list_from_course_code(
             api_get_course_id(),
             $session_id
@@ -160,13 +173,31 @@ switch ($action) {
                 if ($userInfo['status'] == INVITEE) {
                     continue;
                 }
+
+                // Si el usuario ya tiene certificado, se salta antes de todo el
+                // cálculo pesado (gradebook, quizzes, correo): una sola consulta.
+                $existingCertificate = GradebookUtils::get_certificate_by_user_id(
+                    $categoryId,
+                    $userInfo['user_id']
+                );
+                if (!empty($existingCertificate)) {
+                    continue;
+                }
+
                 $params = $plugin->getValuesRegisterData($userInfo['user_id'], $course_id, $session_id);
                 $checkRegister = $plugin->checkRegisterLogData($userInfo['user_id'], $course_id, $session_id);
 
                 if($checkRegister == 0){
                     $plugin->registerData($params, true);
                 }
-                Category::generateUserCertificate($categoryId, $userInfo['user_id']);
+                Category::generateUserCertificate(
+                    $categoryId,
+                    $userInfo['user_id'],
+                    false,
+                    false,
+                    $customDate,
+                    $sendCertificateEmail
+                );
             }
         }
         header('Location: '.$url);
@@ -343,7 +374,8 @@ if (!empty($cats)) {
 $actions = '';
 $actions .= Display::url(
     Display::return_icon('tuning.png', get_lang('GenerateCertificates'), [], ICON_SIZE_MEDIUM),
-    $url.'&action=generate_all_certificates'
+    $url.'&action=generate_all_certificates',
+    ['id' => 'btn-generate-all-certificates']
 );
 $actions .= Display::url(
     Display::return_icon('delete.png', get_lang('DeleteAllCertificates'), [], ICON_SIZE_MEDIUM),
@@ -421,6 +453,72 @@ if (count($certificate_list) > 0 && $hideCertificateExport !== 'true') {
 
 echo Display::toolbarAction('actions', [$actions]);
 echo $filterForm;
+
+// Modal para generar certificados con fecha personalizada opcional
+echo '
+<div class="modal fade" id="generate-certificates-modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">'.get_lang('GenerateCertificates').'</h4>
+            </div>
+            <div class="modal-body">
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" id="custom-date-check"> Fecha personalizada
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label for="custom-date-value">Fecha y hora de emisi&oacute;n</label>
+                    <input type="datetime-local" class="form-control" id="custom-date-value" disabled>
+                    <p class="help-block">Si no marca "Fecha personalizada", los certificados se generar&aacute;n con la fecha y hora actual, como hasta ahora.</p>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" id="send-mail-check" checked> Enviar correo de notificaci&oacute;n a los estudiantes
+                    </label>
+                    <p class="help-block">Solo se env&iacute;a a los estudiantes cuyo certificado se genere en esta acci&oacute;n.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">'.get_lang('Cancel').'</button>
+                <button type="button" class="btn btn-primary" id="confirm-generate-certificates">'.get_lang('GenerateCertificates').'</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+$(function () {
+    var generateUrl = $("#btn-generate-all-certificates").attr("href");
+
+    $("#btn-generate-all-certificates").on("click", function (e) {
+        e.preventDefault();
+        $("#generate-certificates-modal").modal("show");
+    });
+
+    $("#custom-date-check").on("change", function () {
+        $("#custom-date-value").prop("disabled", !this.checked);
+    });
+
+    $("#confirm-generate-certificates").on("click", function () {
+        var target = generateUrl;
+        if ($("#custom-date-check").is(":checked")) {
+            var value = $("#custom-date-value").val();
+            if (!value) {
+                alert("Debe seleccionar la fecha y hora de emisión.");
+                return;
+            }
+            // datetime-local => "YYYY-MM-DDTHH:MM"
+            target += "&custom_date=" + encodeURIComponent(value.replace("T", " ") + ":00");
+        }
+        if (!$("#send-mail-check").is(":checked")) {
+            target += "&send_mail=0";
+        }
+        window.location.href = target;
+    });
+});
+</script>';
 
 if (count($certificate_list) == 0) {
     echo Display::return_message(get_lang('NoResultsAvailable'), 'warning');
