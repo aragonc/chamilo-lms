@@ -746,7 +746,7 @@ class GradebookUtils
      *
      * @return array
      */
-    public static function get_list_users_certificates($cat_id = null, $userList = [])
+    public static function get_list_users_certificates($cat_id = null, $userList = [], $orderBy = null)
     {
         $table_certificate = Database::get_main_table(TABLE_MAIN_GRADEBOOK_CERTIFICATE);
         $table_user = Database::get_main_table(TABLE_MAIN_USER);
@@ -762,7 +762,17 @@ class GradebookUtils
             $userListCondition = implode("','", $userList);
             $sql .= " AND u.user_id IN ('$userListCondition')";
         }
-        $sql .= ' ORDER BY '.(api_sort_by_first_name() ? 'u.firstname' : 'u.lastname');
+        switch ($orderBy) {
+            case 'date_asc':
+                $sql .= ' ORDER BY gc.created_at ASC';
+                break;
+            case 'date_desc':
+                $sql .= ' ORDER BY gc.created_at DESC';
+                break;
+            default:
+                $sql .= ' ORDER BY '.(api_sort_by_first_name() ? 'u.firstname' : 'u.lastname');
+                break;
+        }
         $rs = Database::query($sql);
 
         $list_users = [];

@@ -33,7 +33,13 @@ $action = isset($_GET['action']) && $_GET['action'] ? $_GET['action'] : null;
 $filterOfficialCode = isset($_POST['filter']) ? Security::remove_XSS($_POST['filter']) : null;
 $filterOfficialCodeGet = isset($_GET['filter']) ? Security::remove_XSS($_GET['filter']) : null;
 
-$url = api_get_self().'?'.api_get_cidreq().'&cat_id='.$categoryId.'&filter='.$filterOfficialCode;
+// Orden de la lista: por nombre (por defecto) o por fecha de emisión asc/desc
+$sortCertificates = isset($_GET['sort']) ? $_GET['sort'] : 'name';
+if (!in_array($sortCertificates, ['name', 'date_asc', 'date_desc'])) {
+    $sortCertificates = 'name';
+}
+
+$url = api_get_self().'?'.api_get_cidreq().'&cat_id='.$categoryId.'&filter='.$filterOfficialCode.'&sort='.$sortCertificates;
 $courseInfo = api_get_course_info();
 
 $filter = api_get_setting('certificate_filter_by_official_code');
@@ -55,21 +61,22 @@ if ($filter === 'true') {
     if ($form->validate()) {
         $officialCode = $form->getSubmitValue('filter');
         if ($officialCode === 'all') {
-            $certificate_list = GradebookUtils::get_list_users_certificates($categoryId);
+            $certificate_list = GradebookUtils::get_list_users_certificates($categoryId, [], $sortCertificates);
         } else {
             $userList = UserManager::getUsersByOfficialCode($officialCode);
             if (!empty($userList)) {
                 $certificate_list = GradebookUtils::get_list_users_certificates(
                     $categoryId,
-                    $userList
+                    $userList,
+                    $sortCertificates
                 );
             }
         }
     } else {
-        $certificate_list = GradebookUtils::get_list_users_certificates($categoryId);
+        $certificate_list = GradebookUtils::get_list_users_certificates($categoryId, [], $sortCertificates);
     }
 } else {
-    $certificate_list = GradebookUtils::get_list_users_certificates($categoryId);
+    $certificate_list = GradebookUtils::get_list_users_certificates($categoryId, [], $sortCertificates);
 }
 
 $content = '';
@@ -168,6 +175,10 @@ switch ($action) {
         );
         $course_id = api_get_course_int_id(api_get_course_id());
 
+        $generatedCount = 0;
+        $alreadyHadCount = 0;
+        $notEligibleCount = 0;
+
         if (!empty($userList)) {
             foreach ($userList as $userInfo) {
                 if ($userInfo['status'] == INVITEE) {
@@ -181,6 +192,7 @@ switch ($action) {
                     $userInfo['user_id']
                 );
                 if (!empty($existingCertificate)) {
+                    $alreadyHadCount++;
                     continue;
                 }
 
@@ -190,7 +202,7 @@ switch ($action) {
                 if($checkRegister == 0){
                     $plugin->registerData($params, true);
                 }
-                Category::generateUserCertificate(
+                $result = Category::generateUserCertificate(
                     $categoryId,
                     $userInfo['user_id'],
                     false,
@@ -198,8 +210,50 @@ switch ($action) {
                     $customDate,
                     $sendCertificateEmail
                 );
+
+                if (false === $result || null === $result) {
+                    // No terminó el curso, no aprobó todos los quizzes o no
+                    // alcanza el puntaje mínimo.
+                    $notEligibleCount++;
+                } else {
+                    $generatedCount++;
+                }
             }
         }
+
+        $messageParts = [];
+        if ($generatedCount > 0) {
+            $messageParts[] = 1 == $generatedCount
+                ? 'Se generó 1 certificado.'
+                : "Se generaron $generatedCount certificados.";
+            if (!empty($customDate)) {
+                $messageParts[] = 'Fecha de emisión personalizada: '.api_format_date($customDate, DATE_TIME_FORMAT_LONG).'.';
+            }
+            if (!$sendCertificateEmail) {
+                $messageParts[] = 'No se enviaron correos de notificación.';
+            }
+        } else {
+            $messageParts[] = 'No se generó ningún certificado.';
+        }
+        if ($alreadyHadCount > 0) {
+            $messageParts[] = 1 == $alreadyHadCount
+                ? '1 estudiante ya tenía certificado.'
+                : "$alreadyHadCount estudiantes ya tenían certificado.";
+        }
+        if ($notEligibleCount > 0) {
+            $messageParts[] = 1 == $notEligibleCount
+                ? '1 estudiante aún no cumple los requisitos (curso no finalizado, quizzes pendientes o puntaje insuficiente).'
+                : "$notEligibleCount estudiantes aún no cumplen los requisitos (curso no finalizado, quizzes pendientes o puntaje insuficiente).";
+        }
+
+        Display::addFlash(
+            Display::return_message(
+                implode(' ', $messageParts),
+                $generatedCount > 0 ? 'confirmation' : 'warning',
+                false
+            )
+        );
+
         header('Location: '.$url);
         exit;
 
@@ -453,6 +507,32 @@ if (count($certificate_list) > 0 && $hideCertificateExport !== 'true') {
 
 echo Display::toolbarAction('actions', [$actions]);
 echo $filterForm;
+
+// Selector de orden de la lista (nombre / fecha de emisión asc-desc)
+if (count($certificate_list) > 0) {
+    $sortBaseUrl = api_get_self().'?'.api_get_cidreq().'&cat_id='.$categoryId.'&filter='.$filterOfficialCodeGet.'&sort=';
+    $sortOptions = [
+        'name' => 'Apellidos y nombres (A-Z)',
+        'date_asc' => 'Fecha de emisión (más antiguos primero)',
+        'date_desc' => 'Fecha de emisión (más recientes primero)',
+    ];
+    echo '<div class="form-inline" style="margin-bottom: 15px;">
+        <label for="sort-certificates">Ordenar por</label>
+        <select id="sort-certificates" class="form-control" style="margin-left: 5px;">';
+    foreach ($sortOptions as $optionValue => $optionLabel) {
+        $selected = $optionValue === $sortCertificates ? ' selected' : '';
+        echo '<option value="'.$optionValue.'"'.$selected.'>'.$optionLabel.'</option>';
+    }
+    echo '</select>
+    </div>
+    <script>
+    $(function () {
+        $("#sort-certificates").on("change", function () {
+            window.location.href = '.json_encode($sortBaseUrl).' + this.value;
+        });
+    });
+    </script>';
+}
 
 // Modal para generar certificados con fecha personalizada opcional
 echo '
