@@ -178,6 +178,10 @@ switch ($action) {
         $generatedCount = 0;
         $alreadyHadCount = 0;
         $notEligibleCount = 0;
+        $notEligibleDetails = [];
+
+        $categoryData = Category::load($categoryId);
+        $categoryObject = !empty($categoryData[0]) ? $categoryData[0] : null;
 
         if (!empty($userList)) {
             foreach ($userList as $userInfo) {
@@ -213,8 +217,46 @@ switch ($action) {
 
                 if (false === $result || null === $result) {
                     // No terminó el curso, no aprobó todos los quizzes o no
-                    // alcanza el puntaje mínimo.
+                    // alcanza el puntaje mínimo. Se detalla el motivo por
+                    // estudiante para poder diagnosticar casos puntuales.
                     $notEligibleCount++;
+
+                    $reasons = [];
+                    if (null !== $categoryObject) {
+                        $currentScore = Category::getCurrentScore(
+                            $userInfo['user_id'],
+                            $categoryObject,
+                            true
+                        );
+                        $minScore = $categoryObject->getCertificateMinScore();
+                        if ($currentScore < $minScore) {
+                            $reasons[] = 'puntaje '.round($currentScore, 2).'% (mínimo '.$minScore.'%)';
+                        }
+                        if (empty($categoryObject->getGenerateCertificates())) {
+                            $reasons[] = 'la evaluación no tiene activada la generación de certificados';
+                        }
+                    }
+                    $quizCheckDetail = ProikosPlugin::checkUserQuizCompletion(
+                        $userInfo['user_id'],
+                        $categoryId
+                    );
+                    if (empty($quizCheckDetail['passed'])) {
+                        $pendingTitles = [];
+                        if (!empty($quizCheckDetail['incomplete_quizzes'])) {
+                            foreach ($quizCheckDetail['incomplete_quizzes'] as $pendingQuiz) {
+                                $pendingTitles[] = $pendingQuiz['title'];
+                            }
+                        }
+                        $reasons[] = 'quizzes pendientes'.(!empty($pendingTitles) ? ': '.implode(', ', $pendingTitles) : '');
+                    }
+                    if (empty($reasons)) {
+                        $reasons[] = 'motivo no determinado';
+                    }
+
+                    $notEligibleDetails[] = api_get_person_name(
+                        $userInfo['firstname'],
+                        $userInfo['lastname']
+                    ).' — '.implode('; ', $reasons);
                 } else {
                     $generatedCount++;
                 }
@@ -244,6 +286,9 @@ switch ($action) {
             $messageParts[] = 1 == $notEligibleCount
                 ? '1 estudiante aún no cumple los requisitos (curso no finalizado, quizzes pendientes o puntaje insuficiente).'
                 : "$notEligibleCount estudiantes aún no cumplen los requisitos (curso no finalizado, quizzes pendientes o puntaje insuficiente).";
+            if (!empty($notEligibleDetails)) {
+                $messageParts[] = '<br /><strong>Detalle:</strong><br />'.implode('<br />', array_map('htmlspecialchars', $notEligibleDetails));
+            }
         }
 
         Display::addFlash(

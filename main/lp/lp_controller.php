@@ -1287,6 +1287,10 @@ switch ($action) {
             $accumulateScormTime = isset($_REQUEST['accumulate_scorm_time']) ? $_REQUEST['accumulate_scorm_time'] : 'true';
             $_SESSION['oLP']->setAccumulateScormTime($accumulateScormTime);
 
+            if ($_SESSION['oLP']->get_type() == 2) {
+                $_SESSION['oLP']->set_force_commit(isset($_POST['force_commit']) ? 1 : 0);
+            }
+
             $publicated_on = null;
             if (isset($_REQUEST['activate_start_date_check']) && $_REQUEST['activate_start_date_check'] == 1) {
                 $publicated_on = $_REQUEST['publicated_on'];

@@ -234,6 +234,18 @@ $form->addElement(
     get_lang('AccumulateScormTime')
 );
 
+// force_commit: SCORM only. Saves progress on each LMSSetValue() so it is not
+// lost when the learner closes the browser before the package commits.
+if ($learnPath->get_type() == 2) {
+    $form->addElement(
+        'checkbox',
+        'force_commit',
+        [null, get_lang('ForceCommitInfo')],
+        get_lang('ForceCommit')
+    );
+    $defaults['force_commit'] = $learnPath->force_commit ? 1 : 0;
+}
+
 $scoreAsProgressSetting = api_get_configuration_value('lp_score_as_progress_enable');
 $countItems = $learnPath->get_total_items_count();
 $lpType = $learnPath->get_type();

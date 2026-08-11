@@ -9036,4 +9036,6 @@ $ParentCareer = "Parent career";
 $CareerCannotBeDeletedAsItHasChildren = "This career cannot be deleted until all of its children have been deleted or moved to another career.";
 $AllQuizzesAreRequired = 'All quizzes are required';
 
+$ForceCommit = "Force commit (SCORM)";
+$ForceCommitInfo = "When enabled, progress is saved to the LMS on every value reported by the SCORM content. Useful if learners lose their progress when closing the browser.";
 ?>

@@ -1096,7 +1096,6 @@ class scorm extends learnpath
         if ($this->subdir == '') {
             $manifest_file = api_get_path(SYS_COURSE_PATH).$courseInfo['directory'].'/scorm/imsmanifest.xml';
         }
-        echo $manifest_file;
         if (is_file($manifest_file) && is_readable($manifest_file)) {
             // Re-parse the manifest file.
             if ($this->debug > 1) {

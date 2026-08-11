@@ -5631,6 +5631,29 @@ class learnpath
     }
 
     /**
+     * Sets force_commit. For SCORM only: if enabled, a LMSCommit() request is
+     * sent on each LMSSetValue(), so progress is not lost if the learner
+     * closes the browser before the package commits by itself.
+     *
+     * @param int $forceCommit 1 to enable, 0 to disable
+     *
+     * @return bool True on success
+     */
+    public function set_force_commit($forceCommit = 0)
+    {
+        $forceCommit = (int) $forceCommit;
+        $this->force_commit = (bool) $forceCommit;
+        $table = Database::get_course_table(TABLE_LP_MAIN);
+        $lp_id = $this->get_id();
+        $sql = "UPDATE $table SET
+                    force_commit = '".$forceCommit."'
+                WHERE iid = $lp_id";
+        Database::query($sql);
+
+        return true;
+    }
+
+    /**
      * Sets and saves the expired_on date.
      *
      * @param string $expired_on Optional string giving the new author of this learnpath

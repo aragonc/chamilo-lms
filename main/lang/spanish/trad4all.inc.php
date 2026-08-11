@@ -9082,3 +9082,6 @@ $ThisExerciseIsBlocked = "Este ejercicio esta bloqueado para usted.";
 $ReviewYourFinalResult = "Revisar tu resultado final";
 $AgeUser = "Edad";
 $LevelOfEducation = "Grado de instrucción";
+
+$ForceCommit = "Forzar guardado (SCORM)";
+$ForceCommitInfo = "Cuando se activa, el avance se guarda en el LMS cada vez que el contenido SCORM reporta un cambio. Útil si los usuarios pierden su progreso al cerrar el navegador.";

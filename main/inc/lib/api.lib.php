@@ -2942,6 +2942,17 @@ function api_get_session_visibility(
                 ? api_strtotime($courseAccess['login_course_date'], 'UTC')
                 : 0;
             $userDurationData = SessionManager::getUserSession($userId, $session_id);
+
+            // If the user was re-enrolled after their first access, use the
+            // registration date as the starting point so the duration resets
+            // (same logic as SessionManager::getDayLeftInSession()).
+            if (!empty($userDurationData['registered_at'])) {
+                $registeredAt = api_strtotime($userDurationData['registered_at'], 'UTC');
+                if ($registeredAt > $firstAccess) {
+                    $firstAccess = $registeredAt;
+                }
+            }
+
             $userDuration = isset($userDurationData['duration'])
                 ? (intval($userDurationData['duration']) * 24 * 60 * 60)
                 : 0;
