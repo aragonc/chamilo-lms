@@ -1957,3 +1957,11 @@ if ($allowProikos) {
         ';
     }
 }
+
+// Plugin de proctoring propio (foto DNI + rostro + capturas periódicas de webcam y pantalla).
+if ('true' === api_get_plugin_setting('exerciseproctoring', 'tool_enable')) {
+    require_once api_get_path(SYS_PLUGIN_PATH).'exerciseproctoring/lib/ExerciseProctoringPlugin.php';
+    if (ExerciseProctoringPlugin::exerciseHasProctoring($objExercise) && !empty($exe_id)) {
+        echo ExerciseProctoringPlugin::create()->renderTracker($objExercise, $exe_id);
+    }
+}
