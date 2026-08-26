@@ -84,3 +84,59 @@
         });
     }
 </script>
+
+{% set libro_reclamaciones_enabled = 'proikos'|api_get_plugin_setting('enable_libro_reclamaciones') %}
+{% set libro_reclamaciones_url = 'proikos'|api_get_plugin_setting('libro_reclamaciones_url') %}
+{% if libro_reclamaciones_enabled == 'true' and libro_reclamaciones_url %}
+<a href="{{ libro_reclamaciones_url }}" target="_blank" rel="noopener"
+   id="libro-reclamaciones-btn" class="lr-login"
+   title="Libro de Reclamaciones">
+    <img src="{{ _p.web_plugin }}proikos/images/libro_reclamaciones.png" alt="Libro de Reclamaciones" class="lr-icon">
+    <span class="lr-label">Libro de<br>Reclamaciones</span>
+</a>
+<style>
+    #libro-reclamaciones-btn {
+        position: fixed;
+        right: 20px;
+        bottom: 110px;
+        z-index: 100000;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #1565c0;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 50px;
+        padding: 10px 16px 10px 12px;
+        box-shadow: 0 3px 10px rgba(0,0,0,.35);
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.2;
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+    #libro-reclamaciones-btn:hover,
+    #libro-reclamaciones-btn:focus {
+        color: #fff;
+        transform: scale(1.06);
+        box-shadow: 0 5px 16px rgba(0,0,0,.45);
+        text-decoration: none;
+    }
+    #libro-reclamaciones-btn .lr-icon {
+        width: 36px;
+        height: auto;
+    }
+    #libro-reclamaciones-btn .lr-label {
+        text-transform: uppercase;
+        letter-spacing: .3px;
+    }
+    @media (max-width: 767px) {
+        #libro-reclamaciones-btn .lr-label {
+            display: none;
+        }
+        #libro-reclamaciones-btn {
+            padding: 12px;
+            border-radius: 50%;
+        }
+    }
+</style>
+{% endif %}
