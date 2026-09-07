@@ -667,6 +667,20 @@ $frameReady = Display::getFrameReadyBlock(
 );
 $template->assign('frame_ready', $frameReady);
 
+// Proctoring: dentro de una lección el ejercicio corre en un iframe que se recarga
+// en cada pregunta, lo que destruiría el stream de pantalla compartida. El
+// proctoring se monta aquí, en la página exterior que no se recarga, y el iframe
+// del ejercicio le comunica su intento al cargar (renderLpHandshake).
+$proctoringLpTracker = '';
+if ('true' === api_get_plugin_setting('exerciseproctoring', 'tool_enable')) {
+    require_once api_get_path(SYS_PLUGIN_PATH).'exerciseproctoring/lib/ExerciseProctoringPlugin.php';
+    $proctoringExercise = ExerciseProctoringPlugin::getLpItemExercise($lp, $lp_item_id);
+    if (null !== $proctoringExercise) {
+        $proctoringLpTracker = ExerciseProctoringPlugin::create()->renderLpTracker($proctoringExercise);
+    }
+}
+$template->assign('proctoring_lp_tracker', $proctoringLpTracker);
+
 $view = $template->get_template('learnpath/view.tpl');
 $content = $template->fetch($view);
 

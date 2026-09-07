@@ -1033,6 +1033,21 @@ if (false !== $quizKeepAlivePingInterval) {
     })</script>";
 }
 
+// Proctoring: en modo "una pregunta por página" cada pregunta recarga la página y
+// eso destruiría el stream de pantalla compartida. Se sirve una página contenedora
+// que aloja el proctoring y navega el ejercicio dentro de un iframe, de modo que el
+// alumno comparte pantalla una sola vez para todo el examen.
+if ('true' === api_get_plugin_setting('exerciseproctoring', 'tool_enable') && !empty($exe_id)) {
+    require_once api_get_path(SYS_PLUGIN_PATH).'exerciseproctoring/lib/ExerciseProctoringPlugin.php';
+    if (ExerciseProctoringPlugin::exerciseHasProctoring($objExercise)) {
+        $proctoringShell = ExerciseProctoringPlugin::create()->renderShell($objExercise, $exe_id);
+        if (!empty($proctoringShell)) {
+            echo $proctoringShell;
+            exit;
+        }
+    }
+}
+
 if (!in_array($origin, ['learnpath', 'embeddable', 'mobileapp', 'iframe'])) {
     //so we are not in learnpath tool
     SessionManager::addFlashSessionReadOnly();
@@ -1961,7 +1976,18 @@ if ($allowProikos) {
 // Plugin de proctoring propio (foto DNI + rostro + capturas periódicas de webcam y pantalla).
 if ('true' === api_get_plugin_setting('exerciseproctoring', 'tool_enable')) {
     require_once api_get_path(SYS_PLUGIN_PATH).'exerciseproctoring/lib/ExerciseProctoringPlugin.php';
+    // Aviso de estado de licencia (solo visible para administradores).
+    echo ExerciseProctoringPlugin::create()->renderLicenseNotice($objExercise);
     if (ExerciseProctoringPlugin::exerciseHasProctoring($objExercise) && !empty($exe_id)) {
-        echo ExerciseProctoringPlugin::create()->renderTracker($objExercise, $exe_id);
+        if (ExerciseProctoringPlugin::isInsideLearnpath()) {
+            // Dentro de una lección el proctoring vive en la página exterior, que no
+            // se recarga: aquí solo se le comunica de qué intento se trata, para no
+            // volver a pedir la pantalla en cada pregunta.
+            echo ExerciseProctoringPlugin::create()->renderLpHandshake($objExercise, $exe_id);
+        } elseif (!ExerciseProctoringPlugin::isInsideShell()) {
+            // Dentro del iframe del shell el proctoring ya corre en la página
+            // contenedora: montarlo de nuevo pediría cámara y pantalla otra vez.
+            echo ExerciseProctoringPlugin::create()->renderTracker($objExercise, $exe_id);
+        }
     }
 }

@@ -201,6 +201,7 @@
                                 style="width:100%; height:100%"
                                 border="0"
                                 frameborder="0"
+                                allow="camera; microphone; display-capture; fullscreen"
                                 allowfullscreen="true"
                                 webkitallowfullscreen="true" mozallowfullscreen="true"></iframe>
                         {% else %}
@@ -211,6 +212,7 @@
                                 style="width:100%; height:100%"
                                 border="0"
                                 frameborder="0"
+                                allow="camera; microphone; display-capture; fullscreen"
                                 allowfullscreen="true"
                                 webkitallowfullscreen="true" mozallowfullscreen="true"></iframe>
                         {% endif %}
@@ -419,3 +421,7 @@
         });
     });
 </script>
+
+{# Proctoring del examen: vive en esta página (que no se recarga al cambiar de
+   pregunta) para que la pantalla se comparta una sola vez durante todo el examen. #}
+{{ proctoring_lp_tracker }}
