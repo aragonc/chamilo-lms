@@ -675,6 +675,16 @@ if ($is_allowedToEdit) {
 }
 
 echo $actions;
+
+// Historial de activación / desactivación del examen (ojo de visibilidad).
+if (($is_allowedToEdit || $is_tutor) && $exerciseExists) {
+    echo ExerciseLib::getVisibilityHistoryHtml(
+        (int) $exercise_id,
+        api_get_course_int_id(),
+        api_get_session_id()
+    );
+}
+
 $url = api_get_path(WEB_AJAX_PATH).'model.ajax.php?a=get_exercise_results&exerciseId='.$exercise_id.'&filter_by_user='.$filter_user.'&'.api_get_cidreq();
 $action_links = '';
 // Generating group list
@@ -700,7 +710,7 @@ if ($is_allowedToEdit || $is_tutor) {
         get_lang('LastName'),
         get_lang('LoginName'),
         get_lang('Group'),
-        get_lang('Duration').' ('.get_lang('MinMinute').')',
+        'Tiempo efectivo ('.get_lang('MinMinute').')',
         get_lang('StartDate'),
         get_lang('EndDate'),
         get_lang('Score'),
@@ -749,7 +759,7 @@ if ($is_allowedToEdit || $is_tutor) {
             //for the top bar
             'editoptions' => ['value' => $group_parameters],
         ],
-        ['name' => 'duration', 'index' => 'exe_duration', 'width' => '30', 'align' => 'left', 'search' => 'true'],
+        ['name' => 'effective_time', 'index' => 'effective_time', 'width' => '55', 'align' => 'left', 'search' => 'false'],
         ['name' => 'start_date', 'index' => 'start_date', 'width' => '60', 'align' => 'left', 'search' => 'true'],
         ['name' => 'exe_date', 'index' => 'exe_date', 'width' => '60', 'align' => 'left', 'search' => 'true'],
         ['name' => 'score', 'index' => 'exe_result', 'width' => '50', 'align' => 'center', 'search' => 'true'],

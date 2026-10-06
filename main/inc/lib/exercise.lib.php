@@ -2783,6 +2783,7 @@ HOTSPOT;
                     steps_counter,
                     exe_user_id,
                     te.exe_duration,
+                    GREATEST(COALESCE(TIMESTAMPDIFF(SECOND, te.start_date, te.exe_date), 0), 0) AS effective_time,
                     te.status as completion_status,
                     propagate_neg,
                     revised,
@@ -3021,6 +3022,8 @@ HOTSPOT;
                     }
 
                     $attempt['exe_duration'] = !empty($attempt['exe_duration']) ? round($attempt['exe_duration'] / 60) : 0;
+                    // Tiempo efectivo: minutos entre la hora de inicio y la hora de fin del intento.
+                    $attempt['effective_time'] = !empty($attempt['effective_time']) ? round($attempt['effective_time'] / 60) : 0;
                     $id = $attempt['exe_id'];
                     $dt = api_convert_and_format_date($attempt['exe_weighting']);
 
@@ -7088,6 +7091,182 @@ EOT;
                 }
             }
         }
+    }
+
+    /**
+     * Registra en track_e_default la activación o desactivación de un ejercicio
+     * (clic en el ojo de visibilidad), para conservar el historial completo.
+     */
+    public static function logVisibilityChange(int $exerciseId, bool $visible, int $courseId, int $sessionId = 0)
+    {
+        if (empty($exerciseId) || empty($courseId)) {
+            return;
+        }
+
+        Event::addEvent(
+            $visible ? LOG_EXERCISE_VISIBLE : LOG_EXERCISE_INVISIBLE,
+            LOG_EXERCISE_ID,
+            $exerciseId,
+            api_get_utc_datetime(),
+            api_get_user_id(),
+            $courseId,
+            $sessionId
+        );
+    }
+
+    /**
+     * Devuelve los periodos en que el ejercicio estuvo activo, armados a partir
+     * del historial de activaciones/desactivaciones del curso y sesión dados.
+     *
+     * Cada periodo: start, end (fechas UTC o null), start_user_id, end_user_id, seconds.
+     * start = null: se desactivó sin registro previo de activación.
+     * end = null: el ejercicio sigue activo.
+     */
+    public static function getVisibilityPeriods(int $exerciseId, int $courseId, int $sessionId = 0): array
+    {
+        $table = Database::get_main_table(TABLE_STATISTIC_TRACK_E_DEFAULT);
+        $sql = "SELECT default_date, default_event_type, default_user_id
+                FROM $table
+                WHERE
+                    c_id = $courseId AND
+                    COALESCE(session_id, 0) = $sessionId AND
+                    default_event_type IN ('".LOG_EXERCISE_VISIBLE."', '".LOG_EXERCISE_INVISIBLE."') AND
+                    default_value_type = '".LOG_EXERCISE_ID."' AND
+                    default_value = '$exerciseId'
+                ORDER BY default_date ASC, default_id ASC";
+        $result = Database::query($sql);
+
+        $periods = [];
+        $open = null;
+        while ($row = Database::fetch_array($result, 'ASSOC')) {
+            if (LOG_EXERCISE_VISIBLE === $row['default_event_type']) {
+                // Una activación repetida sin desactivación intermedia no abre otro periodo.
+                if (null === $open) {
+                    $open = [
+                        'start' => $row['default_date'],
+                        'start_user_id' => (int) $row['default_user_id'],
+                        'end' => null,
+                        'end_user_id' => null,
+                    ];
+                }
+                continue;
+            }
+
+            if (null === $open) {
+                // Desactivación repetida: se ignora. Si es la primera, el ejercicio
+                // venía activo desde antes de que existiera el registro.
+                if (empty($periods)) {
+                    $periods[] = [
+                        'start' => null,
+                        'start_user_id' => null,
+                        'end' => $row['default_date'],
+                        'end_user_id' => (int) $row['default_user_id'],
+                    ];
+                }
+                continue;
+            }
+
+            $open['end'] = $row['default_date'];
+            $open['end_user_id'] = (int) $row['default_user_id'];
+            $periods[] = $open;
+            $open = null;
+        }
+
+        if (null !== $open) {
+            $periods[] = $open;
+        }
+
+        $now = time();
+        foreach ($periods as &$period) {
+            $period['seconds'] = null;
+            if (!empty($period['start'])) {
+                $end = empty($period['end']) ? $now : api_strtotime($period['end'], 'UTC');
+                $period['seconds'] = max(0, $end - api_strtotime($period['start'], 'UTC'));
+            }
+        }
+
+        return $periods;
+    }
+
+    /**
+     * Panel con el historial de activación/desactivación del examen para el reporte.
+     */
+    public static function getVisibilityHistoryHtml(int $exerciseId, int $courseId, int $sessionId = 0): string
+    {
+        $periods = self::getVisibilityPeriods($exerciseId, $courseId, $sessionId);
+
+        $formatDuration = function ($seconds) {
+            if (null === $seconds) {
+                return '-';
+            }
+            $days = intdiv($seconds, 86400);
+            $hours = intdiv($seconds % 86400, 3600);
+            $minutes = intdiv($seconds % 3600, 60);
+            $text = $days > 0 ? $days.' d ' : '';
+
+            return $text.sprintf('%02d h %02d min', $hours, $minutes);
+        };
+
+        $userNames = [];
+        $getUserName = function ($userId) use (&$userNames) {
+            if (empty($userId)) {
+                return '-';
+            }
+            if (!isset($userNames[$userId])) {
+                $userInfo = api_get_user_info($userId);
+                $userNames[$userId] = $userInfo ? $userInfo['complete_name'] : '-';
+            }
+
+            return $userNames[$userId];
+        };
+
+        if (empty($periods)) {
+            $content = Display::return_message(
+                'No hay registros de activación o desactivación de este examen. '.
+                'Se registran a partir de ahora cada vez que se haga clic en el ojo de visibilidad.',
+                'normal',
+                false
+            );
+        } else {
+            $table = new HTML_Table(['class' => 'table table-hover table-striped table-condensed']);
+            $headers = ['#', 'Activado', 'Desactivado', 'Tiempo activo', 'Activado por', 'Desactivado por'];
+            foreach ($headers as $index => $header) {
+                $table->setHeaderContents(0, $index, $header);
+            }
+
+            $row = 1;
+            foreach ($periods as $period) {
+                $start = empty($period['start'])
+                    ? '<em>Antes del registro</em>'
+                    : api_get_local_time($period['start']);
+                $end = empty($period['end'])
+                    ? Display::label('Sigue activo', 'success')
+                    : api_get_local_time($period['end']);
+                $duration = $formatDuration($period['seconds']);
+                if (empty($period['end']) && null !== $period['seconds']) {
+                    $duration .= ' <small class="text-muted">(hasta ahora)</small>';
+                }
+
+                $table->setCellContents($row, 0, $row);
+                $table->setCellContents($row, 1, $start);
+                $table->setCellContents($row, 2, $end);
+                $table->setCellContents($row, 3, $duration);
+                $table->setCellContents($row, 4, Security::remove_XSS($getUserName($period['start_user_id'])));
+                $table->setCellContents($row, 5, Security::remove_XSS($getUserName($period['end_user_id'])));
+                $row++;
+            }
+
+            $content = $table->toHtml();
+        }
+
+        return Display::panelCollapse(
+            'Historial de activación del examen',
+            $content,
+            'exercise_visibility_history',
+            [],
+            'exercise_visibility_history_accordion',
+            'exercise_visibility_history_collapse'
+        );
     }
 
     /**

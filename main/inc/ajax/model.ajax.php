@@ -1635,7 +1635,7 @@ switch ($action) {
                 'lastname',
                 'username',
                 'group_name',
-                'exe_duration',
+                'effective_time',
                 'start_date',
                 'exe_date',
                 'score',

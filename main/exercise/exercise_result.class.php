@@ -85,7 +85,7 @@ class ExerciseResult
                     te.start_date as exstart,
                     steps_counter as exstep,
                     exe_user_id as excruid,
-                    te.exe_duration as duration,
+                    GREATEST(COALESCE(TIMESTAMPDIFF(SECOND, te.start_date, te.exe_date), 0), 0) as duration,
                     te.orig_lp_id as orig_lp_id,
                     tlm.name as lp_name,
                     user.username,
@@ -121,7 +121,7 @@ class ExerciseResult
                         te.start_date as exstart,
                         steps_counter as exstep,
                         exe_user_id as excruid,
-                        te.exe_duration as duration,
+                        GREATEST(COALESCE(TIMESTAMPDIFF(SECOND, te.start_date, te.exe_date), 0), 0) as duration,
                         ce.results_disabled as exdisabled,
                         te.orig_lp_id as orig_lp_id,
                         tlm.name as lp_name,
@@ -367,7 +367,7 @@ class ExerciseResult
         $data .= get_lang('Title').';';
         $data .= get_lang('StartDate').';';
         $data .= get_lang('EndDate').';';
-        $data .= get_lang('Duration').' ('.get_lang('MinMinutes').') ;';
+        $data .= 'Tiempo efectivo ('.get_lang('MinMinutes').') ;';
         $data .= get_lang('Score').';';
         $data .= get_lang('Total').';';
         $data .= get_lang('Status').';';
@@ -558,7 +558,7 @@ class ExerciseResult
         $column++;
         $worksheet->setCellValueByColumnAndRow($column, $line, get_lang('EndDate'));
         $column++;
-        $worksheet->setCellValueByColumnAndRow($column, $line, get_lang('Duration').' ('.get_lang('MinMinutes').')');
+        $worksheet->setCellValueByColumnAndRow($column, $line, 'Tiempo efectivo ('.get_lang('MinMinutes').')');
         $column++;
         $worksheet->setCellValueByColumnAndRow($column, $line, get_lang('Score'));
         $column++;

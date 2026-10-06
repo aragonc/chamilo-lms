@@ -238,6 +238,9 @@ define('LOG_WIKI_ACCESS', 'wiki_page_view');
 define('LOG_EXERCISE_RESULT_DELETE', 'exe_result_deleted');
 // Logs only the one attempt
 define('LOG_EXERCISE_ATTEMPT_DELETE', 'exe_attempt_deleted');
+// Activación / desactivación de un ejercicio (ojo de visibilidad)
+define('LOG_EXERCISE_VISIBLE', 'exercise_visible');
+define('LOG_EXERCISE_INVISIBLE', 'exercise_invisible');
 define('LOG_LP_ATTEMPT_DELETE', 'lp_attempt_deleted');
 define('LOG_QUESTION_RESULT_DELETE', 'qst_attempt_deleted');
 define('LOG_QUESTION_SCORE_UPDATE', 'score_attempt_updated');

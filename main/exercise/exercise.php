@@ -288,6 +288,7 @@ if (!empty($action) && $is_allowedToEdit) {
                         'visible',
                         $userId
                     );
+                    ExerciseLib::logVisibilityChange($objExerciseTmp->iid, true, $courseId, $sessionId);
 
                     break;
                 case 'invisible':
@@ -311,9 +312,10 @@ if (!empty($action) && $is_allowedToEdit) {
                         $courseInfo,
                         TOOL_QUIZ,
                         $objExerciseTmp->iid,
-                        'visible',
+                        'invisible',
                         $userId
                     );
+                    ExerciseLib::logVisibilityChange($objExerciseTmp->iid, false, $courseId, $sessionId);
                     break;
             }
         }
@@ -391,6 +393,7 @@ if ($is_allowedToEdit) {
                             'visible',
                             $userId
                         );
+                        ExerciseLib::logVisibilityChange($objExerciseTmp->iid, true, $courseId, $sessionId);
                         Display::addFlash(Display::return_message(get_lang('VisibilityChanged'), 'confirmation'));
                         break;
                     case 'disable':
@@ -417,6 +420,7 @@ if ($is_allowedToEdit) {
                             'invisible',
                             $userId
                         );
+                        ExerciseLib::logVisibilityChange($objExerciseTmp->iid, false, $courseId, $sessionId);
                         Display::addFlash(Display::return_message(get_lang('VisibilityChanged'), 'confirmation'));
                         break;
                     case 'disable_results':
