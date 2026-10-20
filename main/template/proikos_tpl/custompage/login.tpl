@@ -12,33 +12,45 @@
                             <div id="vegas">
                                 <div class="logo" style="text-align: center">
                                     <a href="{{ _p.web }}">
-                                    <img width="200px" class="img-responsive" style="display: inline-block;" title="{{ _s.site_name }}" src="{{ _p.web_css_theme }}images/logo.svg">
+                                    <img width="200px" class="img-responsive pk-site-logo" style="display: inline-block;" title="{{ _s.site_name }}" data-default-src="{{ _p.web_css_theme }}images/logo.svg" src="{{ proikos_appearance.logo|default(_p.web_css_theme ~ 'images/logo.svg') }}">
                                     </a>
                                 </div>
-                                <div class="description">
-                                    Nos alegra verte de nuevo, ingresa tus datos y accede a tu aula virtual
+                                {% set pk_default_description = 'Nos alegra verte de nuevo, ingresa tus datos y accede a tu aula virtual' %}
+                                <div class="description" data-pk-live="login_description" data-default="{{ pk_default_description }}">
+                                    {% if proikos_appearance.login_description %}{{ proikos_appearance.login_description|e|nl2br }}{% else %}{{ pk_default_description }}{% endif %}
                                 </div>
                                 <div class="character">
-                                    <img width="287px" class="img-responsive" style="display: inline-block;" src="{{ _p.web_css_theme }}images/character.png">
+                                    <img width="287px" class="img-responsive pk-login-character" style="display: inline-block;" data-default-src="{{ _p.web_css_theme }}images/character.png" src="{{ proikos_appearance.login_character|default(_p.web_css_theme ~ 'images/character.png') }}">
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="padding-login">
-                                <h3 class="title">Bienvenidos a {{ _s.site_name }}</h3>
+                                <h3 class="title" data-pk-live="login_title" data-default="Bienvenidos a {{ _s.site_name|e }}">{% if proikos_appearance.login_title %}{{ proikos_appearance.login_title|e }}{% else %}Bienvenidos a {{ _s.site_name }}{% endif %}</h3>
                                 {{ mgs_flash }}
                                 {% if error %}
                                 <div class="alert alert-warning" role="alert">
                                     {{ error }}
                                 </div>
                                 {% endif %}
-                                <div class="form-group">
-                                    <label for="user">Usuario (DNI)</label>
-                                    <input type="text" class="form-control" id="user" name="login" ">
-                                </div>
-                                <div class="form-group">
-                                    <label for="password">{{ 'Password'|get_lang() }}</label>
-                                    <input type="password" class="form-control" name="password" id="password" >
+                                <div class="pk-login-fields">
+                                    <div class="form-group">
+                                        <label for="user">Usuario (DNI)</label>
+                                        <input type="text" class="form-control" id="user" name="login"
+                                               placeholder="Ingresa tu número de DNI" autocomplete="username"
+                                               autocapitalize="none" spellcheck="false" required autofocus>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="password">{{ 'Password'|get_lang() }}</label>
+                                        <div class="pk-login-pass">
+                                            <input type="password" class="form-control" name="password" id="password"
+                                                   placeholder="Ingresa tu contraseña" autocomplete="current-password" required>
+                                            <button type="button" class="pk-login-pass-toggle" id="pk-login-pass-toggle"
+                                                    aria-label="Mostrar contraseña" aria-pressed="false" tabindex="-1">
+                                                <i class="fa fa-eye" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="last-password">
@@ -56,8 +68,9 @@
                                 </a >
                                 {% endif %}
 
-                                <div class="message">
-                                    Por razones de seguridad, no olvides cerrar la sesión, incluso antes de cerrar el navegador.
+                                {% set pk_default_message = 'Por razones de seguridad, no olvides cerrar la sesión, incluso antes de cerrar el navegador.' %}
+                                <div class="message" data-pk-live="login_message" data-default="{{ pk_default_message }}">
+                                    {% if proikos_appearance.login_message %}{{ proikos_appearance.login_message|e|nl2br }}{% else %}{{ pk_default_message }}{% endif %}
                                 </div>
                                 <div class="software-name">
                                     <a href="{{_p.web}}" target="_blank">
@@ -76,7 +89,96 @@
         </div>
     </div>
 </div>
+<style>
+    /* Campos del login con el mismo aspecto que el formulario de inscripción */
+    .custompage .pk-login-fields {
+        --pk-accent: var(--primary-color, #008AD1);
+        --pk-border: #d5dde6;
+        --pk-text: #1f2d3d;
+    }
+    .custompage .pk-login-fields .form-group {
+        margin: 0 0 18px;
+    }
+    .custompage .pk-login-fields label {
+        display: block;
+        margin: 0 0 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--pk-text);
+    }
+    .custompage .pk-login-fields .form-control {
+        width: 100%;
+        height: 44px;
+        padding: 10px 12px;
+        font-size: 14px;
+        color: var(--pk-text);
+        background: #fff;
+        border: 1px solid var(--pk-border);
+        border-radius: 8px;
+        box-shadow: none;
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .custompage .pk-login-fields .form-control::placeholder {
+        color: #a3afbd;
+    }
+    .custompage .pk-login-fields .form-control:focus {
+        border-color: var(--pk-accent);
+        box-shadow: 0 0 0 3px rgba(0, 138, 209, .15);
+        outline: 0;
+    }
+    .custompage .pk-login-pass {
+        position: relative;
+    }
+    .custompage .pk-login-pass .form-control {
+        padding-right: 44px;
+    }
+    .custompage .pk-login-pass-toggle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        color: #8a97a6;
+        background: none;
+        border: 0;
+        cursor: pointer;
+    }
+    .custompage .pk-login-pass-toggle:hover,
+    .custompage .pk-login-pass-toggle[aria-pressed="true"] {
+        color: var(--pk-accent);
+    }
+    .custompage .width-login .last-password {
+        margin: -6px 0 22px;
+    }
+    .custompage .width-login .btn-block {
+        height: 44px;
+        padding-top: 0;
+        padding-bottom: 0;
+        line-height: 42px;
+        border-radius: 8px;
+    }
+    .custompage .width-login .btn-block + .btn-block {
+        margin-top: 10px;
+    }
+</style>
 <script>
+    (function () {
+        var toggle = document.getElementById('pk-login-pass-toggle');
+        var input = document.getElementById('password');
+        if (!toggle || !input) {
+            return;
+        }
+        toggle.addEventListener('click', function () {
+            var show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            toggle.setAttribute('aria-pressed', show ? 'true' : 'false');
+            toggle.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            toggle.querySelector('i').className = show ? 'fa fa-eye-slash' : 'fa fa-eye';
+            input.focus();
+        });
+    })();
+
     function onClick(e) {
         e.preventDefault();
         grecaptcha.enterprise.ready(async () => {

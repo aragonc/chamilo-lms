@@ -50,6 +50,9 @@
                 {% endif %}
             </div>
         </div>
+        <div class="pk-footer-text" data-pk-live="footer_html" data-default=""{% if not proikos_appearance.footer_html %} style="display: none;"{% endif %}>
+            {{ proikos_appearance.footer_html }}
+        </div>
         {% if footer_extra_content  %}
             {{ footer_extra_content }}
         {% endif %}

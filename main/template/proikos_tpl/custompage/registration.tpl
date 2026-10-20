@@ -8,7 +8,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <a href="{{ _p.web }}">
-                                    <img width="250px" title="{{ _s.site_name }}" src="{{ _p.web_css_theme }}images/logo.svg">
+                                    <img width="250px" title="{{ _s.site_name }}" class="pk-site-logo" data-default-src="{{ _p.web_css_theme }}images/logo.svg" src="{{ proikos_appearance.logo|default(_p.web_css_theme ~ 'images/logo.svg') }}">
                                 </a>
                             </div>
                             <div class="col-md-6">
@@ -19,7 +19,7 @@
                         </div>
                     {% else %}
                         <a href="{{ _p.web }}">
-                            <img width="250px" title="{{ _s.site_name }}" src="{{ _p.web_css_theme }}images/logo.svg">
+                            <img width="250px" title="{{ _s.site_name }}" class="pk-site-logo" data-default-src="{{ _p.web_css_theme }}images/logo.svg" src="{{ proikos_appearance.logo|default(_p.web_css_theme ~ 'images/logo.svg') }}">
                         </a>
                     {% endif %}
                 </div>

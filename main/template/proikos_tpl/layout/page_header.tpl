@@ -17,7 +17,7 @@
                 <div class="logos">
                     <div class="logo_campus">
                         <a href="{{ _p.web }}">
-                            <img width="180px" src="{{ _p.web_css_theme }}images/logo.svg">
+                            <img width="180px" class="pk-header-logo" data-default-src="{{ _p.web_css_theme }}images/logo.svg" src="{{ proikos_appearance.header_logo|default(proikos_appearance.logo|default(_p.web_css_theme ~ 'images/logo.svg')) }}">
                         </a>
                     </div>
                     <div class="logo_entity">
@@ -28,7 +28,7 @@
                 <div class="logos">
                     <div class="logo_campus">
                         <a href="{{ _p.web }}">
-                            <img width="180px" src="{{ _p.web_css_theme }}images/logo.svg">
+                            <img width="180px" class="pk-header-logo" data-default-src="{{ _p.web_css_theme }}images/logo.svg" src="{{ proikos_appearance.header_logo|default(proikos_appearance.logo|default(_p.web_css_theme ~ 'images/logo.svg')) }}">
                         </a>
                     </div>
                 </div>

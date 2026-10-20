@@ -8,7 +8,7 @@
                             <div class="logo" style="text-align: center;">
                                 <a href="{{ _p.web }}">
                                 <img width="200px" class="img-responsive" style="display: inline-block;"
-                                     title="{{ _s.site_name }}" src="{{ _p.web_css_theme }}images/logo.svg">
+                                     title="{{ _s.site_name }}" class="pk-site-logo" data-default-src="{{ _p.web_css_theme }}images/logo.svg" src="{{ proikos_appearance.logo|default(_p.web_css_theme ~ 'images/logo.svg') }}">
                                 </a>
                             </div>
                             <div class="character">

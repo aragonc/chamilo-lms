@@ -745,6 +745,17 @@ class Template
                 $picture = $plugin->getPictureEntity($code_reference);
             }
             $this->assign('entity_proikos', $picture);
+
+            // Apariencia personalizada (CSS, logo, textos) y barra de personalización para admins.
+            require_once api_get_path(SYS_PLUGIN_PATH).'proikos/src/AppearanceManager.php';
+            $appearanceState = \src\AppearanceManager::getState();
+            $this->assign('proikos_appearance', $appearanceState['vars'] ?? []);
+            if (!$disable_js_and_css_files) {
+                $this->assign(
+                    'css_custom_file_to_string',
+                    $css_file_to_string.\src\AppearanceManager::getHeadHtml(\src\AppearanceManager::customizerAllowed())
+                );
+            }
         }
         // Logo
         $logo = return_logo($this->theme);
