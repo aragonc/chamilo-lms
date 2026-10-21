@@ -132,7 +132,13 @@
     .custompage .pk-login-pass .form-control {
         padding-right: 44px;
     }
+    /* Oculta el ojo nativo de Edge para no duplicar el botón */
+    .custompage .pk-login-pass input::-ms-reveal,
+    .custompage .pk-login-pass input::-ms-clear {
+        display: none;
+    }
     .custompage .pk-login-pass-toggle {
+        z-index: 2;
         position: absolute;
         top: 0;
         right: 0;
@@ -169,9 +175,17 @@
         if (!toggle || !input) {
             return;
         }
+        // Evita que el botón le quite el foco al campo.
+        toggle.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+        });
         toggle.addEventListener('click', function () {
             var show = input.type === 'password';
+            var value = input.value;
             input.type = show ? 'text' : 'password';
+            // Con autocompletado del navegador el valor sigue enmascarado
+            // tras cambiar el tipo; reasignarlo lo convierte en texto normal.
+            input.value = value;
             toggle.setAttribute('aria-pressed', show ? 'true' : 'false');
             toggle.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
             toggle.querySelector('i').className = show ? 'fa fa-eye-slash' : 'fa fa-eye';
