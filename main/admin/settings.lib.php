@@ -943,23 +943,19 @@ function storePlugins()
     $appPlugin = new AppPlugin();
     // Get a list of all current 'Plugins' settings
     $plugin_list = $appPlugin->read_plugins_from_path();
-    $installed_plugins = [];
+    // Only the plugins whose checkbox changed are installed/uninstalled, running the install.php
+    // and uninstall.php of every plugin in the folder made each save very slow
+    $currentPlugins = $appPlugin->getInstalledPluginsInCurrentUrl();
 
     foreach ($plugin_list as $plugin) {
-        if (isset($_POST['plugin_'.$plugin])) {
+        $isChecked = isset($_POST['plugin_'.$plugin]);
+        $isInstalled = in_array($plugin, $currentPlugins);
+
+        if ($isChecked && !$isInstalled) {
             $appPlugin->install($plugin);
-            $installed_plugins[] = $plugin;
+        } elseif (!$isChecked && $isInstalled) {
+            $appPlugin->uninstall($plugin);
         }
-    }
-
-    if (!empty($installed_plugins)) {
-        $remove_plugins = array_diff($plugin_list, $installed_plugins);
-    } else {
-        $remove_plugins = $plugin_list;
-    }
-
-    foreach ($remove_plugins as $plugin) {
-        $appPlugin->uninstall($plugin);
     }
 }
 
