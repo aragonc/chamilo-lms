@@ -168,7 +168,7 @@ $enableLinkSmowlInBtn = 'false';
 // Replace $exercise_id if enableMonitor
 if ($allowProikos) {
 
-    $enableMonitor = $objExercise->enableMonitor == 1 && !$continueTest;
+    $enableMonitor = $objExercise->enableMonitor == 1 && !$continueTest && ProikosPlugin::isSmowlEnabled();
     if ($enableMonitor) {
         $userInfo = api_get_user_info();
         $availableLanguages = [

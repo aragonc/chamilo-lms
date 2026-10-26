@@ -2673,7 +2673,9 @@ class Exercise
                 );
             }
 
-            $form->addCheckBox('enable_monitor', get_lang('EnableMonitor'), get_lang('YesEnableMonitorStudent'), 1);
+            if (ProikosPlugin::isSmowlEnabled()) {
+                $form->addCheckBox('enable_monitor', get_lang('EnableMonitor'), get_lang('YesEnableMonitorStudent'), 1);
+            }
             $form->addCheckBox('is_final_exercise', get_lang('ThisFinalExercise'), get_lang('ThisFinalExerciseHelp'), 1);
 
             $form->addElement('html', '</div>'); //End advanced setting
@@ -2939,7 +2941,10 @@ class Exercise
         $this->setShowPreviousButton($form->getSubmitValue('show_previous_button'));
         $this->setNotifications($form->getSubmitValue('notifications'));
         $this->setExerciseCategoryId($form->getSubmitValue('exercise_category_id'));
-        $this->setEnableMonitor($form->getSubmitValue('enable_monitor'));
+        // Sin SMOWL el check no se muestra: se conserva el valor guardado.
+        if (ProikosPlugin::isSmowlEnabled()) {
+            $this->setEnableMonitor($form->getSubmitValue('enable_monitor'));
+        }
         $this->setIsFinalExercise($form->getSubmitValue('is_final_exercise'));
         $this->setPageResultConfiguration($form->getSubmitValues());
         $showHideConfiguration = api_get_configuration_value('quiz_hide_question_number');

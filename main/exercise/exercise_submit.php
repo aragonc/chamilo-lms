@@ -1886,7 +1886,7 @@ if (!in_array($origin, ['learnpath', 'embeddable', 'iframe'])) {
 Display::display_footer();
 
 if ($allowProikos) {
-    $enableMonitor = $exerciseInSession->enableMonitor == 1;
+    $enableMonitor = $exerciseInSession->enableMonitor == 1 && ProikosPlugin::isSmowlEnabled();
     if ($enableMonitor) {
         $proikosPlugin = ProikosPlugin::create();
 
