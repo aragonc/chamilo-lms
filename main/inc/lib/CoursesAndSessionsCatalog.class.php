@@ -1773,13 +1773,20 @@ class CoursesAndSessionsCatalog
         }
         $array_stakeholders = [];
         $currentDate = new DateTime();
+        // Se muestran también las sesiones que inician más adelante dentro del mes actual,
+        // para que los alumnos puedan inscribirse con anticipación.
+        $endOfMonth = new DateTime('last day of this month 23:59:59');
 
         $count = 0;
         $sessionList = [];
         $userInSessions = [];
         foreach ($sessions as $session) {
-            if (!(($session->getDisplayStartDate() <= $currentDate) && ($session->getDisplayEndDate() >= $currentDate))
-                && !empty($session->getDisplayEndDate())) {
+            $displayStart = $session->getDisplayStartDate();
+            $displayEnd = $session->getDisplayEndDate();
+            $hasEnded = !empty($displayEnd) && $displayEnd < $currentDate;
+            $startsAfterThisMonth = !empty($displayStart) && $displayStart > $endOfMonth;
+
+            if (!empty($displayEnd) && ($hasEnded || $startsAfterThisMonth)) {
                 unset($sessions[$count]);
             } else {
                 $sessionList[]=$session;
